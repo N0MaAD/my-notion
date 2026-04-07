@@ -2511,3 +2511,54 @@
    .tiptap-editor .ProseMirror [data-embed-block] {
      display: block !important;
    }
+
+   /* ---- Trash drop zone ---- */
+   .trash-zone {
+     position: fixed;
+     bottom: 1.5rem;
+     left: 1.5rem;
+     width: 56px;
+     height: 56px;
+     border-radius: 50%;
+     background: rgba(239, 68, 68, 0.15);
+     border: 2px dashed rgba(239, 68, 68, 0.5);
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     z-index: 9999;
+     cursor: default;
+     transition: transform 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+     backdrop-filter: blur(8px);
+   }
+
+   .trash-zone .trash-icon {
+     font-size: 1.5rem;
+     transition: transform 0.2s;
+   }
+
+   .trash-zone.trash-hover {
+     background: rgba(239, 68, 68, 0.35);
+     border-color: rgba(239, 68, 68, 0.9);
+     transform: scale(1.2);
+     box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+   }
+
+   .trash-zone.trash-hover .trash-icon {
+     transform: scale(1.15);
+   }
+
+   /* Trash appear/disappear transition */
+   .trash-enter-active {
+     transition: opacity 0.25s ease, transform 0.25s ease;
+   }
+   .trash-leave-active {
+     transition: opacity 0.2s ease, transform 0.2s ease;
+   }
+   .trash-enter-from {
+     opacity: 0;
+     transform: scale(0.5);
+   }
+   .trash-leave-to {
+     opacity: 0;
+     transform: scale(0.5);
+   }
