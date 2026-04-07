@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db } from '../firebase.js'
+import { useAuthStore } from './auth.js'
 
-// ─── Système de types extensible ───
-// Pour ajouter un nouveau type : ajouter une entrée ici, c'est tout.
+// ─── Systeme de types extensible ───
+// Pour ajouter un nouveau type : ajouter une entree ici, c'est tout.
 export const NOTE_TYPES = {
   note: {
     id: 'note',
@@ -53,6 +56,9 @@ export const useBoardStore = defineStore('board', () => {
   const activeNoteId = ref(null)
   const openPagePath = ref([])
   const pinnedNoteIds = ref([])
+  const dataLoaded = ref(false)
+
+  let saveTimeout = null
 
   const activeNote = computed(() => {
     for (const col of columns.value) {
@@ -114,7 +120,7 @@ export const useBoardStore = defineStore('board', () => {
         type: noteType,
         blocks: []
       }
-      // Données spécifiques au type
+      // Donnees specifiques au type
       if (noteType === 'task') {
         noteData.checked = false
       }
@@ -136,7 +142,6 @@ export const useBoardStore = defineStore('board', () => {
     const pinIdx = pinnedNoteIds.value.indexOf(noteId)
     if (pinIdx !== -1) {
       pinnedNoteIds.value.splice(pinIdx, 1)
-      savePinsToStorage()
     }
   }
 
@@ -155,7 +160,6 @@ export const useBoardStore = defineStore('board', () => {
       const note = col.notes.find(n => n.id === noteId)
       if (note) {
         note.type = newType
-        // Ajouter les données spécifiques si elles manquent
         if (newType === 'task' && note.checked === undefined) {
           note.checked = false
         }
@@ -284,48 +288,58 @@ export const useBoardStore = defineStore('board', () => {
     } else {
       pinnedNoteIds.value.splice(idx, 1)
     }
-    savePinsToStorage()
   }
 
   function isPinned(noteId) {
     return pinnedNoteIds.value.includes(noteId)
   }
 
-  function saveToStorage() {
-    localStorage.setItem('board-data', JSON.stringify(columns.value))
+  // ─── Firestore persistence ───
+
+  function getUserDocRef() {
+    const authStore = useAuthStore()
+    if (!authStore.user) return null
+    return doc(db, 'users', authStore.user.uid)
   }
 
-  function loadFromStorage() {
-    const data = localStorage.getItem('board-data')
-    if (data) {
+  function saveToFirestore() {
+    // Debounce : attend 500ms apres le dernier changement avant de sauvegarder
+    clearTimeout(saveTimeout)
+    saveTimeout = setTimeout(async () => {
+      const docRef = getUserDocRef()
+      if (!docRef) return
       try {
-        columns.value = JSON.parse(data)
+        await setDoc(docRef, {
+          columns: JSON.parse(JSON.stringify(columns.value)),
+          pins: JSON.parse(JSON.stringify(pinnedNoteIds.value))
+        })
       } catch (e) {
-        console.error('Erreur chargement données:', e)
+        console.error('Erreur sauvegarde Firestore:', e)
       }
-    }
+    }, 500)
   }
 
-  function savePinsToStorage() {
-    localStorage.setItem('board-pins', JSON.stringify(pinnedNoteIds.value))
-  }
-
-  function loadPinsFromStorage() {
-    const data = localStorage.getItem('board-pins')
-    if (data) {
-      try {
-        pinnedNoteIds.value = JSON.parse(data)
-      } catch (e) {
-        console.error('Erreur chargement pins:', e)
+  async function loadFromFirestore() {
+    const docRef = getUserDocRef()
+    if (!docRef) return
+    try {
+      const snap = await getDoc(docRef)
+      if (snap.exists()) {
+        const data = snap.data()
+        columns.value = data.columns || []
+        pinnedNoteIds.value = data.pins || []
       }
+    } catch (e) {
+      console.error('Erreur chargement Firestore:', e)
     }
+    dataLoaded.value = true
   }
 
-  loadFromStorage()
-  loadPinsFromStorage()
-
-  watch(columns, () => {
-    saveToStorage()
+  // Auto-save quand les donnees changent
+  watch([columns, pinnedNoteIds], () => {
+    if (dataLoaded.value) {
+      saveToFirestore()
+    }
   }, { deep: true })
 
   return {
@@ -335,6 +349,7 @@ export const useBoardStore = defineStore('board', () => {
     openPagePath,
     currentPage,
     pinnedNotes,
+    dataLoaded,
     addColumn,
     deleteColumn,
     renameColumn,
@@ -353,7 +368,6 @@ export const useBoardStore = defineStore('board', () => {
     moveNote,
     togglePin,
     isPinned,
-    saveToStorage,
-    loadFromStorage
+    loadFromFirestore
   }
 })
