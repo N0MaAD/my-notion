@@ -6,12 +6,12 @@ import { getFirestore } from 'firebase/firestore'
 // Remplace ces valeurs par celles de ton projet Firebase
 // (Console Firebase > Parametres du projet > Config)
 const firebaseConfig = {
-  apiKey: 'REPLACE_ME',
-  authDomain: 'REPLACE_ME.firebaseapp.com',
-  projectId: 'REPLACE_ME',
-  storageBucket: 'REPLACE_ME.firebasestorage.app',
-  messagingSenderId: 'REPLACE_ME',
-  appId: 'REPLACE_ME'
+  apiKey: 'AIzaSyDBX3YJ-kPTqvMwTXLbt-mqFpl0bjYzcPA',
+  authDomain: 'my-notion-8d43b.firebaseapp.com',
+  projectId: 'my-notion-8d43b',
+  storageBucket: 'my-notion-8d43b.firebasestorage.app',
+  messagingSenderId: '508332901129',
+  appId: '1:508332901129:web:80c9297186ccc907805f9d8'
 }
 
 const app = initializeApp(firebaseConfig)
