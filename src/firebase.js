@@ -1,10 +1,12 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager
+} from 'firebase/firestore'
 
 // ─── Configuration Firebase ───
-// Remplace ces valeurs par celles de ton projet Firebase
-// (Console Firebase > Parametres du projet > Config)
 const firebaseConfig = {
   apiKey: 'AIzaSyDBX3YJ-kPTqvMwTXLbt-mqFpl0bjYzcPA',
   authDomain: 'my-notion-8d43b.firebaseapp.com',
@@ -16,4 +18,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
-export const db = getFirestore(app)
+
+// Firestore avec persistance locale (mode hors ligne)
+// Les donnees sont cachees dans IndexedDB et synchronisees automatiquement
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+})

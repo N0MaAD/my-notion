@@ -20,11 +20,24 @@
       <img v-if="authStore.user.photoURL" :src="authStore.user.photoURL" class="user-avatar" referrerpolicy="no-referrer" />
       <span class="user-name">{{ authStore.user.displayName }}</span>
     </div>
+    <nav class="nav-tabs">
+      <button
+        class="nav-tab"
+        :class="{ active: currentView === 'notes' }"
+        @click="currentView = 'notes'"
+      >Notes</button>
+      <button
+        class="nav-tab"
+        :class="{ active: currentView === 'agenda' }"
+        @click="currentView = 'agenda'"
+      >Agenda</button>
+    </nav>
     <button class="btn-logout" @click="authStore.logout()">Deconnexion</button>
   </div>
 
   <div v-if="!isFullscreen" class="board-area">
-    <BoardView />
+    <BoardView v-if="currentView === 'notes'" />
+    <AgendaView v-else-if="currentView === 'agenda'" />
   </div>
   <div
     v-if="store.activeNote && !isFullscreen"
@@ -39,7 +52,7 @@
   <!-- Trash drop zone -->
   <Transition name="trash">
     <div
-      v-if="isDraggingCard"
+      v-if="isDraggingCard && currentView === 'notes'"
       class="trash-zone"
       :class="{ 'trash-hover': isOverTrash }"
       @dragover.prevent="onTrashDragOver"
@@ -55,6 +68,7 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import BoardView from './views/BoardView.vue'
+import AgendaView from './views/AgendaView.vue'
 import SidebarView from './views/SidebarView.vue'
 import SearchModal from './components/SearchModal.vue'
 import LoginView from './views/LoginView.vue'
@@ -67,6 +81,7 @@ const sidebarWidth = ref(400)
 const isFullscreen = ref(false)
 const isDraggingCard = ref(false)
 const isOverTrash = ref(false)
+const currentView = ref('notes')
 
 // Charge les donnees Firestore quand l'utilisateur se connecte
 watch(() => authStore.user, async (user) => {
