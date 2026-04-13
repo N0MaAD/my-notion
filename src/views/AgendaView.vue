@@ -78,6 +78,25 @@ const notesWithDeadlines = computed(() => {
   return result
 })
 
+// Toutes les notes de type duration avec au moins une date
+const notesWithDuration = computed(() => {
+  const result = []
+  for (const col of store.columns) {
+    for (const note of col.notes) {
+      if (note.type === 'duration' && (note.startDate || note.endDate)) {
+        result.push({ ...note, columnTitle: col.title })
+      }
+    }
+  }
+  return result
+})
+
+function toDay(dateStr) {
+  const d = new Date(dateStr)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
 // Construit la grille de 6 semaines (42 cellules) du mois affiche
 const calendarCells = computed(() => {
   const cells = []
@@ -100,11 +119,19 @@ const calendarCells = computed(() => {
     const isToday = date.getTime() === today.getTime()
 
     // Notes dont la deadline tombe ce jour
-    const notes = notesWithDeadlines.value.filter(n => {
-      const d = new Date(n.deadline)
-      d.setHours(0, 0, 0, 0)
-      return d.getTime() === date.getTime()
+    const deadlineNotes = notesWithDeadlines.value.filter(n => {
+      return toDay(n.deadline).getTime() === date.getTime()
     })
+
+    // Notes de type duration qui couvrent ce jour
+    const durationNotes = notesWithDuration.value.filter(n => {
+      const start = n.startDate ? toDay(n.startDate).getTime() : -Infinity
+      const end = n.endDate ? toDay(n.endDate).getTime() : Infinity
+      const t = date.getTime()
+      return t >= start && t <= end
+    })
+
+    const notes = [...durationNotes, ...deadlineNotes]
 
     cells.push({
       key: date.toISOString(),

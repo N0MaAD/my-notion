@@ -28,6 +28,13 @@ export const NOTE_TYPES = {
     color: '#f59e0b',
     description: 'Note avec date limite'
   },
+  duration: {
+    id: 'duration',
+    label: 'Duree',
+    icon: '🗓️',
+    color: '#14b8a6',
+    description: 'Evenement sur une periode (conges, projet...)'
+  },
   idea: {
     id: 'idea',
     label: 'Idée',
@@ -127,6 +134,10 @@ export const useBoardStore = defineStore('board', () => {
       if (noteType === 'deadline') {
         noteData.deadline = null
       }
+      if (noteType === 'duration') {
+        noteData.startDate = null
+        noteData.endDate = null
+      }
       col.notes.push(noteData)
     }
   }
@@ -166,6 +177,21 @@ export const useBoardStore = defineStore('board', () => {
         if (newType === 'deadline' && note.deadline === undefined) {
           note.deadline = null
         }
+        if (newType === 'duration') {
+          if (note.startDate === undefined) note.startDate = null
+          if (note.endDate === undefined) note.endDate = null
+        }
+        return
+      }
+    }
+  }
+
+  function setNoteDuration(noteId, startDate, endDate) {
+    for (const col of columns.value) {
+      const note = col.notes.find(n => n.id === noteId)
+      if (note) {
+        note.startDate = startDate
+        note.endDate = endDate
         return
       }
     }
@@ -359,6 +385,7 @@ export const useBoardStore = defineStore('board', () => {
     updateNoteType,
     toggleNoteChecked,
     setNoteDeadline,
+    setNoteDuration,
     setActiveNote,
     addBlock,
     updateBlock,

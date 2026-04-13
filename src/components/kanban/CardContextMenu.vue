@@ -34,12 +34,30 @@
         @input="setDeadline($event.target.value)"
       />
     </div>
+
+    <div v-if="currentType === 'duration'" class="context-menu-divider" />
+    <div v-if="currentType === 'duration'" class="context-menu-date">
+      <label class="context-menu-date-label">🗓️ Debut</label>
+      <input
+        type="date"
+        class="context-menu-date-input"
+        :value="localStart"
+        @input="localStart = $event.target.value; applyDuration()"
+      />
+      <label class="context-menu-date-label" style="margin-top: 0.5rem">🗓️ Fin</label>
+      <input
+        type="date"
+        class="context-menu-date-input"
+        :value="localEnd"
+        @input="localEnd = $event.target.value; applyDuration()"
+      />
+    </div>
   </div>
 </Teleport>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { NOTE_TYPES, useBoardStore } from '../../stores/board.js'
 
 const store = useBoardStore()
@@ -50,16 +68,26 @@ const props = defineProps({
   y: Number,
   noteId: String,
   currentType: { type: String, default: 'note' },
-  currentDeadline: { type: String, default: null }
+  currentDeadline: { type: String, default: null },
+  currentStartDate: { type: String, default: null },
+  currentEndDate: { type: String, default: null }
 })
 
 const emit = defineEmits(['close'])
 
 const types = computed(() => Object.values(NOTE_TYPES))
 
+const localStart = ref(props.currentStartDate || '')
+const localEnd = ref(props.currentEndDate || '')
+
+watch(() => [props.currentStartDate, props.currentEndDate], ([s, e]) => {
+  localStart.value = s || ''
+  localEnd.value = e || ''
+})
+
 function selectType(typeId) {
   store.updateNoteType(props.noteId, typeId)
-  if (typeId !== 'deadline') {
+  if (typeId !== 'deadline' && typeId !== 'duration') {
     close()
   }
 }
@@ -67,6 +95,14 @@ function selectType(typeId) {
 function setDeadline(date) {
   store.setNoteDeadline(props.noteId, date)
   close()
+}
+
+function applyDuration() {
+  store.setNoteDuration(
+    props.noteId,
+    localStart.value || null,
+    localEnd.value || null
+  )
 }
 
 function close() {

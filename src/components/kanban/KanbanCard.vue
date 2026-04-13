@@ -44,6 +44,11 @@
   <div v-if="note.deadline" class="card-deadline" :class="deadlineClass">
     📅 {{ formatDeadline(note.deadline) }}
   </div>
+
+  <!-- Duree affichee si type duration -->
+  <div v-if="note.type === 'duration' && (note.startDate || note.endDate)" class="card-duration">
+    🗓️ {{ formatDurationRange(note.startDate, note.endDate) }}
+  </div>
 </div>
 
 <!-- Menu contextuel -->
@@ -54,6 +59,8 @@
   :noteId="note.id"
   :currentType="note.type || 'note'"
   :currentDeadline="note.deadline || null"
+  :currentStartDate="note.startDate || null"
+  :currentEndDate="note.endDate || null"
   @close="showContextMenu = false"
 />
 </template>
@@ -99,6 +106,14 @@ const deadlineClass = computed(() => {
 function formatDeadline(dateStr) {
   const d = new Date(dateStr)
   return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+}
+
+function formatDurationRange(start, end) {
+  const fmt = (s) => new Date(s).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  if (start && end) return `${fmt(start)} → ${fmt(end)}`
+  if (start) return `depuis ${fmt(start)}`
+  if (end) return `jusqu'au ${fmt(end)}`
+  return ''
 }
 
 function onDragStart(e) {
@@ -183,5 +198,15 @@ function openContextMenu(e) {
 .deadline-overdue {
   color: #dc2626;
   background: #fef2f2;
+}
+
+.card-duration {
+  font-size: 0.72rem;
+  margin-top: 0.3rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  width: fit-content;
+  color: #0d9488;
+  background: #f0fdfa;
 }
 </style>
