@@ -34,10 +34,20 @@
       </div>
     </div>
 
-    <!-- Date picker si deadline sélectionné -->
-    <div v-if="selectedType === 'deadline'" class="add-card-deadline">
-      <label>📅 Date limite</label>
-      <input type="date" v-model="deadlineDate" class="input" />
+    <!-- Date picker si type 'date' sélectionné -->
+    <div v-if="selectedType === 'date'" class="add-card-date">
+      <label class="add-card-deadline-toggle">
+        <input type="checkbox" v-model="isDeadline" />
+        <span>Deadline (date unique)</span>
+      </label>
+      <div class="add-card-deadline">
+        <label>{{ isDeadline ? '📅 Date' : '🗓️ Début' }}</label>
+        <input type="date" v-model="startDate" class="input" />
+      </div>
+      <div v-if="!isDeadline" class="add-card-deadline">
+        <label>🗓️ Fin</label>
+        <input type="date" v-model="endDate" class="input" />
+      </div>
     </div>
 
     <div class="form-actions">
@@ -65,19 +75,27 @@ const title = ref('')
 const inputRef = ref(null)
 const selectedType = ref('note')
 const showTypePicker = ref(false)
-const deadlineDate = ref('')
+const startDate = ref('')
+const endDate = ref('')
+const isDeadline = ref(false)
 
-const types = computed(() => Object.values(NOTE_TYPES))
+const types = computed(() => Object.values(NOTE_TYPES).filter(t => !t.hidden))
 
 const selectedTypeInfo = computed(() => {
   return NOTE_TYPES[selectedType.value] || NOTE_TYPES.note
 })
 
+function resetDateFields() {
+  startDate.value = ''
+  endDate.value = ''
+  isDeadline.value = false
+}
+
 async function startAdding(type = 'note') {
   selectedType.value = type
   showTypePicker.value = false
   isAdding.value = true
-  deadlineDate.value = ''
+  resetDateFields()
   await nextTick()
   inputRef.value?.focus()
 }
@@ -85,7 +103,7 @@ async function startAdding(type = 'note') {
 async function startAddingWithPicker() {
   isAdding.value = true
   showTypePicker.value = true
-  deadlineDate.value = ''
+  resetDateFields()
   await nextTick()
   inputRef.value?.focus()
 }
@@ -100,18 +118,22 @@ function submit() {
   if (!title.value.trim()) return
   store.addNote(props.columnId, title.value.trim(), selectedType.value)
 
-  // Si deadline, ajouter la date
-  if (selectedType.value === 'deadline' && deadlineDate.value) {
-    // Trouver la note qu'on vient de créer (la dernière de la colonne)
+  // Si type 'date', appliquer les dates et le flag deadline
+  if (selectedType.value === 'date') {
     const col = store.columns.find(c => c.id === props.columnId)
     if (col && col.notes.length > 0) {
       const newNote = col.notes[col.notes.length - 1]
-      store.setNoteDeadline(newNote.id, deadlineDate.value)
+      store.setNoteIsDeadline(newNote.id, isDeadline.value)
+      store.setNoteDuration(
+        newNote.id,
+        startDate.value || null,
+        isDeadline.value ? null : (endDate.value || null)
+      )
     }
   }
 
   title.value = ''
-  deadlineDate.value = ''
+  resetDateFields()
   isAdding.value = false
   showTypePicker.value = false
   selectedType.value = 'note'
@@ -119,7 +141,7 @@ function submit() {
 
 function cancel() {
   title.value = ''
-  deadlineDate.value = ''
+  resetDateFields()
   isAdding.value = false
   showTypePicker.value = false
   selectedType.value = 'note'
@@ -223,8 +245,31 @@ function cancel() {
   margin-left: auto;
 }
 
-.add-card-deadline {
+.add-card-date {
   margin-top: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.add-card-deadline-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: #666;
+  cursor: pointer;
+  user-select: none;
+}
+
+.add-card-deadline-toggle input[type="checkbox"] {
+  width: 0.9rem;
+  height: 0.9rem;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.add-card-deadline {
   display: flex;
   align-items: center;
   gap: 0.5rem;
