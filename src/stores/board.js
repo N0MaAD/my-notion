@@ -21,22 +21,6 @@ export const NOTE_TYPES = {
     color: '#3b82f6',
     description: 'Tâche avec case à cocher'
   },
-  deadline: {
-    id: 'deadline',
-    label: 'Deadline',
-    icon: '📅',
-    color: '#f59e0b',
-    description: 'Note avec date (deadline ou periode)',
-    hidden: true
-  },
-  duration: {
-    id: 'duration',
-    label: 'Duree',
-    icon: '🗓️',
-    color: '#14b8a6',
-    description: 'Evenement sur une periode (conges, projet...)',
-    hidden: true
-  },
   date: {
     id: 'date',
     label: 'Date',
