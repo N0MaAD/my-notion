@@ -26,14 +26,23 @@ export const NOTE_TYPES = {
     label: 'Deadline',
     icon: '📅',
     color: '#f59e0b',
-    description: 'Note avec date limite'
+    description: 'Note avec date (deadline ou periode)',
+    hidden: true
   },
   duration: {
     id: 'duration',
     label: 'Duree',
     icon: '🗓️',
     color: '#14b8a6',
-    description: 'Evenement sur une periode (conges, projet...)'
+    description: 'Evenement sur une periode (conges, projet...)',
+    hidden: true
+  },
+  date: {
+    id: 'date',
+    label: 'Date',
+    icon: '📅',
+    color: '#f59e0b',
+    description: 'Deadline ou periode (conges, projet...)'
   },
   idea: {
     id: 'idea',
@@ -131,12 +140,10 @@ export const useBoardStore = defineStore('board', () => {
       if (noteType === 'task') {
         noteData.checked = false
       }
-      if (noteType === 'deadline') {
-        noteData.deadline = null
-      }
-      if (noteType === 'duration') {
+      if (noteType === 'date') {
         noteData.startDate = null
         noteData.endDate = null
+        noteData.isDeadline = false
       }
       col.notes.push(noteData)
     }
@@ -174,12 +181,10 @@ export const useBoardStore = defineStore('board', () => {
         if (newType === 'task' && note.checked === undefined) {
           note.checked = false
         }
-        if (newType === 'deadline' && note.deadline === undefined) {
-          note.deadline = null
-        }
-        if (newType === 'duration') {
+        if (newType === 'date') {
           if (note.startDate === undefined) note.startDate = null
           if (note.endDate === undefined) note.endDate = null
+          if (note.isDeadline === undefined) note.isDeadline = false
         }
         return
       }
@@ -193,6 +198,37 @@ export const useBoardStore = defineStore('board', () => {
         note.startDate = startDate
         note.endDate = endDate
         return
+      }
+    }
+  }
+
+  function setNoteIsDeadline(noteId, isDeadline) {
+    for (const col of columns.value) {
+      const note = col.notes.find(n => n.id === noteId)
+      if (note) {
+        note.isDeadline = isDeadline
+        if (isDeadline) {
+          note.endDate = null
+        }
+        return
+      }
+    }
+  }
+
+  // Migre les anciens types deadline/duration vers le type unifie 'date'
+  function migrateNotes() {
+    for (const col of columns.value) {
+      for (const note of col.notes) {
+        if (note.type === 'deadline') {
+          note.type = 'date'
+          note.isDeadline = true
+          note.startDate = note.deadline || null
+          note.endDate = null
+          delete note.deadline
+        } else if (note.type === 'duration') {
+          note.type = 'date'
+          note.isDeadline = false
+        }
       }
     }
   }
@@ -354,6 +390,7 @@ export const useBoardStore = defineStore('board', () => {
         const data = snap.data()
         columns.value = data.columns || []
         pinnedNoteIds.value = data.pins || []
+        migrateNotes()
       }
     } catch (e) {
       console.error('Erreur chargement Firestore:', e)
@@ -386,6 +423,7 @@ export const useBoardStore = defineStore('board', () => {
     toggleNoteChecked,
     setNoteDeadline,
     setNoteDuration,
+    setNoteIsDeadline,
     setActiveNote,
     addBlock,
     updateBlock,

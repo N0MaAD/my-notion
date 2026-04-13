@@ -40,15 +40,24 @@
     </button>
   </div>
 
-  <!-- Deadline affichée si présente -->
-  <div v-if="note.deadline" class="card-deadline" :class="deadlineClass">
-    📅 {{ formatDeadline(note.deadline) }}
-  </div>
-
-  <!-- Duree affichee si type duration -->
-  <div v-if="note.type === 'duration' && (note.startDate || note.endDate)" class="card-duration">
-    🗓️ {{ formatDurationRange(note.startDate, note.endDate) }}
-  </div>
+  <!-- Date affichee si type date -->
+  <template v-if="note.type === 'date'">
+    <!-- Mode deadline : une seule date -->
+    <div
+      v-if="note.isDeadline && note.startDate"
+      class="card-deadline"
+      :class="deadlineClass"
+    >
+      📅 {{ formatDate(note.startDate) }}
+    </div>
+    <!-- Mode periode : plage de dates -->
+    <div
+      v-else-if="!note.isDeadline && (note.startDate || note.endDate)"
+      class="card-duration"
+    >
+      🗓️ {{ formatDurationRange(note.startDate, note.endDate) }}
+    </div>
+  </template>
 </div>
 
 <!-- Menu contextuel -->
@@ -58,9 +67,9 @@
   :y="contextY"
   :noteId="note.id"
   :currentType="note.type || 'note'"
-  :currentDeadline="note.deadline || null"
   :currentStartDate="note.startDate || null"
   :currentEndDate="note.endDate || null"
+  :currentIsDeadline="note.isDeadline || false"
   @close="showContextMenu = false"
 />
 </template>
@@ -93,17 +102,18 @@ const cardBorderStyle = computed(() => {
 })
 
 const deadlineClass = computed(() => {
-  if (!props.note.deadline) return ''
+  const target = props.note.startDate
+  if (!target) return ''
   const now = new Date()
   now.setHours(0, 0, 0, 0)
-  const dl = new Date(props.note.deadline)
+  const dl = new Date(target)
   const diff = (dl - now) / (1000 * 60 * 60 * 24)
   if (diff < 0) return 'deadline-overdue'
   if (diff <= 2) return 'deadline-soon'
   return 'deadline-ok'
 })
 
-function formatDeadline(dateStr) {
+function formatDate(dateStr) {
   const d = new Date(dateStr)
   return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 }

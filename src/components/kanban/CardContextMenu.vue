@@ -24,33 +24,36 @@
       <span v-if="t.id === currentType" class="context-menu-check">✓</span>
     </div>
 
-    <div v-if="currentType === 'deadline'" class="context-menu-divider" />
-    <div v-if="currentType === 'deadline'" class="context-menu-date">
-      <label class="context-menu-date-label">📅 Date limite</label>
-      <input
-        type="date"
-        class="context-menu-date-input"
-        :value="currentDeadline"
-        @input="setDeadline($event.target.value)"
-      />
-    </div>
+    <div v-if="currentType === 'date'" class="context-menu-divider" />
+    <div v-if="currentType === 'date'" class="context-menu-date">
+      <label class="context-menu-checkbox-label">
+        <input
+          type="checkbox"
+          :checked="currentIsDeadline"
+          @change="toggleDeadline($event.target.checked)"
+        />
+        <span>Deadline (date unique)</span>
+      </label>
 
-    <div v-if="currentType === 'duration'" class="context-menu-divider" />
-    <div v-if="currentType === 'duration'" class="context-menu-date">
-      <label class="context-menu-date-label">🗓️ Debut</label>
+      <label class="context-menu-date-label">
+        {{ currentIsDeadline ? '📅 Date' : '🗓️ Date de debut' }}
+      </label>
       <input
         type="date"
         class="context-menu-date-input"
         :value="localStart"
-        @input="localStart = $event.target.value; applyDuration()"
+        @input="localStart = $event.target.value; applyDates()"
       />
-      <label class="context-menu-date-label" style="margin-top: 0.5rem">🗓️ Fin</label>
-      <input
-        type="date"
-        class="context-menu-date-input"
-        :value="localEnd"
-        @input="localEnd = $event.target.value; applyDuration()"
-      />
+
+      <template v-if="!currentIsDeadline">
+        <label class="context-menu-date-label" style="margin-top: 0.5rem">🗓️ Date de fin</label>
+        <input
+          type="date"
+          class="context-menu-date-input"
+          :value="localEnd"
+          @input="localEnd = $event.target.value; applyDates()"
+        />
+      </template>
     </div>
   </div>
 </Teleport>
@@ -68,14 +71,15 @@ const props = defineProps({
   y: Number,
   noteId: String,
   currentType: { type: String, default: 'note' },
-  currentDeadline: { type: String, default: null },
   currentStartDate: { type: String, default: null },
-  currentEndDate: { type: String, default: null }
+  currentEndDate: { type: String, default: null },
+  currentIsDeadline: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['close'])
 
-const types = computed(() => Object.values(NOTE_TYPES))
+// Types visibles (on exclut les anciens types migres caches)
+const types = computed(() => Object.values(NOTE_TYPES).filter(t => !t.hidden))
 
 const localStart = ref(props.currentStartDate || '')
 const localEnd = ref(props.currentEndDate || '')
@@ -87,22 +91,24 @@ watch(() => [props.currentStartDate, props.currentEndDate], ([s, e]) => {
 
 function selectType(typeId) {
   store.updateNoteType(props.noteId, typeId)
-  if (typeId !== 'deadline' && typeId !== 'duration') {
+  if (typeId !== 'date') {
     close()
   }
 }
 
-function setDeadline(date) {
-  store.setNoteDeadline(props.noteId, date)
-  close()
-}
-
-function applyDuration() {
+function applyDates() {
   store.setNoteDuration(
     props.noteId,
     localStart.value || null,
     localEnd.value || null
   )
+}
+
+function toggleDeadline(checked) {
+  store.setNoteIsDeadline(props.noteId, checked)
+  if (checked) {
+    localEnd.value = ''
+  }
 }
 
 function close() {
@@ -211,5 +217,23 @@ function close() {
 
 .context-menu-date-input:focus {
   border-color: #3b82f6;
+}
+
+.context-menu-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #444;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.context-menu-checkbox-label input[type="checkbox"] {
+  width: 0.9rem;
+  height: 0.9rem;
+  accent-color: #3b82f6;
+  cursor: pointer;
 }
 </style>

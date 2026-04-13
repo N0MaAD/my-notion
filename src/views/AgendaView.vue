@@ -65,25 +65,12 @@ const monthNames = [
 
 const monthLabel = computed(() => `${monthNames[currentMonth.value]} ${currentYear.value}`)
 
-// Toutes les notes avec une deadline
-const notesWithDeadlines = computed(() => {
+// Toutes les notes de type 'date' avec au moins une date renseignee
+const dateNotes = computed(() => {
   const result = []
   for (const col of store.columns) {
     for (const note of col.notes) {
-      if (note.deadline) {
-        result.push({ ...note, columnTitle: col.title })
-      }
-    }
-  }
-  return result
-})
-
-// Toutes les notes de type duration avec au moins une date
-const notesWithDuration = computed(() => {
-  const result = []
-  for (const col of store.columns) {
-    for (const note of col.notes) {
-      if (note.type === 'duration' && (note.startDate || note.endDate)) {
+      if (note.type === 'date' && (note.startDate || note.endDate)) {
         result.push({ ...note, columnTitle: col.title })
       }
     }
@@ -118,20 +105,19 @@ const calendarCells = computed(() => {
     const inMonth = date.getMonth() === currentMonth.value
     const isToday = date.getTime() === today.getTime()
 
-    // Notes dont la deadline tombe ce jour
-    const deadlineNotes = notesWithDeadlines.value.filter(n => {
-      return toDay(n.deadline).getTime() === date.getTime()
-    })
-
-    // Notes de type duration qui couvrent ce jour
-    const durationNotes = notesWithDuration.value.filter(n => {
+    // Notes de type 'date' qui couvrent ce jour
+    // - deadline : un seul jour (startDate)
+    // - periode : tous les jours entre startDate et endDate
+    const notes = dateNotes.value.filter(n => {
+      if (n.isDeadline) {
+        if (!n.startDate) return false
+        return toDay(n.startDate).getTime() === date.getTime()
+      }
       const start = n.startDate ? toDay(n.startDate).getTime() : -Infinity
       const end = n.endDate ? toDay(n.endDate).getTime() : Infinity
       const t = date.getTime()
       return t >= start && t <= end
     })
-
-    const notes = [...durationNotes, ...deadlineNotes]
 
     cells.push({
       key: date.toISOString(),
