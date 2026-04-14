@@ -5,7 +5,6 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager
 } from 'firebase/firestore'
-import { getStorage } from 'firebase/storage'
 
 // ─── Configuration Firebase ───
 const firebaseConfig = {
@@ -27,6 +26,3 @@ export const db = initializeFirestore(app, {
     tabManager: persistentMultipleTabManager()
   })
 })
-
-// Storage pour les images uploadees dans les notes
-export const storage = getStorage(app)
