@@ -48,14 +48,14 @@
       class="card-deadline"
       :class="deadlineClass"
     >
-      📅 {{ formatDate(note.startDate) }}
+      📅 {{ formatDate(note.startDate) }}<span v-if="note.startTime"> · ⏰ {{ note.startTime }}</span>
     </div>
     <!-- Mode periode : plage de dates -->
     <div
       v-else-if="!note.isDeadline && (note.startDate || note.endDate)"
       class="card-duration"
     >
-      🗓️ {{ formatDurationRange(note.startDate, note.endDate) }}
+      🗓️ {{ formatDurationRange(note.startDate, note.endDate) }}<span v-if="note.startTime"> · ⏰ {{ note.startTime }}</span>
     </div>
   </template>
 </div>
@@ -70,6 +70,7 @@
   :currentStartDate="note.startDate || null"
   :currentEndDate="note.endDate || null"
   :currentIsDeadline="note.isDeadline || false"
+  :currentStartTime="note.startTime || null"
   @close="showContextMenu = false"
 />
 </template>

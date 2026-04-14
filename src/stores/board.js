@@ -238,6 +238,20 @@ export const useBoardStore = defineStore('board', () => {
       if (note) {
         note.startDate = startDate
         note.endDate = endDate
+        // Reset notifiedAt si la date change pour qu'on puisse re-notifier
+        delete note.notifiedAt
+        return
+      }
+    }
+  }
+
+  function setNoteTime(noteId, time) {
+    for (const col of columns.value) {
+      const note = col.notes.find(n => n.id === noteId)
+      if (note) {
+        if (time) note.startTime = time
+        else delete note.startTime
+        delete note.notifiedAt
         return
       }
     }
@@ -462,7 +476,7 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   // Création rapide d'une note 'date' dans la colonne En cours (utilisé par l'agenda)
-  function addDateNoteToInProgress({ title, startDate, endDate, isDeadline, color }) {
+  function addDateNoteToInProgress({ title, startDate, endDate, isDeadline, color, startTime }) {
     const col = columns.value.find(c => c.id === IN_PROGRESS_COLUMN_ID)
     if (!col) return null
     const note = {
@@ -475,8 +489,59 @@ export const useBoardStore = defineStore('board', () => {
       isDeadline: !!isDeadline
     }
     if (color) note.customColor = color
+    if (startTime) note.startTime = startTime
     col.notes.push(note)
     return note
+  }
+
+  // ─── Notifications navigateur ───
+  function requestBrowserNotificationPermission() {
+    if (typeof Notification === 'undefined') return Promise.resolve('unsupported')
+    if (Notification.permission === 'granted') return Promise.resolve('granted')
+    if (Notification.permission === 'denied') return Promise.resolve('denied')
+    return Notification.requestPermission()
+  }
+
+  function fireBrowserNotification(title, body) {
+    if (typeof Notification === 'undefined') return
+    if (Notification.permission !== 'granted') return
+    try {
+      new Notification(title, { body, icon: '/favicon.ico', tag: 'my-notion' })
+    } catch (e) {
+      console.warn('Notification error:', e)
+    }
+  }
+
+  // Vérifie les notes 'date' avec une heure définie et fait pop une notif si l'heure est dépassée
+  function checkUpcomingDeadlines() {
+    const now = Date.now()
+    let count = 0
+    for (const col of columns.value) {
+      if (col.id === ARCHIVE_COLUMN_ID) continue
+      for (const note of col.notes) {
+        if (note.type !== 'date') continue
+        if (!note.startDate || !note.startTime) continue
+        if (note.notifiedAt) continue
+
+        // Combine date + heure → timestamp
+        const [hh, mm] = note.startTime.split(':').map(Number)
+        const dt = new Date(note.startDate)
+        dt.setHours(hh || 0, mm || 0, 0, 0)
+        const target = dt.getTime()
+
+        // On notifie si l'heure est passée mais pas vieille de plus de 24h
+        if (target <= now && now - target < 24 * 60 * 60 * 1000) {
+          note.notifiedAt = new Date().toISOString()
+          const dateLabel = dt.toLocaleString('fr-FR', {
+            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+          })
+          addNotification(`⏰ ${note.title} — ${dateLabel}`, 'reminder')
+          fireBrowserNotification('Rappel My Notion', `${note.title} — ${dateLabel}`)
+          count++
+        }
+      }
+    }
+    return count
   }
 
   function togglePin(noteId) {
@@ -564,6 +629,7 @@ export const useBoardStore = defineStore('board', () => {
     setNoteDeadline,
     setNoteDuration,
     setNoteIsDeadline,
+    setNoteTime,
     setNoteColor,
     setActiveNote,
     addBlock,
@@ -574,7 +640,9 @@ export const useBoardStore = defineStore('board', () => {
     moveNote,
     archiveNote,
     checkExpiredDeadlines,
+    checkUpcomingDeadlines,
     cleanupOldArchive,
+    requestBrowserNotificationPermission,
     addDateNoteToInProgress,
     isPermanentColumn,
     addNotification,

@@ -2923,6 +2923,13 @@
      text-overflow: ellipsis;
    }
 
+   .agenda-note-time {
+     font-size: 0.65rem;
+     font-weight: 600;
+     color: var(--accent, #3b82f6);
+     flex-shrink: 0;
+   }
+
    /* ---- Trash drop zone ---- */
    .trash-zone {
      position: fixed;

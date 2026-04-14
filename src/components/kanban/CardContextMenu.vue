@@ -54,6 +54,23 @@
           @input="localEnd = $event.target.value; applyDates()"
         />
       </template>
+
+      <label class="context-menu-checkbox-label" style="margin-top: 0.6rem">
+        <input
+          type="checkbox"
+          :checked="hasTime"
+          @change="toggleHasTime($event.target.checked)"
+        />
+        <span>⏰ Définir une heure</span>
+      </label>
+
+      <input
+        v-if="hasTime"
+        type="time"
+        class="context-menu-date-input"
+        :value="localTime"
+        @input="localTime = $event.target.value; applyTime()"
+      />
     </div>
   </div>
 </Teleport>
@@ -73,7 +90,8 @@ const props = defineProps({
   currentType: { type: String, default: 'note' },
   currentStartDate: { type: String, default: null },
   currentEndDate: { type: String, default: null },
-  currentIsDeadline: { type: Boolean, default: false }
+  currentIsDeadline: { type: Boolean, default: false },
+  currentStartTime: { type: String, default: null }
 })
 
 const emit = defineEmits(['close'])
@@ -83,10 +101,14 @@ const types = computed(() => Object.values(NOTE_TYPES).filter(t => !t.hidden))
 
 const localStart = ref(props.currentStartDate || '')
 const localEnd = ref(props.currentEndDate || '')
+const hasTime = ref(!!props.currentStartTime)
+const localTime = ref(props.currentStartTime || '09:00')
 
-watch(() => [props.currentStartDate, props.currentEndDate], ([s, e]) => {
+watch(() => [props.currentStartDate, props.currentEndDate, props.currentStartTime], ([s, e, t]) => {
   localStart.value = s || ''
   localEnd.value = e || ''
+  hasTime.value = !!t
+  localTime.value = t || '09:00'
 })
 
 function selectType(typeId) {
@@ -109,6 +131,20 @@ function toggleDeadline(checked) {
   if (checked) {
     localEnd.value = ''
   }
+}
+
+function toggleHasTime(checked) {
+  hasTime.value = checked
+  if (checked) {
+    store.setNoteTime(props.noteId, localTime.value || '09:00')
+    store.requestBrowserNotificationPermission()
+  } else {
+    store.setNoteTime(props.noteId, null)
+  }
+}
+
+function applyTime() {
+  store.setNoteTime(props.noteId, localTime.value || null)
 }
 
 function close() {

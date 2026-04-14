@@ -86,6 +86,7 @@ const isOverTrash = ref(false)
 const currentView = ref('notes')
 
 let archiveCheckInterval = null
+let reminderCheckInterval = null
 
 // Charge les donnees Firestore quand l'utilisateur se connecte
 watch(() => authStore.user, async (user) => {
@@ -97,6 +98,12 @@ watch(() => authStore.user, async (user) => {
       store.cleanupOldArchive()
       store.checkExpiredDeadlines()
     }, 60 * 60 * 1000)
+    // Vérifie les rappels avec heure toutes les minutes
+    store.checkUpcomingDeadlines()
+    if (reminderCheckInterval) clearInterval(reminderCheckInterval)
+    reminderCheckInterval = setInterval(() => {
+      store.checkUpcomingDeadlines()
+    }, 60 * 1000)
   }
 }, { immediate: true })
 
@@ -120,6 +127,7 @@ onUnmounted(() => {
   document.removeEventListener('dragstart', onGlobalDragStart)
   document.removeEventListener('dragend', onGlobalDragEnd)
   if (archiveCheckInterval) clearInterval(archiveCheckInterval)
+  if (reminderCheckInterval) clearInterval(reminderCheckInterval)
 })
 
 function onTrashDragOver() {
