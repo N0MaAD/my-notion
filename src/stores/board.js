@@ -4,6 +4,11 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useAuthStore } from './auth.js'
 
+// ─── Colonnes permanentes ───
+export const IN_PROGRESS_COLUMN_ID = '__col_in_progress__'
+export const ARCHIVE_COLUMN_ID = '__col_archive__'
+export const ARCHIVE_RETENTION_DAYS = 20
+
 // ─── Systeme de types extensible ───
 // Pour ajouter un nouveau type : ajouter une entree ici, c'est tout.
 export const NOTE_TYPES = {
@@ -57,8 +62,58 @@ export const useBoardStore = defineStore('board', () => {
   const openPagePath = ref([])
   const pinnedNoteIds = ref([])
   const dataLoaded = ref(false)
+  const notifications = ref([])
 
   let saveTimeout = null
+  let notifId = 0
+
+  function addNotification(message, type = 'info') {
+    const id = ++notifId
+    notifications.value.push({ id, message, type })
+    setTimeout(() => removeNotification(id), 5000)
+    return id
+  }
+
+  function removeNotification(id) {
+    const idx = notifications.value.findIndex(n => n.id === id)
+    if (idx !== -1) notifications.value.splice(idx, 1)
+  }
+
+  function ensurePermanentColumns() {
+    const hasInProgress = columns.value.some(c => c.id === IN_PROGRESS_COLUMN_ID)
+    const hasArchive = columns.value.some(c => c.id === ARCHIVE_COLUMN_ID)
+
+    if (!hasInProgress) {
+      columns.value.unshift({
+        id: IN_PROGRESS_COLUMN_ID,
+        title: 'En cours',
+        notes: [],
+        permanent: true
+      })
+    }
+    if (!hasArchive) {
+      columns.value.push({
+        id: ARCHIVE_COLUMN_ID,
+        title: 'Archivé',
+        notes: [],
+        permanent: true,
+        archive: true,
+        color: '#ef4444',
+        opacity: 0.08
+      })
+    }
+  }
+
+  function isPermanentColumn(columnId) {
+    return columnId === IN_PROGRESS_COLUMN_ID || columnId === ARCHIVE_COLUMN_ID
+  }
+
+  function findColumnOfNote(noteId) {
+    for (const col of columns.value) {
+      if (col.notes.some(n => n.id === noteId)) return col
+    }
+    return null
+  }
 
   const activeNote = computed(() => {
     for (const col of columns.value) {
@@ -102,11 +157,13 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   function deleteColumn(columnId) {
+    if (isPermanentColumn(columnId)) return
     columns.value = columns.value.filter(c => c.id !== columnId)
     if (activeNote.value === null) activeNoteId.value = null
   }
 
   function renameColumn(columnId, newTitle) {
+    if (isPermanentColumn(columnId)) return
     const col = columns.value.find(c => c.id === columnId)
     if (col) col.title = newTitle
   }
@@ -324,7 +381,102 @@ export const useBoardStore = defineStore('board', () => {
     if (noteIndex === -1) return
 
     const [note] = fromCol.notes.splice(noteIndex, 1)
+
+    // Gestion archive : entrée → archivedAt, sortie → suppression du flag
+    if (toColumnId === ARCHIVE_COLUMN_ID) {
+      note.archivedAt = new Date().toISOString()
+    } else if (fromColumnId === ARCHIVE_COLUMN_ID) {
+      delete note.archivedAt
+    }
+
     toCol.notes.splice(newIndex, 0, note)
+  }
+
+  function archiveNote(noteId, silent = false) {
+    const fromCol = findColumnOfNote(noteId)
+    if (!fromCol || fromCol.id === ARCHIVE_COLUMN_ID) return
+    const archiveCol = columns.value.find(c => c.id === ARCHIVE_COLUMN_ID)
+    if (!archiveCol) return
+    const idx = fromCol.notes.findIndex(n => n.id === noteId)
+    if (idx === -1) return
+    const [note] = fromCol.notes.splice(idx, 1)
+    note.archivedAt = new Date().toISOString()
+    archiveCol.notes.push(note)
+    if (!silent) {
+      addNotification(`« ${note.title} » a été archivée`, 'archive')
+    }
+    return note
+  }
+
+  function setNoteColor(noteId, color) {
+    for (const col of columns.value) {
+      const note = col.notes.find(n => n.id === noteId)
+      if (note) {
+        if (color) note.customColor = color
+        else delete note.customColor
+        return
+      }
+    }
+  }
+
+  // Parcourt les notes 'date' et archive celles dont la deadline / fin de période est passée
+  function checkExpiredDeadlines() {
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    const toArchive = []
+
+    for (const col of columns.value) {
+      if (col.id === ARCHIVE_COLUMN_ID) continue
+      for (const note of col.notes) {
+        if (note.type !== 'date') continue
+        const ref = note.isDeadline ? note.startDate : (note.endDate || note.startDate)
+        if (!ref) continue
+        const refDate = new Date(ref)
+        refDate.setHours(0, 0, 0, 0)
+        if (refDate.getTime() < now.getTime()) {
+          toArchive.push(note.id)
+        }
+      }
+    }
+
+    for (const id of toArchive) {
+      archiveNote(id)
+    }
+    return toArchive.length
+  }
+
+  // Supprime les notes archivées depuis plus de ARCHIVE_RETENTION_DAYS jours
+  function cleanupOldArchive() {
+    const archiveCol = columns.value.find(c => c.id === ARCHIVE_COLUMN_ID)
+    if (!archiveCol) return 0
+    const cutoff = Date.now() - ARCHIVE_RETENTION_DAYS * 24 * 60 * 60 * 1000
+    const before = archiveCol.notes.length
+    archiveCol.notes = archiveCol.notes.filter(n => {
+      if (!n.archivedAt) {
+        n.archivedAt = new Date().toISOString()
+        return true
+      }
+      return new Date(n.archivedAt).getTime() >= cutoff
+    })
+    return before - archiveCol.notes.length
+  }
+
+  // Création rapide d'une note 'date' dans la colonne En cours (utilisé par l'agenda)
+  function addDateNoteToInProgress({ title, startDate, endDate, isDeadline, color }) {
+    const col = columns.value.find(c => c.id === IN_PROGRESS_COLUMN_ID)
+    if (!col) return null
+    const note = {
+      id: crypto.randomUUID(),
+      title: title || 'Nouvelle date',
+      type: 'date',
+      blocks: [],
+      startDate: startDate || null,
+      endDate: isDeadline ? null : (endDate || null),
+      isDeadline: !!isDeadline
+    }
+    if (color) note.customColor = color
+    col.notes.push(note)
+    return note
   }
 
   function togglePin(noteId) {
@@ -379,6 +531,9 @@ export const useBoardStore = defineStore('board', () => {
     } catch (e) {
       console.error('Erreur chargement Firestore:', e)
     }
+    ensurePermanentColumns()
+    cleanupOldArchive()
+    checkExpiredDeadlines()
     dataLoaded.value = true
   }
 
@@ -397,6 +552,7 @@ export const useBoardStore = defineStore('board', () => {
     currentPage,
     pinnedNotes,
     dataLoaded,
+    notifications,
     addColumn,
     deleteColumn,
     renameColumn,
@@ -408,6 +564,7 @@ export const useBoardStore = defineStore('board', () => {
     setNoteDeadline,
     setNoteDuration,
     setNoteIsDeadline,
+    setNoteColor,
     setActiveNote,
     addBlock,
     updateBlock,
@@ -415,6 +572,13 @@ export const useBoardStore = defineStore('board', () => {
     openSubPage,
     goBackTo,
     moveNote,
+    archiveNote,
+    checkExpiredDeadlines,
+    cleanupOldArchive,
+    addDateNoteToInProgress,
+    isPermanentColumn,
+    addNotification,
+    removeNotification,
     togglePin,
     isPinned,
     loadFromFirestore

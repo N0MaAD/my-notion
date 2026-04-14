@@ -2,7 +2,12 @@
 <div
     class="column"
     :style="columnStyle"
-    :class="{ 'column-dragging': isColumnDragging, 'column-drop-target': isColumnDropTarget }"
+    :class="{
+      'column-dragging': isColumnDragging,
+      'column-drop-target': isColumnDropTarget,
+      'column-archive': column.archive,
+      'column-permanent': column.permanent
+    }"
     @dragover.prevent="onColumnDragOver"
     @dragleave="onColumnDragLeave"
     @drop="onColumnDrop"
@@ -10,12 +15,17 @@
   <div class="column-header">
     <div class="column-header-left">
     <span
+    v-if="!column.permanent"
     class="column-drag-handle"
     draggable="true"
     @dragstart.stop="onColumnDragStart"
     @dragend="onColumnDragEnd"
   >⠿</span>
+    <span v-else class="column-permanent-icon" :title="column.archive ? 'Colonne archive' : 'Colonne permanente'">
+      {{ column.archive ? '🗄️' : '📌' }}
+    </span>
       <ColorPicker
+        v-if="!column.permanent"
         :color="column.color || null"
         :opacity="column.opacity ?? 1"
         @update:color="updateColor"
@@ -32,7 +42,7 @@
         ref="renameRef"
       />
     </div>
-    <div class="column-actions">
+    <div v-if="!column.permanent" class="column-actions">
       <button class="btn btn-ghost" @click="startRename" title="Renommer">✎</button>
       <button class="btn btn-danger" @click="store.deleteColumn(column.id)" title="Supprimer">✕</button>
     </div>
@@ -76,6 +86,12 @@ const isColumnDragging = ref(false)
 const isColumnDropTarget = ref(false)
 
 const columnStyle = computed(() => {
+if (props.column.archive) {
+  return {
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderTop: '3px solid #ef4444'
+  }
+}
 if (!props.column.color) return {}
 const r = parseInt(props.column.color.slice(1, 3), 16)
 const g = parseInt(props.column.color.slice(3, 5), 16)

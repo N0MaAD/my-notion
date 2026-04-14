@@ -48,6 +48,7 @@
     <SidebarView :is-fullscreen="isFullscreen" @toggle-fullscreen="isFullscreen = !isFullscreen" />
   </aside>
   <SearchModal />
+  <NotificationToast />
 
   <!-- Trash drop zone -->
   <Transition name="trash">
@@ -71,6 +72,7 @@ import BoardView from './views/BoardView.vue'
 import AgendaView from './views/AgendaView.vue'
 import SidebarView from './views/SidebarView.vue'
 import SearchModal from './components/SearchModal.vue'
+import NotificationToast from './components/NotificationToast.vue'
 import LoginView from './views/LoginView.vue'
 import { useBoardStore } from './stores/board.js'
 import { useAuthStore } from './stores/auth.js'
@@ -83,10 +85,18 @@ const isDraggingCard = ref(false)
 const isOverTrash = ref(false)
 const currentView = ref('notes')
 
+let archiveCheckInterval = null
+
 // Charge les donnees Firestore quand l'utilisateur se connecte
 watch(() => authStore.user, async (user) => {
   if (user) {
     await store.loadFromFirestore()
+    // Re-vérifie les deadlines / nettoie l'archive toutes les heures
+    if (archiveCheckInterval) clearInterval(archiveCheckInterval)
+    archiveCheckInterval = setInterval(() => {
+      store.cleanupOldArchive()
+      store.checkExpiredDeadlines()
+    }, 60 * 60 * 1000)
   }
 }, { immediate: true })
 
@@ -109,6 +119,7 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('dragstart', onGlobalDragStart)
   document.removeEventListener('dragend', onGlobalDragEnd)
+  if (archiveCheckInterval) clearInterval(archiveCheckInterval)
 })
 
 function onTrashDragOver() {

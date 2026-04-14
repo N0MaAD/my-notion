@@ -96,9 +96,9 @@ const noteTypeInfo = computed(() => {
 })
 
 const cardBorderStyle = computed(() => {
-  const typeInfo = noteTypeInfo.value
-  if (!typeInfo.color) return {}
-  return { borderLeft: `3px solid ${typeInfo.color}` }
+  const color = props.note.customColor || noteTypeInfo.value.color
+  if (!color) return {}
+  return { borderLeft: `3px solid ${color}` }
 })
 
 const deadlineClass = computed(() => {
