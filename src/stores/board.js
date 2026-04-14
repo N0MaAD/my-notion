@@ -5,7 +5,6 @@ import { db } from '../firebase.js'
 import { useAuthStore } from './auth.js'
 
 // ─── Colonnes permanentes ───
-export const IN_PROGRESS_COLUMN_ID = '__col_in_progress__'
 export const ARCHIVE_COLUMN_ID = '__col_archive__'
 export const ARCHIVE_RETENTION_DAYS = 20
 
@@ -67,6 +66,57 @@ export const useBoardStore = defineStore('board', () => {
   let saveTimeout = null
   let notifId = 0
 
+  // ─── Historique (undo/redo) ───
+  const HISTORY_LIMIT = 50
+  const undoStack = ref([])
+  const redoStack = ref([])
+  let isApplyingHistory = false
+
+  function snapshotState() {
+    return JSON.parse(JSON.stringify({
+      columns: columns.value,
+      pinnedNoteIds: pinnedNoteIds.value
+    }))
+  }
+
+  function recordSnapshot() {
+    if (isApplyingHistory || !dataLoaded.value) return
+    undoStack.value.push(snapshotState())
+    if (undoStack.value.length > HISTORY_LIMIT) undoStack.value.shift()
+    // Toute nouvelle action invalide le redo
+    redoStack.value = []
+  }
+
+  function applySnapshot(snap) {
+    columns.value = snap.columns
+    pinnedNoteIds.value = snap.pinnedNoteIds
+  }
+
+  function undo() {
+    if (undoStack.value.length === 0) return false
+    isApplyingHistory = true
+    redoStack.value.push(snapshotState())
+    const snap = undoStack.value.pop()
+    applySnapshot(snap)
+    setTimeout(() => { isApplyingHistory = false }, 0)
+    addNotification('↶ Action annulée', 'info')
+    return true
+  }
+
+  function redo() {
+    if (redoStack.value.length === 0) return false
+    isApplyingHistory = true
+    undoStack.value.push(snapshotState())
+    const snap = redoStack.value.pop()
+    applySnapshot(snap)
+    setTimeout(() => { isApplyingHistory = false }, 0)
+    addNotification('↷ Action rétablie', 'info')
+    return true
+  }
+
+  const canUndo = computed(() => undoStack.value.length > 0)
+  const canRedo = computed(() => redoStack.value.length > 0)
+
   function addNotification(message, type = 'info') {
     const id = ++notifId
     notifications.value.push({ id, message, type })
@@ -80,17 +130,18 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   function ensurePermanentColumns() {
-    const hasInProgress = columns.value.some(c => c.id === IN_PROGRESS_COLUMN_ID)
-    const hasArchive = columns.value.some(c => c.id === ARCHIVE_COLUMN_ID)
-
-    if (!hasInProgress) {
-      columns.value.unshift({
-        id: IN_PROGRESS_COLUMN_ID,
-        title: 'En cours',
-        notes: [],
-        permanent: true
-      })
+    // Migration : convertit l'ancienne colonne "En cours" permanente en colonne normale
+    const inProgressIdx = columns.value.findIndex(c => c.id === '__col_in_progress__')
+    if (inProgressIdx !== -1) {
+      const old = columns.value[inProgressIdx]
+      columns.value[inProgressIdx] = {
+        id: crypto.randomUUID(),
+        title: old.title || 'En cours',
+        notes: old.notes || []
+      }
     }
+
+    const hasArchive = columns.value.some(c => c.id === ARCHIVE_COLUMN_ID)
     if (!hasArchive) {
       columns.value.push({
         id: ARCHIVE_COLUMN_ID,
@@ -105,7 +156,7 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   function isPermanentColumn(columnId) {
-    return columnId === IN_PROGRESS_COLUMN_ID || columnId === ARCHIVE_COLUMN_ID
+    return columnId === ARCHIVE_COLUMN_ID
   }
 
   function findColumnOfNote(noteId) {
@@ -149,6 +200,7 @@ export const useBoardStore = defineStore('board', () => {
   })
 
   function addColumn(title) {
+    recordSnapshot()
     columns.value.push({
       id: crypto.randomUUID(),
       title,
@@ -158,12 +210,14 @@ export const useBoardStore = defineStore('board', () => {
 
   function deleteColumn(columnId) {
     if (isPermanentColumn(columnId)) return
+    recordSnapshot()
     columns.value = columns.value.filter(c => c.id !== columnId)
     if (activeNote.value === null) activeNoteId.value = null
   }
 
   function renameColumn(columnId, newTitle) {
     if (isPermanentColumn(columnId)) return
+    recordSnapshot()
     const col = columns.value.find(c => c.id === columnId)
     if (col) col.title = newTitle
   }
@@ -171,6 +225,7 @@ export const useBoardStore = defineStore('board', () => {
   function addNote(columnId, title, noteType = 'note') {
     const col = columns.value.find(c => c.id === columnId)
     if (col) {
+      recordSnapshot()
       const noteData = {
         id: crypto.randomUUID(),
         title,
@@ -191,6 +246,7 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   function deleteNote(noteId) {
+    recordSnapshot()
     for (const col of columns.value) {
       col.notes = col.notes.filter(n => n.id !== noteId)
     }
@@ -208,6 +264,7 @@ export const useBoardStore = defineStore('board', () => {
     for (const col of columns.value) {
       const note = col.notes.find(n => n.id === noteId)
       if (note) {
+        recordSnapshot()
         note.title = newTitle
         return
       }
@@ -218,6 +275,7 @@ export const useBoardStore = defineStore('board', () => {
     for (const col of columns.value) {
       const note = col.notes.find(n => n.id === noteId)
       if (note) {
+        recordSnapshot()
         note.type = newType
         if (newType === 'task' && note.checked === undefined) {
           note.checked = false
@@ -236,6 +294,7 @@ export const useBoardStore = defineStore('board', () => {
     for (const col of columns.value) {
       const note = col.notes.find(n => n.id === noteId)
       if (note) {
+        recordSnapshot()
         note.startDate = startDate
         note.endDate = endDate
         // Reset notifiedAt si la date change pour qu'on puisse re-notifier
@@ -249,6 +308,7 @@ export const useBoardStore = defineStore('board', () => {
     for (const col of columns.value) {
       const note = col.notes.find(n => n.id === noteId)
       if (note) {
+        recordSnapshot()
         if (time) note.startTime = time
         else delete note.startTime
         delete note.notifiedAt
@@ -261,6 +321,7 @@ export const useBoardStore = defineStore('board', () => {
     for (const col of columns.value) {
       const note = col.notes.find(n => n.id === noteId)
       if (note) {
+        recordSnapshot()
         note.isDeadline = isDeadline
         if (isDeadline) {
           note.endDate = null
@@ -292,6 +353,7 @@ export const useBoardStore = defineStore('board', () => {
     for (const col of columns.value) {
       const note = col.notes.find(n => n.id === noteId)
       if (note && note.type === 'task') {
+        recordSnapshot()
         note.checked = !note.checked
         return
       }
@@ -394,6 +456,7 @@ export const useBoardStore = defineStore('board', () => {
     const noteIndex = fromCol.notes.findIndex(n => n.id === noteId)
     if (noteIndex === -1) return
 
+    recordSnapshot()
     const [note] = fromCol.notes.splice(noteIndex, 1)
 
     // Gestion archive : entrée → archivedAt, sortie → suppression du flag
@@ -413,6 +476,7 @@ export const useBoardStore = defineStore('board', () => {
     if (!archiveCol) return
     const idx = fromCol.notes.findIndex(n => n.id === noteId)
     if (idx === -1) return
+    recordSnapshot()
     const [note] = fromCol.notes.splice(idx, 1)
     note.archivedAt = new Date().toISOString()
     archiveCol.notes.push(note)
@@ -426,6 +490,7 @@ export const useBoardStore = defineStore('board', () => {
     for (const col of columns.value) {
       const note = col.notes.find(n => n.id === noteId)
       if (note) {
+        recordSnapshot()
         if (color) note.customColor = color
         else delete note.customColor
         return
@@ -475,10 +540,19 @@ export const useBoardStore = defineStore('board', () => {
     return before - archiveCol.notes.length
   }
 
-  // Création rapide d'une note 'date' dans la colonne En cours (utilisé par l'agenda)
-  function addDateNoteToInProgress({ title, startDate, endDate, isDeadline, color, startTime }) {
-    const col = columns.value.find(c => c.id === IN_PROGRESS_COLUMN_ID)
-    if (!col) return null
+  // Création rapide d'une note 'date' (utilisé par l'agenda)
+  // Cible la première colonne non-archive ; en crée une si nécessaire.
+  function addDateNote({ title, startDate, endDate, isDeadline, color, startTime }) {
+    let col = columns.value.find(c => c.id !== ARCHIVE_COLUMN_ID)
+    if (!col) {
+      col = {
+        id: crypto.randomUUID(),
+        title: 'Mes notes',
+        notes: []
+      }
+      columns.value.unshift(col)
+    }
+    recordSnapshot()
     const note = {
       id: crypto.randomUUID(),
       title: title || 'Nouvelle date',
@@ -545,6 +619,7 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   function togglePin(noteId) {
+    recordSnapshot()
     const idx = pinnedNoteIds.value.indexOf(noteId)
     if (idx === -1) {
       pinnedNoteIds.value.push(noteId)
@@ -618,6 +693,10 @@ export const useBoardStore = defineStore('board', () => {
     pinnedNotes,
     dataLoaded,
     notifications,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
     addColumn,
     deleteColumn,
     renameColumn,
@@ -643,7 +722,7 @@ export const useBoardStore = defineStore('board', () => {
     checkUpcomingDeadlines,
     cleanupOldArchive,
     requestBrowserNotificationPermission,
-    addDateNoteToInProgress,
+    addDateNote,
     isPermanentColumn,
     addNotification,
     removeNotification,

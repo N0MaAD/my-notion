@@ -44,7 +44,7 @@
     </div>
     <div v-if="!column.permanent" class="column-actions">
       <button class="btn btn-ghost" @click="startRename" title="Renommer">✎</button>
-      <button class="btn btn-danger" @click="store.deleteColumn(column.id)" title="Supprimer">✕</button>
+      <button class="btn btn-danger" @click="confirmDeleteColumn" title="Supprimer">✕</button>
     </div>
   </div>
 
@@ -192,5 +192,16 @@ isRenaming.value = false
 
 function cancelRename() {
 isRenaming.value = false
+}
+
+function confirmDeleteColumn() {
+const count = props.column.notes.length
+if (count > 0) {
+  const ok = window.confirm(
+    `Supprimer la colonne « ${props.column.title} » et ses ${count} note${count > 1 ? 's' : ''} ?\n\nTu pourras annuler avec Ctrl+Z.`
+  )
+  if (!ok) return
+}
+store.deleteColumn(props.column.id)
 }
 </script>

@@ -44,16 +44,62 @@
     </div>
   </div>
 
+  <!-- Note picker (lien vers une autre note) -->
+  <div
+    v-if="showNotePicker"
+    class="note-picker"
+    :style="{ top: notePickerPos.top + 'px', left: notePickerPos.left + 'px' }"
+  >
+    <input
+      ref="notePickerInputRef"
+      v-model="notePickerFilter"
+      class="note-picker-input"
+      placeholder="Rechercher une note..."
+      @keydown="onNotePickerKey"
+      @blur="closeNotePicker"
+    />
+    <div class="note-picker-list">
+      <div
+        v-for="(n, i) in filteredNotes"
+        :key="n.id"
+        class="note-picker-item"
+        :class="{ active: i === notePickerIndex }"
+        @mousedown.prevent="pickNote(n)"
+        @mouseenter="notePickerIndex = i"
+      >
+        <span class="note-picker-item-title">🔖 {{ n.title }}</span>
+        <span class="note-picker-item-col">{{ n.columnTitle }}</span>
+      </div>
+      <div v-if="filteredNotes.length === 0" class="note-picker-empty">
+        Aucune note
+      </div>
+    </div>
+  </div>
+
+  <input
+    ref="fileInputRef"
+    type="file"
+    accept="image/*"
+    style="display: none"
+    @change="onImageFileChange"
+  />
+
   <EditorContent :editor="editor" class="tiptap-editor" />
   <button class="btn btn-danger block-delete" @click="$emit('delete')">✕</button>
 </div>
 </template>
 
 <script setup>
-import { ref, computed, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
+import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
+import { useBoardStore } from '../../stores/board.js'
+import { uploadImage } from '../../lib/uploadImage.js'
+
+const store = useBoardStore()
 
 const props = defineProps({ content: String })
 const emit = defineEmits(['update', 'delete', 'slash-command'])
@@ -72,6 +118,8 @@ const slashItems = [
 { id: 'text', icon: '📝', label: 'Texte', description: 'Bloc de texte simple', type: 'text' },
 { id: 'page', icon: '📄', label: 'Sous-page', description: 'Créer une sous-page', type: 'page' },
 { id: 'embed', icon: '🔗', label: 'Embed', description: 'Intégrer un lien (YouTube, Sheets...)', type: 'embed' },
+{ id: 'noteLink', icon: '🔖', label: 'Lien vers une note', description: 'Insérer un lien vers une autre note', type: 'noteLink' },
+{ id: 'image', icon: '🖼️', label: 'Image', description: 'Importer une image', type: 'image' },
 { id: 'h2', icon: 'H2', label: 'Titre 2', description: 'Grand titre', type: 'heading2' },
 { id: 'h3', icon: 'H3', label: 'Titre 3', description: 'Sous-titre', type: 'heading3' },
 { id: 'bullet', icon: '•', label: 'Liste à puces', description: 'Liste non ordonnée', type: 'bullet' },
@@ -79,6 +127,112 @@ const slashItems = [
 { id: 'quote', icon: '"', label: 'Citation', description: 'Bloc de citation', type: 'quote' },
 { id: 'code', icon: '<>', label: 'Code', description: 'Bloc de code', type: 'code' },
 ]
+
+// ─── Note picker (Lien vers une note) ───
+const showNotePicker = ref(false)
+const notePickerPos = ref({ top: 0, left: 0 })
+const notePickerFilter = ref('')
+const notePickerIndex = ref(0)
+const notePickerInputRef = ref(null)
+const fileInputRef = ref(null)
+
+const allNotes = computed(() => {
+  const result = []
+  for (const col of store.columns) {
+    for (const note of col.notes) {
+      result.push({ id: note.id, title: note.title || 'Sans titre', columnTitle: col.title })
+    }
+  }
+  return result
+})
+
+const filteredNotes = computed(() => {
+  const q = notePickerFilter.value.trim().toLowerCase()
+  const list = q
+    ? allNotes.value.filter(n => n.title.toLowerCase().includes(q))
+    : allNotes.value
+  return list.slice(0, 12)
+})
+
+async function openNotePicker() {
+  // Position : sous le slash actuel
+  notePickerPos.value = { ...slashPos.value }
+  notePickerFilter.value = ''
+  notePickerIndex.value = 0
+  showNotePicker.value = true
+  await nextTick()
+  notePickerInputRef.value?.focus()
+}
+
+function closeNotePicker() {
+  showNotePicker.value = false
+  notePickerFilter.value = ''
+  notePickerIndex.value = 0
+  editor.value?.commands.focus()
+}
+
+function pickNote(note) {
+  if (!note) return
+  editor.value
+    .chain()
+    .focus()
+    .insertContent({
+      type: 'text',
+      text: note.title,
+      marks: [
+        {
+          type: 'link',
+          attrs: { href: `note:${note.id}`, class: 'note-link' }
+        }
+      ]
+    })
+    .insertContent(' ')
+    .run()
+  closeNotePicker()
+}
+
+function onNotePickerKey(e) {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    notePickerIndex.value = Math.min(notePickerIndex.value + 1, filteredNotes.value.length - 1)
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    notePickerIndex.value = Math.max(notePickerIndex.value - 1, 0)
+  } else if (e.key === 'Enter') {
+    e.preventDefault()
+    pickNote(filteredNotes.value[notePickerIndex.value])
+  } else if (e.key === 'Escape') {
+    e.preventDefault()
+    closeNotePicker()
+  }
+}
+
+// ─── Upload image ───
+async function handleImageFile(file) {
+  if (!file) return
+  try {
+    store.addNotification('Upload de l\'image…', 'info')
+    const url = await uploadImage(file)
+    editor.value
+      .chain()
+      .focus()
+      .setImage({ src: url })
+      .run()
+  } catch (e) {
+    console.error(e)
+    store.addNotification(`Échec upload image : ${e.message}`, 'archive')
+  }
+}
+
+function triggerImagePicker() {
+  fileInputRef.value?.click()
+}
+
+function onImageFileChange(e) {
+  const file = e.target.files?.[0]
+  if (file) handleImageFile(file)
+  e.target.value = ''
+}
 
 const filteredSlashItems = computed(() => {
 if (!slashFilter.value) return slashItems
@@ -137,6 +291,12 @@ switch (item.type) {
   case 'embed':
     emit('slash-command', { type: 'embed' })
     break
+  case 'noteLink':
+    openNotePicker()
+    break
+  case 'image':
+    triggerImagePicker()
+    break
   case 'heading2':
     editor.value.chain().focus().toggleHeading({ level: 2 }).run()
     break
@@ -164,6 +324,22 @@ extensions: [
   StarterKit,
   Placeholder.configure({
     placeholder: 'Tapez "/" pour les commandes...'
+  }),
+  Link.configure({
+    openOnClick: false,
+    autolink: false,
+    protocols: [{ scheme: 'note', optionalSlashes: true }],
+    HTMLAttributes: {
+      class: 'note-link',
+      rel: null,
+      target: null
+    }
+  }),
+  Image.configure({
+    inline: false,
+    HTMLAttributes: {
+      class: 'note-image'
+    }
   })
 ],
 onUpdate({ editor }) {
@@ -210,6 +386,41 @@ onSelectionUpdate({ editor }) {
   }
 },
 editorProps: {
+  handleClickOn(view, pos, node, nodePos, event) {
+    const a = event.target.closest && event.target.closest('a')
+    if (a && a.getAttribute('href')?.startsWith('note:')) {
+      event.preventDefault()
+      const noteId = a.getAttribute('href').replace(/^note:\/?\/?/, '')
+      store.setActiveNote(noteId)
+      return true
+    }
+    return false
+  },
+  handleDrop(view, event, slice, moved) {
+    if (moved) return false
+    const files = event.dataTransfer?.files
+    if (!files || files.length === 0) return false
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'))
+    if (imageFiles.length === 0) return false
+    event.preventDefault()
+    imageFiles.forEach((f) => handleImageFile(f))
+    return true
+  },
+  handlePaste(view, event) {
+    const items = event.clipboardData?.items
+    if (!items) return false
+    for (const it of items) {
+      if (it.kind === 'file' && it.type.startsWith('image/')) {
+        const file = it.getAsFile()
+        if (file) {
+          event.preventDefault()
+          handleImageFile(file)
+          return true
+        }
+      }
+    }
+    return false
+  },
   handleKeyDown(view, event) {
     if (!showSlashMenu.value) return false
 

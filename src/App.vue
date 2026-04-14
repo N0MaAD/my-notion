@@ -118,14 +118,36 @@ function onGlobalDragEnd() {
   isOverTrash.value = false
 }
 
+function onGlobalKeyDown(e) {
+  // Ne pas intercepter quand l'utilisateur tape dans un champ ou un éditeur
+  const target = e.target
+  const isEditable =
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    (target && target.isContentEditable)
+  if (isEditable) return
+
+  const meta = e.ctrlKey || e.metaKey
+  if (meta && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+    e.preventDefault()
+    store.undo()
+  } else if (meta && ((e.key === 'z' || e.key === 'Z') && e.shiftKey || e.key === 'y' || e.key === 'Y')) {
+    e.preventDefault()
+    store.redo()
+  }
+}
+
 onMounted(() => {
   document.addEventListener('dragstart', onGlobalDragStart)
   document.addEventListener('dragend', onGlobalDragEnd)
+  document.addEventListener('keydown', onGlobalKeyDown)
 })
 
 onUnmounted(() => {
   document.removeEventListener('dragstart', onGlobalDragStart)
   document.removeEventListener('dragend', onGlobalDragEnd)
+  document.removeEventListener('keydown', onGlobalKeyDown)
   if (archiveCheckInterval) clearInterval(archiveCheckInterval)
   if (reminderCheckInterval) clearInterval(reminderCheckInterval)
 })

@@ -315,7 +315,7 @@ function submitModal() {
     store.setNoteTime(editingNote.value.id, time)
     store.setNoteColor(editingNote.value.id, form.value.color)
   } else {
-    store.addDateNoteToInProgress({
+    store.addDateNote({
       title,
       startDate: form.value.startDate || null,
       endDate: form.value.endDate || null,
