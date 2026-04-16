@@ -1,5 +1,5 @@
 <template>
-<div class="block-text" ref="blockRef">
+<div class="block-text" ref="blockRef" @dragover.prevent>
   <!-- Toolbar flottante -->
   <div
     v-if="showToolbar"
