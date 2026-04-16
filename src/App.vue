@@ -16,10 +16,35 @@
 <div v-else class="app-layout" :class="{ 'sidebar-fullscreen': isFullscreen }">
   <!-- User bar -->
   <div class="user-bar">
-    <div class="user-info">
+    <div class="user-info" @click.stop="showSettings = !showSettings">
       <img v-if="authStore.user.photoURL" :src="authStore.user.photoURL" class="user-avatar" referrerpolicy="no-referrer" />
       <span class="user-name">{{ authStore.user.displayName }}</span>
     </div>
+
+    <!-- Settings dropdown -->
+    <div v-if="showSettings" class="settings-overlay" @click="showSettings = false" />
+    <div v-if="showSettings" class="settings-menu" @click.stop>
+      <div class="settings-menu-section">
+        <div class="settings-menu-label">Theme</div>
+        <div class="settings-theme-options">
+          <button
+            v-for="t in THEMES"
+            :key="t.id"
+            class="settings-theme-btn"
+            :class="{ active: themeStore.theme === t.id }"
+            @click="themeStore.setTheme(t.id)"
+          >
+            <span class="theme-icon">{{ t.icon }}</span>
+            <span>{{ t.label }}</span>
+          </button>
+        </div>
+      </div>
+      <div class="settings-menu-sep" />
+      <button class="settings-menu-item danger" @click="authStore.logout(); showSettings = false">
+        Deconnexion
+      </button>
+    </div>
+
     <nav class="nav-tabs">
       <button
         class="nav-tab"
@@ -32,7 +57,6 @@
         @click="currentView = 'agenda'"
       >Agenda</button>
     </nav>
-    <button class="btn-logout" @click="authStore.logout()">Deconnexion</button>
   </div>
 
   <div v-if="!isFullscreen" class="board-area">
@@ -76,9 +100,12 @@ import NotificationToast from './components/NotificationToast.vue'
 import LoginView from './views/LoginView.vue'
 import { useBoardStore } from './stores/board.js'
 import { useAuthStore } from './stores/auth.js'
+import { useThemeStore, THEMES } from './stores/theme.js'
 
 const store = useBoardStore()
 const authStore = useAuthStore()
+const themeStore = useThemeStore()
+const showSettings = ref(false)
 const sidebarWidth = ref(400)
 const isFullscreen = ref(false)
 const isDraggingCard = ref(false)
