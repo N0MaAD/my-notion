@@ -1762,7 +1762,94 @@
    .sidebar-header:hover .sidebar-actions {
      opacity: 1;
    }
-   
+
+   .sidebar-tags {
+     display: flex;
+     flex-wrap: wrap;
+     align-items: center;
+     gap: 0.35rem;
+     margin-bottom: 1rem;
+     padding: 0 0.5rem;
+   }
+
+   .sidebar-tag-chip {
+     font-size: 0.7rem;
+     font-weight: 600;
+     padding: 0.15rem 0.5rem;
+     border-radius: 4px;
+     border: 1px solid;
+     cursor: pointer;
+     transition: opacity 0.15s;
+     white-space: nowrap;
+   }
+
+   .sidebar-tag-chip:hover {
+     opacity: 0.7;
+   }
+
+   .sidebar-tag-add-wrap {
+     position: relative;
+   }
+
+   .sidebar-tag-add-btn {
+     background: none;
+     border: 1px dashed var(--surface-input-border, #e2e2e2);
+     border-radius: 4px;
+     padding: 0.15rem 0.5rem;
+     font-size: 0.7rem;
+     color: var(--text-secondary, #888);
+     cursor: pointer;
+     transition: all 0.15s;
+   }
+
+   .sidebar-tag-add-btn:hover {
+     border-color: var(--accent);
+     color: var(--accent);
+   }
+
+   .sidebar-tag-picker {
+     position: absolute;
+     top: 100%;
+     left: 0;
+     margin-top: 0.3rem;
+     background: var(--surface-dropdown, #fff);
+     border: 1px solid var(--surface-input-border, #e2e2e2);
+     border-radius: 8px;
+     box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+     min-width: 160px;
+     padding: 0.3rem;
+     z-index: 100;
+     animation: contextIn 0.12s ease-out;
+   }
+
+   .sidebar-tag-picker-item {
+     display: flex;
+     align-items: center;
+     gap: 0.5rem;
+     padding: 0.4rem 0.6rem;
+     border-radius: 6px;
+     cursor: pointer;
+     font-size: 0.8rem;
+     transition: background 0.1s;
+   }
+
+   .sidebar-tag-picker-item:hover {
+     background: var(--surface-card-hover, #f0f4ff);
+   }
+
+   .sidebar-tag-dot {
+     width: 10px;
+     height: 10px;
+     border-radius: 50%;
+     flex-shrink: 0;
+   }
+
+   .sidebar-tag-picker-empty {
+     padding: 0.5rem 0.6rem;
+     font-size: 0.75rem;
+     color: var(--text-secondary, #888);
+   }
+
    .sidebar-top-bar {
      display: flex;
      align-items: center;

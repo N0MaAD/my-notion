@@ -509,6 +509,13 @@ export const useBoardStore = defineStore('board', () => {
     }
 
     toCol.notes.splice(newIndex, 0, note)
+
+    if (toCol.tagIds && toCol.tagIds.length > 0) {
+      if (!note.tagIds) note.tagIds = []
+      for (const tagId of toCol.tagIds) {
+        if (!note.tagIds.includes(tagId)) note.tagIds.push(tagId)
+      }
+    }
   }
 
   function archiveNote(noteId, silent = false) {
@@ -665,13 +672,62 @@ export const useBoardStore = defineStore('board', () => {
     const idx = pinnedNoteIds.value.indexOf(noteId)
     if (idx === -1) {
       pinnedNoteIds.value.push(noteId)
+      const favId = getFavorisTagId()
+      if (favId) {
+        for (const col of columns.value) {
+          const note = col.notes.find(n => n.id === noteId)
+          if (note) {
+            if (!note.tagIds) note.tagIds = []
+            if (!note.tagIds.includes(favId)) note.tagIds.push(favId)
+            break
+          }
+        }
+      }
     } else {
       pinnedNoteIds.value.splice(idx, 1)
+      const favId = getFavorisTagId()
+      if (favId) {
+        for (const col of columns.value) {
+          const note = col.notes.find(n => n.id === noteId)
+          if (note && note.tagIds) {
+            const tagIdx = note.tagIds.indexOf(favId)
+            if (tagIdx !== -1) note.tagIds.splice(tagIdx, 1)
+            break
+          }
+        }
+      }
     }
   }
 
   function isPinned(noteId) {
     return pinnedNoteIds.value.includes(noteId)
+  }
+
+  const FAVORIS_TAG_NAME = '★ Favoris'
+
+  function ensureDefaultTags() {
+    const hasFavoris = tags.value.some(t => t.name === FAVORIS_TAG_NAME)
+    if (!hasFavoris) {
+      tags.value.push({ id: crypto.randomUUID(), name: FAVORIS_TAG_NAME, color: '#f59e0b' })
+    }
+  }
+
+  function getFavorisTagId() {
+    const tag = tags.value.find(t => t.name === FAVORIS_TAG_NAME)
+    return tag ? tag.id : null
+  }
+
+  function syncPinsWithFavorisTag() {
+    const favId = getFavorisTagId()
+    if (!favId) return
+    for (const col of columns.value) {
+      for (const note of col.notes) {
+        if (pinnedNoteIds.value.includes(note.id)) {
+          if (!note.tagIds) note.tagIds = []
+          if (!note.tagIds.includes(favId)) note.tagIds.push(favId)
+        }
+      }
+    }
   }
 
   // ─── Tags ───
@@ -682,6 +738,7 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   function deleteTag(tagId) {
+    if (tagId === getFavorisTagId()) return
     tags.value = tags.value.filter(t => t.id !== tagId)
     for (const col of columns.value) {
       if (col.tagIds) col.tagIds = col.tagIds.filter(id => id !== tagId)
@@ -707,8 +764,18 @@ export const useBoardStore = defineStore('board', () => {
       if (note) {
         if (!note.tagIds) note.tagIds = []
         const idx = note.tagIds.indexOf(tagId)
-        if (idx === -1) note.tagIds.push(tagId)
-        else note.tagIds.splice(idx, 1)
+        if (idx === -1) {
+          note.tagIds.push(tagId)
+          if (tagId === getFavorisTagId() && !pinnedNoteIds.value.includes(noteId)) {
+            pinnedNoteIds.value.push(noteId)
+          }
+        } else {
+          note.tagIds.splice(idx, 1)
+          if (tagId === getFavorisTagId()) {
+            const pinIdx = pinnedNoteIds.value.indexOf(noteId)
+            if (pinIdx !== -1) pinnedNoteIds.value.splice(pinIdx, 1)
+          }
+        }
         return
       }
     }
@@ -772,6 +839,8 @@ export const useBoardStore = defineStore('board', () => {
       console.error('Erreur chargement Firestore:', e)
     }
     ensurePermanentColumns()
+    ensureDefaultTags()
+    syncPinsWithFavorisTag()
     cleanupOldArchive()
     cleanupOldTrash()
     checkExpiredDeadlines()

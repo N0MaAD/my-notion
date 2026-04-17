@@ -87,13 +87,39 @@
       </div>
     </div>
 
+    <div v-if="store.openPagePath.length === 0" class="sidebar-tags">
+      <span
+        v-for="tag in noteTags"
+        :key="tag.id"
+        class="sidebar-tag-chip"
+        :style="{ background: tag.color + '22', color: tag.color, borderColor: tag.color + '44' }"
+        @click="store.toggleNoteTag(store.activeNoteId, tag.id)"
+        title="Cliquer pour retirer"
+      >{{ tag.name }} ✕</span>
+      <div class="sidebar-tag-add-wrap">
+        <button class="sidebar-tag-add-btn" @click="showTagPicker = !showTagPicker">+ Tag</button>
+        <div v-if="showTagPicker" class="sidebar-tag-picker">
+          <div
+            v-for="tag in availableTags"
+            :key="tag.id"
+            class="sidebar-tag-picker-item"
+            @click="store.toggleNoteTag(store.activeNoteId, tag.id)"
+          >
+            <span class="sidebar-tag-dot" :style="{ background: tag.color }"></span>
+            <span>{{ tag.name }}</span>
+          </div>
+          <div v-if="availableTags.length === 0" class="sidebar-tag-picker-empty">Tous les tags sont déjà ajoutés</div>
+        </div>
+      </div>
+    </div>
+
     <PageEditor :key="store.currentPage?.id || store.activeNoteId" />
   </div>
 </div>
 </template>
 
 <script setup>
-import { ref, reactive, nextTick } from 'vue'
+import { ref, reactive, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useBoardStore } from '../stores/board.js'
 import PageEditor from '../components/blocks/PageEditor.vue'
 
@@ -109,6 +135,28 @@ const newTitle = ref('')
 const renameRef = ref(null)
 const navCollapsed = ref(false)
 const expanded = reactive({})
+const showTagPicker = ref(false)
+
+const noteTags = computed(() => {
+  const note = store.activeNote
+  if (!note || !note.tagIds) return []
+  return note.tagIds.map(id => store.tags.find(t => t.id === id)).filter(Boolean)
+})
+
+const availableTags = computed(() => {
+  const note = store.activeNote
+  const currentIds = note?.tagIds || []
+  return store.tags.filter(t => !currentIds.includes(t.id))
+})
+
+function onClickOutsideTagPicker(e) {
+  if (showTagPicker.value && !e.target.closest('.sidebar-tag-add-wrap')) {
+    showTagPicker.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', onClickOutsideTagPicker))
+onUnmounted(() => document.removeEventListener('click', onClickOutsideTagPicker))
 
 function closeSidebar() {
 if (props.isFullscreen) {

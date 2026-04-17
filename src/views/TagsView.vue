@@ -72,7 +72,7 @@
           </div>
         </div>
         <div class="tag-modal-footer">
-          <button v-if="editingTag" class="btn btn-danger" @click="handleDelete">Supprimer</button>
+          <button v-if="editingTag && !isFavorisTag(editingTag)" class="btn btn-danger" @click="handleDelete">Supprimer</button>
           <span class="tag-modal-spacer"></span>
           <button class="btn btn-ghost" @click="closeModal">Annuler</button>
           <button class="btn btn-accent" @click="submitModal">{{ editingTag ? 'Enregistrer' : 'Créer' }}</button>
@@ -139,6 +139,10 @@ const detailNotes = computed(() => {
 
 function getNotesForTag(tagId) {
   return store.getNotesForTag(tagId)
+}
+
+function isFavorisTag(tag) {
+  return tag && tag.name === '★ Favoris'
 }
 
 function tagCardStyle(tag) {
