@@ -57,11 +57,14 @@ export const NOTE_TYPES = {
 
 export const useBoardStore = defineStore('board', () => {
   const columns = ref([])
+  const trash = ref([])
   const activeNoteId = ref(null)
   const openPagePath = ref([])
   const pinnedNoteIds = ref([])
   const dataLoaded = ref(false)
   const notifications = ref([])
+
+  const TRASH_RETENTION_DAYS = 30
 
   let saveTimeout = null
   let notifId = 0
@@ -75,7 +78,8 @@ export const useBoardStore = defineStore('board', () => {
   function snapshotState() {
     return JSON.parse(JSON.stringify({
       columns: columns.value,
-      pinnedNoteIds: pinnedNoteIds.value
+      pinnedNoteIds: pinnedNoteIds.value,
+      trash: trash.value
     }))
   }
 
@@ -90,6 +94,7 @@ export const useBoardStore = defineStore('board', () => {
   function applySnapshot(snap) {
     columns.value = snap.columns
     pinnedNoteIds.value = snap.pinnedNoteIds
+    trash.value = snap.trash || []
   }
 
   function undo() {
@@ -248,16 +253,47 @@ export const useBoardStore = defineStore('board', () => {
   function deleteNote(noteId) {
     recordSnapshot()
     for (const col of columns.value) {
-      col.notes = col.notes.filter(n => n.id !== noteId)
+      const idx = col.notes.findIndex(n => n.id === noteId)
+      if (idx !== -1) {
+        const [note] = col.notes.splice(idx, 1)
+        // Déplace en corbeille au lieu de supprimer définitivement
+        trash.value.push({ ...note, deletedAt: new Date().toISOString(), fromColumnId: col.id })
+        break
+      }
     }
     if (activeNoteId.value === noteId) {
       activeNoteId.value = null
       openPagePath.value = []
     }
     const pinIdx = pinnedNoteIds.value.indexOf(noteId)
-    if (pinIdx !== -1) {
-      pinnedNoteIds.value.splice(pinIdx, 1)
+    if (pinIdx !== -1) pinnedNoteIds.value.splice(pinIdx, 1)
+  }
+
+  function restoreFromTrash(noteId) {
+    const idx = trash.value.findIndex(n => n.id === noteId)
+    if (idx === -1) return
+    const [note] = trash.value.splice(idx, 1)
+    const { deletedAt, fromColumnId, ...cleanNote } = note
+    // Restaure dans la colonne d'origine si elle existe encore, sinon la première
+    const targetCol = columns.value.find(c => c.id === fromColumnId && !c.archive)
+      || columns.value.find(c => !c.archive)
+    if (targetCol) {
+      targetCol.notes.unshift(cleanNote)
+      addNotification(`« ${cleanNote.title || 'Sans titre'} » restaurée`, 'info')
     }
+  }
+
+  function deleteForever(noteId) {
+    trash.value = trash.value.filter(n => n.id !== noteId)
+  }
+
+  function emptyTrash() {
+    trash.value = []
+  }
+
+  function cleanupOldTrash() {
+    const cutoff = Date.now() - TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000
+    trash.value = trash.value.filter(n => new Date(n.deletedAt).getTime() >= cutoff)
   }
 
   function renameNote(noteId, newTitle) {
@@ -649,7 +685,8 @@ export const useBoardStore = defineStore('board', () => {
       try {
         await setDoc(docRef, {
           columns: JSON.parse(JSON.stringify(columns.value)),
-          pins: JSON.parse(JSON.stringify(pinnedNoteIds.value))
+          pins: JSON.parse(JSON.stringify(pinnedNoteIds.value)),
+          trash: JSON.parse(JSON.stringify(trash.value))
         })
       } catch (e) {
         console.error('Erreur sauvegarde Firestore:', e)
@@ -666,6 +703,7 @@ export const useBoardStore = defineStore('board', () => {
         const data = snap.data()
         columns.value = data.columns || []
         pinnedNoteIds.value = data.pins || []
+        trash.value = data.trash || []
         migrateNotes()
       }
     } catch (e) {
@@ -673,12 +711,13 @@ export const useBoardStore = defineStore('board', () => {
     }
     ensurePermanentColumns()
     cleanupOldArchive()
+    cleanupOldTrash()
     checkExpiredDeadlines()
     dataLoaded.value = true
   }
 
   // Auto-save quand les donnees changent
-  watch([columns, pinnedNoteIds], () => {
+  watch([columns, pinnedNoteIds, trash], () => {
     if (dataLoaded.value) {
       saveToFirestore()
     }
@@ -686,6 +725,7 @@ export const useBoardStore = defineStore('board', () => {
 
   return {
     columns,
+    trash,
     activeNoteId,
     activeNote,
     openPagePath,
@@ -728,6 +768,9 @@ export const useBoardStore = defineStore('board', () => {
     removeNotification,
     togglePin,
     isPinned,
+    restoreFromTrash,
+    deleteForever,
+    emptyTrash,
     loadFromFirestore
   }
 })

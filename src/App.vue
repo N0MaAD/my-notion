@@ -16,33 +16,9 @@
 <div v-else class="app-layout" :class="{ 'sidebar-fullscreen': isFullscreen }">
   <!-- User bar -->
   <div class="user-bar">
-    <div class="user-info" @click.stop="showSettings = !showSettings">
+    <div class="user-info" @click="showSettings = true">
       <img v-if="authStore.user.photoURL" :src="authStore.user.photoURL" class="user-avatar" referrerpolicy="no-referrer" />
       <span class="user-name">{{ authStore.user.displayName }}</span>
-    </div>
-
-    <!-- Settings dropdown -->
-    <div v-if="showSettings" class="settings-overlay" @click="showSettings = false" />
-    <div v-if="showSettings" class="settings-menu" @click.stop>
-      <div class="settings-menu-section">
-        <div class="settings-menu-label">Theme</div>
-        <div class="settings-theme-options">
-          <button
-            v-for="t in THEMES"
-            :key="t.id"
-            class="settings-theme-btn"
-            :class="{ active: themeStore.theme === t.id }"
-            @click="themeStore.setTheme(t.id)"
-          >
-            <span class="theme-icon">{{ t.icon }}</span>
-            <span>{{ t.label }}</span>
-          </button>
-        </div>
-      </div>
-      <div class="settings-menu-sep" />
-      <button class="settings-menu-item danger" @click="authStore.logout(); showSettings = false">
-        Deconnexion
-      </button>
     </div>
 
     <nav class="nav-tabs">
@@ -58,6 +34,13 @@
       >Agenda</button>
     </nav>
   </div>
+
+  <!-- Settings plein écran -->
+  <SettingsView
+    v-if="showSettings"
+    @close="showSettings = false"
+    @logout="authStore.logout(); showSettings = false"
+  />
 
   <div v-if="!isFullscreen" class="board-area">
     <BoardView v-if="currentView === 'notes'" />
@@ -95,12 +78,13 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import BoardView from './views/BoardView.vue'
 import AgendaView from './views/AgendaView.vue'
 import SidebarView from './views/SidebarView.vue'
+import SettingsView from './views/SettingsView.vue'
 import SearchModal from './components/SearchModal.vue'
 import NotificationToast from './components/NotificationToast.vue'
 import LoginView from './views/LoginView.vue'
 import { useBoardStore } from './stores/board.js'
 import { useAuthStore } from './stores/auth.js'
-import { useThemeStore, THEMES } from './stores/theme.js'
+import { useThemeStore } from './stores/theme.js'
 
 const store = useBoardStore()
 const authStore = useAuthStore()
