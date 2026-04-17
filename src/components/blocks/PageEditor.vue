@@ -239,8 +239,10 @@ watch(filteredSlashItems, () => {
 selectedIndex.value = 0
 })
 
-function focusEditor() {
-if (editor.value) editor.value.commands.focus('end')
+function focusEditor(event) {
+  if (event.target === editorRef.value && editor.value) {
+    editor.value.commands.focus('end')
+  }
 }
 
 function openSlashMenu() {
