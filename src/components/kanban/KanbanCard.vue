@@ -58,6 +58,16 @@
       🗓️ {{ formatDurationRange(note.startDate, note.endDate) }}<span v-if="note.startTime"> · ⏰ {{ note.startTime }}</span>
     </div>
   </template>
+
+  <!-- Tags -->
+  <div v-if="noteTags.length > 0" class="card-tags">
+    <span
+      v-for="tag in noteTags"
+      :key="tag.id"
+      class="card-tag-chip"
+      :style="{ background: tag.color + '22', color: tag.color, borderColor: tag.color + '44' }"
+    >{{ tag.name }}</span>
+  </div>
 </div>
 
 <!-- Menu contextuel -->
@@ -71,6 +81,7 @@
   :currentEndDate="note.endDate || null"
   :currentIsDeadline="note.isDeadline || false"
   :currentStartTime="note.startTime || null"
+  :currentTagIds="note.tagIds || []"
   @close="showContextMenu = false"
 />
 </template>
@@ -94,6 +105,11 @@ const contextY = ref(0)
 
 const noteTypeInfo = computed(() => {
   return NOTE_TYPES[props.note.type || 'note'] || NOTE_TYPES.note
+})
+
+const noteTags = computed(() => {
+  const ids = props.note.tagIds || []
+  return ids.map(id => store.tags.find(t => t.id === id)).filter(Boolean)
 })
 
 const cardBorderStyle = computed(() => {
@@ -209,6 +225,22 @@ function openContextMenu(e) {
 .deadline-overdue {
   color: #dc2626;
   background: #fef2f2;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.3rem;
+}
+
+.card-tag-chip {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
 }
 
 .card-duration {

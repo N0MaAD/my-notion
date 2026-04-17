@@ -58,6 +58,7 @@ export const NOTE_TYPES = {
 export const useBoardStore = defineStore('board', () => {
   const columns = ref([])
   const trash = ref([])
+  const tags = ref([])
   const activeNoteId = ref(null)
   const openPagePath = ref([])
   const pinnedNoteIds = ref([])
@@ -79,7 +80,8 @@ export const useBoardStore = defineStore('board', () => {
     return JSON.parse(JSON.stringify({
       columns: columns.value,
       pinnedNoteIds: pinnedNoteIds.value,
-      trash: trash.value
+      trash: trash.value,
+      tags: tags.value
     }))
   }
 
@@ -95,6 +97,7 @@ export const useBoardStore = defineStore('board', () => {
     columns.value = snap.columns
     pinnedNoteIds.value = snap.pinnedNoteIds
     trash.value = snap.trash || []
+    tags.value = snap.tags || []
   }
 
   function undo() {
@@ -245,6 +248,9 @@ export const useBoardStore = defineStore('board', () => {
         noteData.startDate = null
         noteData.endDate = null
         noteData.isDeadline = false
+      }
+      if (col.tagIds && col.tagIds.length > 0) {
+        noteData.tagIds = [...col.tagIds]
       }
       col.notes.push(noteData)
     }
@@ -668,6 +674,60 @@ export const useBoardStore = defineStore('board', () => {
     return pinnedNoteIds.value.includes(noteId)
   }
 
+  // ─── Tags ───
+  function addTag(name, color) {
+    const id = crypto.randomUUID()
+    tags.value.push({ id, name, color: color || '#94a3b8' })
+    return id
+  }
+
+  function deleteTag(tagId) {
+    tags.value = tags.value.filter(t => t.id !== tagId)
+    for (const col of columns.value) {
+      if (col.tagIds) col.tagIds = col.tagIds.filter(id => id !== tagId)
+      for (const note of col.notes) {
+        if (note.tagIds) note.tagIds = note.tagIds.filter(id => id !== tagId)
+      }
+    }
+  }
+
+  function updateTag(tagId, updates) {
+    const tag = tags.value.find(t => t.id === tagId)
+    if (tag) Object.assign(tag, updates)
+  }
+
+  function setColumnTags(columnId, tagIds) {
+    const col = columns.value.find(c => c.id === columnId)
+    if (col) col.tagIds = tagIds
+  }
+
+  function toggleNoteTag(noteId, tagId) {
+    for (const col of columns.value) {
+      const note = col.notes.find(n => n.id === noteId)
+      if (note) {
+        if (!note.tagIds) note.tagIds = []
+        const idx = note.tagIds.indexOf(tagId)
+        if (idx === -1) note.tagIds.push(tagId)
+        else note.tagIds.splice(idx, 1)
+        return
+      }
+    }
+  }
+
+  function getNotesForTag(tagId) {
+    const result = []
+    for (const col of columns.value) {
+      for (const note of col.notes) {
+        const hasDirectTag = note.tagIds && note.tagIds.includes(tagId)
+        const hasColumnTag = col.tagIds && col.tagIds.includes(tagId)
+        if (hasDirectTag || hasColumnTag) {
+          result.push({ ...note, columnTitle: col.title })
+        }
+      }
+    }
+    return result
+  }
+
   // ─── Firestore persistence ───
 
   function getUserDocRef() {
@@ -686,7 +746,8 @@ export const useBoardStore = defineStore('board', () => {
         await setDoc(docRef, {
           columns: JSON.parse(JSON.stringify(columns.value)),
           pins: JSON.parse(JSON.stringify(pinnedNoteIds.value)),
-          trash: JSON.parse(JSON.stringify(trash.value))
+          trash: JSON.parse(JSON.stringify(trash.value)),
+          tags: JSON.parse(JSON.stringify(tags.value))
         })
       } catch (e) {
         console.error('Erreur sauvegarde Firestore:', e)
@@ -704,6 +765,7 @@ export const useBoardStore = defineStore('board', () => {
         columns.value = data.columns || []
         pinnedNoteIds.value = data.pins || []
         trash.value = data.trash || []
+        tags.value = data.tags || []
         migrateNotes()
       }
     } catch (e) {
@@ -717,7 +779,7 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   // Auto-save quand les donnees changent
-  watch([columns, pinnedNoteIds, trash], () => {
+  watch([columns, pinnedNoteIds, trash, tags], () => {
     if (dataLoaded.value) {
       saveToFirestore()
     }
@@ -726,6 +788,7 @@ export const useBoardStore = defineStore('board', () => {
   return {
     columns,
     trash,
+    tags,
     activeNoteId,
     activeNote,
     openPagePath,
@@ -771,6 +834,12 @@ export const useBoardStore = defineStore('board', () => {
     restoreFromTrash,
     deleteForever,
     emptyTrash,
+    addTag,
+    deleteTag,
+    updateTag,
+    setColumnTags,
+    toggleNoteTag,
+    getNotesForTag,
     loadFromFirestore
   }
 })

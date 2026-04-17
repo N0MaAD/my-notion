@@ -24,6 +24,21 @@
       <span v-if="t.id === currentType" class="context-menu-check">✓</span>
     </div>
 
+    <!-- Tags -->
+    <div v-if="store.tags.length > 0" class="context-menu-divider" />
+    <div v-if="store.tags.length > 0" class="context-menu-label">Tags</div>
+    <div
+      v-for="tag in store.tags"
+      :key="tag.id"
+      class="context-menu-item"
+      :class="{ active: noteHasTag(tag.id) }"
+      @click.stop="store.toggleNoteTag(noteId, tag.id)"
+    >
+      <span class="context-tag-dot" :style="{ background: tag.color }"></span>
+      <span class="context-menu-text">{{ tag.name }}</span>
+      <span v-if="noteHasTag(tag.id)" class="context-menu-check">✓</span>
+    </div>
+
     <div v-if="currentType === 'date'" class="context-menu-divider" />
     <div v-if="currentType === 'date'" class="context-menu-date">
       <label class="context-menu-checkbox-label">
@@ -91,10 +106,15 @@ const props = defineProps({
   currentStartDate: { type: String, default: null },
   currentEndDate: { type: String, default: null },
   currentIsDeadline: { type: Boolean, default: false },
-  currentStartTime: { type: String, default: null }
+  currentStartTime: { type: String, default: null },
+  currentTagIds: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits(['close'])
+
+function noteHasTag(tagId) {
+  return props.currentTagIds.includes(tagId)
+}
 
 // Types visibles (on exclut les anciens types migres caches)
 const types = computed(() => Object.values(NOTE_TYPES).filter(t => !t.hidden))
@@ -271,5 +291,12 @@ function close() {
   height: 0.9rem;
   accent-color: #3b82f6;
   cursor: pointer;
+}
+
+.context-tag-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 </style>

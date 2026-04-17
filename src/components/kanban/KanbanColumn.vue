@@ -48,6 +48,30 @@
     </div>
   </div>
 
+  <!-- Column tags -->
+  <div v-if="!column.permanent && (columnTags.length > 0 || store.tags.length > 0)" class="column-tags">
+    <span
+      v-for="tag in columnTags"
+      :key="tag.id"
+      class="column-tag-chip"
+      :style="{ background: tag.color + '22', color: tag.color, borderColor: tag.color + '44' }"
+      @click="removeColumnTag(tag.id)"
+      :title="'Retirer ' + tag.name"
+    >{{ tag.name }} ✕</span>
+    <button v-if="availableTags.length > 0" class="column-tag-add" @click="showTagPicker = !showTagPicker">+</button>
+    <div v-if="showTagPicker" class="column-tag-picker">
+      <div
+        v-for="tag in availableTags"
+        :key="tag.id"
+        class="column-tag-picker-item"
+        @click="addColumnTag(tag.id)"
+      >
+        <span class="column-tag-dot" :style="{ background: tag.color }"></span>
+        {{ tag.name }}
+      </div>
+    </div>
+  </div>
+
   <div
     class="column-cards"
     :class="{ 'drop-target': isDragOver }"
@@ -84,6 +108,29 @@ const renameRef = ref(null)
 const isDragOver = ref(false)
 const isColumnDragging = ref(false)
 const isColumnDropTarget = ref(false)
+
+const showTagPicker = ref(false)
+
+const columnTags = computed(() => {
+  const ids = props.column.tagIds || []
+  return ids.map(id => store.tags.find(t => t.id === id)).filter(Boolean)
+})
+
+const availableTags = computed(() => {
+  const ids = props.column.tagIds || []
+  return store.tags.filter(t => !ids.includes(t.id))
+})
+
+function addColumnTag(tagId) {
+  const current = props.column.tagIds || []
+  store.setColumnTags(props.column.id, [...current, tagId])
+  showTagPicker.value = false
+}
+
+function removeColumnTag(tagId) {
+  const current = props.column.tagIds || []
+  store.setColumnTags(props.column.id, current.filter(id => id !== tagId))
+}
 
 const columnStyle = computed(() => {
 if (props.column.archive) {

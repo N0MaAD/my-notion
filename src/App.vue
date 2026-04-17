@@ -32,6 +32,11 @@
         :class="{ active: currentView === 'agenda' }"
         @click="currentView = 'agenda'"
       >Agenda</button>
+      <button
+        class="nav-tab"
+        :class="{ active: currentView === 'tags' }"
+        @click="currentView = 'tags'"
+      >Tags</button>
     </nav>
   </div>
 
@@ -45,6 +50,7 @@
   <div v-if="!isFullscreen" class="board-area">
     <BoardView v-if="currentView === 'notes'" />
     <AgendaView v-else-if="currentView === 'agenda'" />
+    <TagsView v-else-if="currentView === 'tags'" />
   </div>
   <div
     v-if="store.activeNote && !isFullscreen"
@@ -77,6 +83,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import BoardView from './views/BoardView.vue'
 import AgendaView from './views/AgendaView.vue'
+import TagsView from './views/TagsView.vue'
 import SidebarView from './views/SidebarView.vue'
 import SettingsView from './views/SettingsView.vue'
 import SearchModal from './components/SearchModal.vue'
