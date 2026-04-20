@@ -3226,6 +3226,152 @@
      outline: 0.15rem solid var(--accent, #3b82f6);
    }
 
+   /* ---- Table styles ---- */
+   .tiptap-editor table {
+     border-collapse: collapse;
+     width: 100%;
+     margin: 0.75rem 0;
+     border-radius: 0.5rem;
+     overflow: hidden;
+     position: relative;
+   }
+
+   .tiptap-editor th,
+   .tiptap-editor td {
+     border: 1px solid var(--surface-input-border, #e2e2e2);
+     padding: 0.5rem 0.65rem;
+     text-align: left;
+     font-size: 0.85rem;
+     vertical-align: top;
+     position: relative;
+     min-width: 80px;
+   }
+
+   .tiptap-editor th {
+     background: var(--surface-column, rgba(12, 20, 42, 0.45));
+     font-weight: 600;
+     font-size: 0.8rem;
+   }
+
+   .tiptap-editor td {
+     background: var(--surface-card, rgba(22, 33, 62, 0.35));
+   }
+
+   .tiptap-editor tr {
+     transition: background 0.12s;
+   }
+
+   .tiptap-editor table .selectedCell {
+     background: rgba(59, 130, 246, 0.12);
+   }
+
+   .tiptap-editor th p,
+   .tiptap-editor td p {
+     margin: 0;
+   }
+
+   /* ---- Table hover add buttons ---- */
+   .tiptap-editor .table-wrapper {
+     position: relative;
+     margin: 0.75rem 0;
+   }
+
+   /* ---- Table picker (slash command) ---- */
+   .table-picker-overlay {
+     position: fixed;
+     inset: 0;
+     z-index: 998;
+   }
+
+   .table-picker {
+     position: absolute;
+     z-index: 999;
+     background: var(--surface-dropdown, #fff);
+     border: 1px solid var(--surface-input-border, #e2e2e2);
+     border-radius: 10px;
+     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+     padding: 0.75rem;
+     animation: contextIn 0.12s ease-out;
+   }
+
+   .table-picker-header {
+     font-size: 0.75rem;
+     font-weight: 600;
+     color: var(--text-secondary, #888);
+     margin-bottom: 0.5rem;
+     text-align: center;
+   }
+
+   .table-picker-grid {
+     display: flex;
+     flex-direction: column;
+     gap: 3px;
+   }
+
+   .table-picker-row {
+     display: flex;
+     gap: 3px;
+   }
+
+   .table-picker-cell {
+     width: 28px;
+     height: 28px;
+     border-radius: 4px;
+     border: 1.5px solid var(--surface-input-border, #ddd);
+     background: var(--surface-card, #f8f9fa);
+     cursor: pointer;
+     transition: all 0.1s;
+   }
+
+   .table-picker-cell.active {
+     background: var(--accent, #3b82f6);
+     border-color: var(--accent, #3b82f6);
+   }
+
+   .table-picker-label {
+     text-align: center;
+     font-size: 0.8rem;
+     font-weight: 600;
+     color: var(--text-primary, #333);
+     margin-top: 0.5rem;
+   }
+
+   /* ---- Table add buttons ---- */
+   .table-add-btn {
+     position: absolute;
+     width: 24px;
+     height: 24px;
+     border-radius: 50%;
+     border: 1.5px solid var(--surface-input-border, #ddd);
+     background: var(--surface-dropdown, #fff);
+     color: var(--accent, #3b82f6);
+     font-size: 1rem;
+     font-weight: 700;
+     cursor: pointer;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+     transition: all 0.15s;
+     z-index: 50;
+     line-height: 1;
+     padding: 0;
+   }
+
+   .table-add-btn:hover {
+     background: var(--accent, #3b82f6);
+     color: #fff;
+     border-color: var(--accent, #3b82f6);
+     transform: scale(1.15);
+   }
+
+   /* ---- Table row hover ---- */
+   .tiptap-editor tr.table-row-hover td,
+   .tiptap-editor tr.table-row-hover th {
+     font-weight: 600;
+     background: rgba(59, 130, 246, 0.06);
+   }
+
    /* ---- Note picker ---- */
    .note-picker {
      position: absolute;

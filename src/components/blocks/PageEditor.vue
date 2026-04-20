@@ -83,6 +83,34 @@
       @change="onImageFileChange"
     />
 
+    <!-- Table size picker -->
+    <div
+      v-if="showTablePicker"
+      class="table-picker-overlay"
+      @click="closeTablePicker"
+    >
+      <div class="table-picker" :style="{ top: tablePickerPos.top + 'px', left: tablePickerPos.left + 'px' }" @click.stop>
+        <div class="table-picker-header">Taille du tableau</div>
+        <div class="table-picker-grid">
+          <div
+            v-for="row in 6"
+            :key="'r'+row"
+            class="table-picker-row"
+          >
+            <div
+              v-for="col in 6"
+              :key="'c'+col"
+              class="table-picker-cell"
+              :class="{ active: row <= tablePickerRows && col <= tablePickerCols }"
+              @mouseenter="tablePickerRows = row; tablePickerCols = col"
+              @click="insertTable(tablePickerRows, tablePickerCols)"
+            />
+          </div>
+        </div>
+        <div class="table-picker-label">{{ tablePickerRows }} × {{ tablePickerCols }}</div>
+      </div>
+    </div>
+
     <EditorContent :editor="editor" class="tiptap-editor tiptap-fullpage" />
   </div>
 </div>
@@ -95,6 +123,10 @@ import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableCell } from '@tiptap/extension-table-cell'
+import { TableHeader } from '@tiptap/extension-table-header'
 import { PageNode, setOpenSubPageCallback } from '../../extensions/PageNode.js'
 import { EmbedNode } from '../../extensions/EmbedNode.js'
 import { useBoardStore } from '../../stores/board.js'
@@ -121,6 +153,7 @@ const slashItems = [
 { id: 'quote', icon: '"', label: 'Citation', description: 'Bloc de citation', type: 'quote' },
 { id: 'code', icon: '<>', label: 'Code', description: 'Bloc de code', type: 'code' },
 { id: 'noteLink', icon: '🔖', label: 'Lien vers une note', description: 'Insérer un lien vers une autre note', type: 'noteLink' },
+{ id: 'table', icon: '📊', label: 'Tableau', description: 'Insérer un tableau', type: 'table' },
 { id: 'image', icon: '🖼️', label: 'Image', description: 'Importer une image', type: 'image' },
 { id: 'page', icon: '📄', label: 'Sous-page', description: 'Créer une sous-page', type: 'page' },
 { id: 'embed', icon: '🔗', label: 'Embed', description: 'Intégrer un lien (YouTube, Sheets...)', type: 'embed' },
@@ -133,6 +166,11 @@ const notePickerFilter = ref('')
 const notePickerIndex = ref(0)
 const notePickerInputRef = ref(null)
 const fileInputRef = ref(null)
+
+const showTablePicker = ref(false)
+const tablePickerPos = ref({ top: 0, left: 0 })
+const tablePickerRows = ref(3)
+const tablePickerCols = ref(3)
 
 const allNotes = computed(() => {
   const result = []
@@ -224,6 +262,26 @@ function onImageFileChange(e) {
   const file = e.target.files?.[0]
   if (file) handleImageFile(file)
   e.target.value = ''
+}
+
+function openTablePicker() {
+  tablePickerPos.value = { ...slashPos.value }
+  tablePickerRows.value = 3
+  tablePickerCols.value = 3
+  showTablePicker.value = true
+}
+
+function closeTablePicker() {
+  showTablePicker.value = false
+}
+
+function insertTable(rows, cols) {
+  editor.value
+    .chain()
+    .focus()
+    .insertTable({ rows, cols, withHeaderRow: true })
+    .run()
+  closeTablePicker()
 }
 
 const filteredSlashItems = computed(() => {
@@ -328,6 +386,9 @@ switch (item.type) {
   case 'code':
     editor.value.chain().focus().toggleCodeBlock().run()
     break
+  case 'table':
+    openTablePicker()
+    break
   case 'noteLink':
     openNotePicker()
     break
@@ -391,6 +452,10 @@ extensions: [
     inline: false,
     HTMLAttributes: { class: 'note-image' }
   }),
+  Table.configure({ resizable: false }),
+  TableRow,
+  TableHeader,
+  TableCell,
   PageNode,
   EmbedNode,
   DragHandle
@@ -498,14 +563,143 @@ editorProps: {
 }
 })
 
+let tableCleanup = null
+
+function setupTableControls() {
+  if (tableCleanup) tableCleanup()
+  const editorEl = blockRef.value?.querySelector('.ProseMirror')
+  if (!editorEl) return
+
+  let addRowBtn = null
+  let addColBtn = null
+  let hoveredRow = null
+  let hoveredTable = null
+
+  function createBtn(label) {
+    const btn = document.createElement('button')
+    btn.className = 'table-add-btn'
+    btn.textContent = label
+    btn.style.display = 'none'
+    editorEl.appendChild(btn)
+    return btn
+  }
+
+  addRowBtn = createBtn('+')
+  addColBtn = createBtn('+')
+
+  function onMouseMove(e) {
+    const cell = e.target.closest('td, th')
+    if (!cell) {
+      hideAll()
+      return
+    }
+    const table = cell.closest('table')
+    if (!table || !editorEl.contains(table)) {
+      hideAll()
+      return
+    }
+
+    hoveredTable = table
+    const tableRect = table.getBoundingClientRect()
+    const editorRect = editorEl.getBoundingClientRect()
+    const cellRect = cell.getBoundingClientRect()
+    const row = cell.closest('tr')
+    hoveredRow = row
+
+    // Highlight row
+    table.querySelectorAll('tr').forEach(r => r.classList.remove('table-row-hover'))
+    if (row) row.classList.add('table-row-hover')
+
+    // Row add button — on the left edge of the table, aligned to the hovered row
+    addRowBtn.style.display = 'flex'
+    addRowBtn.style.top = (cellRect.top + cellRect.height / 2 - editorRect.top - 12) + 'px'
+    addRowBtn.style.left = (tableRect.left - editorRect.left - 28) + 'px'
+
+    // Column add button — on top edge, aligned to the hovered column
+    addColBtn.style.display = 'flex'
+    addColBtn.style.top = (tableRect.top - editorRect.top - 28) + 'px'
+    addColBtn.style.left = (cellRect.left + cellRect.width / 2 - editorRect.left - 12) + 'px'
+  }
+
+  function hideAll() {
+    addRowBtn.style.display = 'none'
+    addColBtn.style.display = 'none'
+    if (hoveredTable) {
+      hoveredTable.querySelectorAll('tr').forEach(r => r.classList.remove('table-row-hover'))
+    }
+    hoveredRow = null
+    hoveredTable = null
+  }
+
+  function onMouseLeave() {
+    hideAll()
+  }
+
+  function onAddRow(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!hoveredRow || !hoveredTable || !editor.value) return
+    const rows = Array.from(hoveredTable.querySelectorAll('tr'))
+    const rowIndex = rows.indexOf(hoveredRow)
+    const cellPos = findCellPosInRow(hoveredTable, rowIndex)
+    if (cellPos !== null) {
+      editor.value.chain().focus(cellPos).addRowAfter().run()
+    }
+  }
+
+  function onAddCol(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!hoveredTable || !editor.value) return
+    const cell = editorEl.querySelector('.table-row-hover td, .table-row-hover th')
+    if (!cell) return
+    const cellPos = findCellPos(cell)
+    if (cellPos !== null) {
+      editor.value.chain().focus(cellPos).addColumnAfter().run()
+    }
+  }
+
+  function findCellPos(cellDom) {
+    const view = editor.value?.view
+    if (!view) return null
+    const pos = view.posAtDOM(cellDom, 0)
+    return pos
+  }
+
+  function findCellPosInRow(table, rowIndex) {
+    const row = table.querySelectorAll('tr')[rowIndex]
+    if (!row) return null
+    const cell = row.querySelector('td, th')
+    if (!cell) return null
+    return findCellPos(cell)
+  }
+
+  addRowBtn.addEventListener('mousedown', onAddRow)
+  addColBtn.addEventListener('mousedown', onAddCol)
+  editorEl.addEventListener('mousemove', onMouseMove)
+  editorEl.addEventListener('mouseleave', onMouseLeave)
+
+  tableCleanup = () => {
+    addRowBtn.removeEventListener('mousedown', onAddRow)
+    addColBtn.removeEventListener('mousedown', onAddCol)
+    editorEl.removeEventListener('mousemove', onMouseMove)
+    editorEl.removeEventListener('mouseleave', onMouseLeave)
+    addRowBtn.remove()
+    addColBtn.remove()
+    tableCleanup = null
+  }
+}
+
 onMounted(() => {
 setOpenSubPageCallback((pageId) => {
   store.openSubPage(pageId)
 })
+nextTick(() => setupTableControls())
 })
 
 onBeforeUnmount(() => {
 setOpenSubPageCallback(null)
+if (tableCleanup) tableCleanup()
 editor.value?.destroy()
 })
 
@@ -516,6 +710,7 @@ if (editor.value && page) {
   if (content !== editor.value.getHTML()) {
     editor.value.commands.setContent(content)
   }
+  nextTick(() => setupTableControls())
 }
 }, { immediate: true })
 </script>
