@@ -24,20 +24,24 @@
       class="slash-menu"
       :style="{ top: slashPos.top + 'px', left: slashPos.left + 'px' }"
     >
-      <div
-        v-for="(item, i) in filteredSlashItems"
-        :key="item.id"
-        class="slash-menu-item"
-        :class="{ active: i === selectedIndex }"
-        @mousedown.prevent="executeSlashCommand(item)"
-        @mouseenter="selectedIndex = i"
-      >
-        <span class="slash-menu-icon">{{ item.icon }}</span>
-        <div class="slash-menu-text">
-          <span class="slash-menu-label">{{ item.label }}</span>
-          <span class="slash-menu-desc">{{ item.description }}</span>
+      <template v-for="(item, i) in filteredSlashItems" :key="item.id">
+        <div
+          v-if="i === 0 || item.category !== filteredSlashItems[i-1].category"
+          class="slash-menu-category"
+        >{{ item.category }}</div>
+        <div
+          class="slash-menu-item"
+          :class="{ active: i === selectedIndex }"
+          @mousedown.prevent="executeSlashCommand(item)"
+          @mouseenter="selectedIndex = i"
+        >
+          <span class="slash-menu-icon">{{ item.icon }}</span>
+          <div class="slash-menu-text">
+            <span class="slash-menu-label">{{ item.label }}</span>
+          </div>
+          <span v-if="item.shortcut" class="slash-menu-shortcut">{{ item.shortcut }}</span>
         </div>
-      </div>
+      </template>
       <div v-if="filteredSlashItems.length === 0" class="slash-menu-empty">
         Aucun résultat
       </div>
@@ -127,8 +131,14 @@ import { Table } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
 import { PageNode, setOpenSubPageCallback } from '../../extensions/PageNode.js'
 import { EmbedNode } from '../../extensions/EmbedNode.js'
+import { CalloutNode } from '../../extensions/CalloutNode.js'
+import { DetailsNode } from '../../extensions/DetailsNode.js'
+import { VideoNode } from '../../extensions/VideoNode.js'
+import { AudioNode } from '../../extensions/AudioNode.js'
 import { useBoardStore } from '../../stores/board.js'
 import { DragHandle } from '../../extensions/DragHandle.js'
 import { uploadImage } from '../../lib/uploadImage.js'
@@ -145,18 +155,26 @@ const slashFilter = ref('')
 const selectedIndex = ref(0)
 
 const slashItems = [
-{ id: 'h1', icon: 'H1', label: 'Titre 1', description: 'Grand titre', type: 'heading1' },
-{ id: 'h2', icon: 'H2', label: 'Titre 2', description: 'Titre moyen', type: 'heading2' },
-{ id: 'h3', icon: 'H3', label: 'Titre 3', description: 'Petit titre', type: 'heading3' },
-{ id: 'bullet', icon: '•', label: 'Liste à puces', description: 'Liste non ordonnée', type: 'bullet' },
-{ id: 'ordered', icon: '1.', label: 'Liste numérotée', description: 'Liste ordonnée', type: 'ordered' },
-{ id: 'quote', icon: '"', label: 'Citation', description: 'Bloc de citation', type: 'quote' },
-{ id: 'code', icon: '<>', label: 'Code', description: 'Bloc de code', type: 'code' },
-{ id: 'noteLink', icon: '🔖', label: 'Lien vers une note', description: 'Insérer un lien vers une autre note', type: 'noteLink' },
-{ id: 'table', icon: '📊', label: 'Tableau', description: 'Insérer un tableau', type: 'table' },
-{ id: 'image', icon: '🖼️', label: 'Image', description: 'Importer une image', type: 'image' },
-{ id: 'page', icon: '📄', label: 'Sous-page', description: 'Créer une sous-page', type: 'page' },
-{ id: 'embed', icon: '🔗', label: 'Embed', description: 'Intégrer un lien (YouTube, Sheets...)', type: 'embed' },
+  { id: 'text', icon: 'T', label: 'Texte', description: 'Texte simple', type: 'text', category: 'Blocs de base', shortcut: '' },
+  { id: 'h1', icon: 'H1', label: 'Titre 1', description: 'Grand titre', type: 'heading1', category: 'Blocs de base', shortcut: '#' },
+  { id: 'h2', icon: 'H2', label: 'Titre 2', description: 'Titre moyen', type: 'heading2', category: 'Blocs de base', shortcut: '##' },
+  { id: 'h3', icon: 'H3', label: 'Titre 3', description: 'Petit titre', type: 'heading3', category: 'Blocs de base', shortcut: '###' },
+  { id: 'h4', icon: 'H4', label: 'Titre 4', description: 'Titre discret', type: 'heading4', category: 'Blocs de base', shortcut: '####' },
+  { id: 'bullet', icon: '⊡', label: 'Liste à puces', description: 'Liste non ordonnée', type: 'bullet', category: 'Blocs de base', shortcut: '-' },
+  { id: 'ordered', icon: '☰', label: 'Liste numérotée', description: 'Liste ordonnée', type: 'ordered', category: 'Blocs de base', shortcut: '1.' },
+  { id: 'taskList', icon: '☑', label: 'Liste de tâches', description: 'Cases à cocher', type: 'taskList', category: 'Blocs de base', shortcut: '[]' },
+  { id: 'toggle', icon: '▸', label: 'Menu dépliant', description: 'Contenu repliable', type: 'toggle', category: 'Blocs de base', shortcut: '>' },
+  { id: 'page', icon: '📄', label: 'Page', description: 'Créer une sous-page', type: 'page', category: 'Blocs de base' },
+  { id: 'callout', icon: '💡', label: 'Encadré', description: 'Bloc encadré avec icône', type: 'callout', category: 'Blocs de base' },
+  { id: 'quote', icon: '❝', label: 'Citation', description: 'Bloc de citation', type: 'quote', category: 'Blocs de base' },
+  { id: 'table', icon: '▦', label: 'Tableau', description: 'Insérer un tableau', type: 'table', category: 'Blocs de base' },
+  { id: 'divider', icon: '—', label: 'Séparateur', description: 'Ligne horizontale', type: 'divider', category: 'Blocs de base', shortcut: '---' },
+  { id: 'image', icon: '🖼', label: 'Image', description: 'Importer une image', type: 'image', category: 'Médias' },
+  { id: 'video', icon: '🎬', label: 'Vidéo', description: 'Intégrer une vidéo (YouTube, URL...)', type: 'video', category: 'Médias' },
+  { id: 'audio', icon: '🔊', label: 'Audio', description: 'Intégrer un fichier audio', type: 'audio', category: 'Médias' },
+  { id: 'code', icon: '⟨/⟩', label: 'Code', description: 'Bloc de code', type: 'code', category: 'Médias' },
+  { id: 'embed', icon: '🔖', label: 'Aperçu de lien Web', description: 'Intégrer un lien (YouTube, Sheets...)', type: 'embed', category: 'Médias' },
+  { id: 'noteLink', icon: '🔗', label: 'Lien vers une note', description: 'Insérer un lien vers une autre note', type: 'noteLink', category: 'Lien' },
 ]
 
 // ─── Note picker ───
@@ -365,6 +383,9 @@ deleteSlashText()
 closeSlashMenu()
 
 switch (item.type) {
+  case 'text':
+    editor.value.chain().focus().setParagraph().run()
+    break
   case 'heading1':
     editor.value.chain().focus().toggleHeading({ level: 1 }).run()
     break
@@ -374,17 +395,43 @@ switch (item.type) {
   case 'heading3':
     editor.value.chain().focus().toggleHeading({ level: 3 }).run()
     break
+  case 'heading4':
+    editor.value.chain().focus().toggleHeading({ level: 4 }).run()
+    break
   case 'bullet':
     editor.value.chain().focus().toggleBulletList().run()
     break
   case 'ordered':
     editor.value.chain().focus().toggleOrderedList().run()
     break
+  case 'taskList':
+    editor.value.chain().focus().toggleTaskList().run()
+    break
+  case 'toggle': {
+    const summary = prompt('Titre du menu dépliant :') || 'Menu dépliant'
+    editor.value.chain().focus().insertContent({
+      type: 'detailsBlock',
+      attrs: { summary, open: true },
+      content: [{ type: 'paragraph' }]
+    }).run()
+    break
+  }
+  case 'callout': {
+    editor.value.chain().focus().insertContent({
+      type: 'calloutBlock',
+      attrs: { emoji: '💡' },
+      content: [{ type: 'paragraph' }]
+    }).run()
+    break
+  }
   case 'quote':
     editor.value.chain().focus().toggleBlockquote().run()
     break
   case 'code':
     editor.value.chain().focus().toggleCodeBlock().run()
+    break
+  case 'divider':
+    editor.value.chain().focus().setHorizontalRule().run()
     break
   case 'table':
     openTablePicker()
@@ -395,6 +442,27 @@ switch (item.type) {
   case 'image':
     triggerImagePicker()
     break
+  case 'video': {
+    const url = prompt('URL de la vidéo (YouTube, Vimeo, lien direct...) :')
+    if (url && url.trim()) {
+      editor.value.chain().focus().insertContent({
+        type: 'videoBlock',
+        attrs: { src: url.trim() }
+      }).run()
+    }
+    break
+  }
+  case 'audio': {
+    const url = prompt('URL du fichier audio :')
+    if (url && url.trim()) {
+      const title = prompt('Titre (optionnel) :') || ''
+      editor.value.chain().focus().insertContent({
+        type: 'audioBlock',
+        attrs: { src: url.trim(), title }
+      }).run()
+    }
+    break
+  }
   case 'page': {
     const title = prompt('Nom de la sous-page :')
     if (title && title.trim()) {
@@ -432,7 +500,9 @@ return tb ? tb.content || '' : ''
 const editor = useEditor({
 content: getInitialContent(),
 extensions: [
-  StarterKit,
+  StarterKit.configure({
+    heading: { levels: [1, 2, 3, 4] }
+  }),
   Placeholder.configure({
     placeholder: ({ node }) => {
       if (node.type.name === 'heading') return 'Titre...'
@@ -456,6 +526,12 @@ extensions: [
   TableRow,
   TableHeader,
   TableCell,
+  TaskList,
+  TaskItem.configure({ nested: true }),
+  CalloutNode,
+  DetailsNode,
+  VideoNode,
+  AudioNode,
   PageNode,
   EmbedNode,
   DragHandle
