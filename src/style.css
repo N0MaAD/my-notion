@@ -3557,6 +3557,360 @@
      padding-left: 0.5rem;
    }
 
+   /* ---- Chart block ---- */
+   .chart-block {
+     position: relative;
+     margin: 0.75rem 0;
+     padding: 1rem;
+     background: var(--surface-card, rgba(22,33,62,0.35));
+     border: 1px solid var(--surface-card-border, rgba(56,189,248,0.08));
+     border-radius: 0.6rem;
+   }
+
+   .chart-title {
+     font-weight: 600;
+     font-size: 0.85rem;
+     margin-bottom: 0.6rem;
+     color: var(--text-primary);
+   }
+
+   .chart-canvas-wrap {
+     max-height: 280px;
+     position: relative;
+   }
+
+   .chart-number-display {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     padding: 1.5rem 0;
+   }
+
+   .chart-number-value {
+     font-size: 3rem;
+     font-weight: 800;
+     color: var(--accent, #3b82f6);
+     line-height: 1;
+   }
+
+   .chart-number-label {
+     font-size: 0.8rem;
+     color: var(--text-secondary, #888);
+     margin-top: 0.4rem;
+   }
+
+   .chart-edit-btn {
+     position: absolute;
+     top: 0.5rem;
+     right: 0.5rem;
+     background: var(--surface-dropdown, #fff);
+     border: 1px solid var(--surface-input-border, #ddd);
+     border-radius: 6px;
+     padding: 0.2rem 0.45rem;
+     font-size: 0.75rem;
+     cursor: pointer;
+     opacity: 0;
+     transition: opacity 0.15s;
+     color: var(--text-primary);
+   }
+
+   .chart-block:hover .chart-edit-btn {
+     opacity: 1;
+   }
+
+   /* ---- Chart editor modal ---- */
+   .chart-editor-overlay {
+     position: fixed;
+     inset: 0;
+     background: rgba(0,0,0,0.4);
+     z-index: 2000;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+   }
+
+   .chart-editor {
+     background: var(--surface-dropdown, #fff);
+     border: 1px solid var(--surface-input-border, #e2e2e2);
+     border-radius: 12px;
+     box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+     width: 460px;
+     max-width: 95vw;
+     max-height: 85vh;
+     display: flex;
+     flex-direction: column;
+     animation: popUp 0.2s cubic-bezier(0.16,1,0.3,1);
+   }
+
+   .chart-editor-header {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     padding: 1rem 1.25rem;
+     border-bottom: 1px solid var(--surface-input-border, #eee);
+   }
+
+   .chart-editor-header h3 {
+     font-size: 1rem;
+     font-weight: 600;
+     margin: 0;
+   }
+
+   .chart-editor-close {
+     background: none;
+     border: none;
+     font-size: 1rem;
+     cursor: pointer;
+     color: var(--text-secondary, #888);
+     padding: 0.2rem 0.4rem;
+   }
+
+   .chart-editor-body {
+     flex: 1;
+     overflow-y: auto;
+     padding: 1rem 1.25rem;
+     display: flex;
+     flex-direction: column;
+     gap: 0.75rem;
+   }
+
+   .chart-editor-label {
+     font-size: 0.78rem;
+     font-weight: 600;
+     color: var(--text-secondary, #888);
+     text-transform: uppercase;
+     letter-spacing: 0.04em;
+   }
+
+   .chart-editor-input {
+     width: 100%;
+     padding: 0.45rem 0.65rem;
+     background: var(--surface-input, rgba(255,255,255,0.05));
+     border: 1px solid var(--surface-input-border, #ddd);
+     border-radius: 6px;
+     font-size: 0.85rem;
+     color: var(--text-primary);
+     outline: none;
+     box-sizing: border-box;
+   }
+
+   .chart-editor-input:focus {
+     border-color: var(--accent, #3b82f6);
+   }
+
+   .chart-editor-input-num {
+     width: 80px;
+   }
+
+   .chart-editor-tabs {
+     display: flex;
+     gap: 0.4rem;
+   }
+
+   .chart-editor-tab {
+     flex: 1;
+     padding: 0.45rem;
+     border-radius: 6px;
+     border: 1px solid var(--surface-input-border, #ddd);
+     background: none;
+     cursor: pointer;
+     font-size: 0.8rem;
+     color: var(--text-secondary, #888);
+     transition: all 0.15s;
+   }
+
+   .chart-editor-tab.active {
+     background: var(--accent, #3b82f6);
+     color: #fff;
+     border-color: var(--accent, #3b82f6);
+   }
+
+   .chart-editor-manual {
+     display: flex;
+     flex-direction: column;
+     gap: 0.35rem;
+   }
+
+   .chart-editor-row-header {
+     display: flex;
+     gap: 0.5rem;
+     padding: 0 0.2rem;
+     font-size: 0.72rem;
+     color: var(--text-secondary, #888);
+     font-weight: 600;
+   }
+
+   .chart-editor-row-header span:first-child { flex: 1 }
+   .chart-editor-row-header span:nth-child(2) { width: 80px }
+
+   .chart-editor-row {
+     display: flex;
+     gap: 0.5rem;
+     align-items: center;
+   }
+
+   .chart-editor-row .chart-editor-input:first-child {
+     flex: 1;
+   }
+
+   .chart-editor-row-del {
+     background: none;
+     border: none;
+     color: var(--text-secondary, #aaa);
+     cursor: pointer;
+     font-size: 0.8rem;
+     padding: 0.2rem;
+     flex-shrink: 0;
+     transition: color 0.1s;
+   }
+
+   .chart-editor-row-del:hover { color: #ef4444; }
+
+   .chart-editor-add-row {
+     background: none;
+     border: 1px dashed var(--surface-input-border, #ddd);
+     border-radius: 6px;
+     padding: 0.4rem;
+     font-size: 0.8rem;
+     cursor: pointer;
+     color: var(--text-secondary, #888);
+     transition: all 0.15s;
+     margin-top: 0.2rem;
+   }
+
+   .chart-editor-add-row:hover {
+     border-color: var(--accent, #3b82f6);
+     color: var(--accent, #3b82f6);
+   }
+
+   .chart-editor-auto {
+     display: flex;
+     flex-direction: column;
+     gap: 0.5rem;
+   }
+
+   .chart-editor-select {
+     padding: 0.5rem 0.65rem;
+     background: var(--surface-input, rgba(255,255,255,0.05));
+     border: 1px solid var(--surface-input-border, #ddd);
+     border-radius: 6px;
+     font-size: 0.85rem;
+     color: var(--text-primary);
+     outline: none;
+     width: 100%;
+   }
+
+   .chart-editor-footer {
+     display: flex;
+     justify-content: flex-end;
+     gap: 0.5rem;
+     padding: 0.75rem 1.25rem;
+     border-top: 1px solid var(--surface-input-border, #eee);
+   }
+
+   /* ---- Poll block ---- */
+   .poll-block {
+     margin: 0.75rem 0;
+     padding: 1rem 1.25rem;
+     background: var(--surface-card, rgba(22,33,62,0.35));
+     border: 1px solid var(--surface-card-border, rgba(56,189,248,0.08));
+     border-radius: 0.6rem;
+   }
+
+   .poll-question {
+     font-weight: 700;
+     font-size: 0.95rem;
+     margin-bottom: 0.75rem;
+     color: var(--text-primary);
+   }
+
+   .poll-option {
+     position: relative;
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     padding: 0.55rem 0.75rem;
+     border-radius: 8px;
+     border: 1.5px solid var(--surface-input-border, #ddd);
+     margin-bottom: 0.4rem;
+     cursor: pointer;
+     overflow: hidden;
+     transition: border-color 0.15s;
+     user-select: none;
+   }
+
+   .poll-option:hover {
+     border-color: var(--accent, #3b82f6);
+   }
+
+   .poll-option-bar {
+     position: absolute;
+     left: 0; top: 0; bottom: 0;
+     background: rgba(59,130,246,0.12);
+     transition: width 0.4s cubic-bezier(0.16,1,0.3,1);
+     border-radius: 6px;
+     z-index: 0;
+   }
+
+   .poll-option-text {
+     position: relative;
+     z-index: 1;
+     font-size: 0.85rem;
+     font-weight: 500;
+   }
+
+   .poll-option-votes {
+     position: relative;
+     z-index: 1;
+     font-size: 0.75rem;
+     font-weight: 700;
+     color: var(--accent, #3b82f6);
+   }
+
+   .poll-footer {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     font-size: 0.75rem;
+     color: var(--text-secondary, #888);
+     margin-top: 0.5rem;
+   }
+
+   .poll-reset-btn {
+     background: none;
+     border: none;
+     cursor: pointer;
+     color: var(--text-secondary, #aaa);
+     font-size: 0.9rem;
+     padding: 0.1rem 0.3rem;
+     transition: color 0.1s;
+   }
+
+   .poll-reset-btn:hover { color: var(--accent, #3b82f6); }
+
+   /* ---- Map block ---- */
+   .map-block {
+     margin: 0.75rem 0;
+     border-radius: 0.6rem;
+     overflow: hidden;
+     border: 1px solid var(--surface-card-border, rgba(56,189,248,0.08));
+   }
+
+   .map-label {
+     padding: 0.4rem 0.75rem;
+     font-size: 0.78rem;
+     font-weight: 600;
+     background: var(--surface-card, rgba(22,33,62,0.35));
+     color: var(--text-secondary, #888);
+   }
+
+   .map-iframe {
+     width: 100%;
+     height: 320px;
+     border: none;
+     display: block;
+   }
+
    /* ---- Note picker ---- */
    .note-picker {
      position: absolute;

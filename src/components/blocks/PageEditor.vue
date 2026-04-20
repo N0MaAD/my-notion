@@ -117,6 +117,15 @@
 
     <EditorContent :editor="editor" class="tiptap-editor tiptap-fullpage" />
   </div>
+
+  <ChartEditor
+    :visible="showChartEditor"
+    :chart-type="chartEditorType"
+    :initial-attrs="chartEditorAttrs"
+    :is-editing="chartEditorIsEditing"
+    @close="closeChartEditor"
+    @save="onChartEditorSave"
+  />
 </div>
 </template>
 
@@ -139,6 +148,10 @@ import { CalloutNode } from '../../extensions/CalloutNode.js'
 import { DetailsNode } from '../../extensions/DetailsNode.js'
 import { VideoNode } from '../../extensions/VideoNode.js'
 import { AudioNode } from '../../extensions/AudioNode.js'
+import { ChartNode } from '../../extensions/ChartNode.js'
+import { PollNode } from '../../extensions/PollNode.js'
+import { MapNode } from '../../extensions/MapNode.js'
+import ChartEditor from './ChartEditor.vue'
 import { useBoardStore } from '../../stores/board.js'
 import { DragHandle } from '../../extensions/DragHandle.js'
 import { uploadImage } from '../../lib/uploadImage.js'
@@ -175,6 +188,13 @@ const slashItems = [
   { id: 'code', icon: '⟨/⟩', label: 'Code', description: 'Bloc de code', type: 'code', category: 'Médias' },
   { id: 'embed', icon: '🔖', label: 'Aperçu de lien Web', description: 'Intégrer un lien (YouTube, Sheets...)', type: 'embed', category: 'Médias' },
   { id: 'noteLink', icon: '🔗', label: 'Lien vers une note', description: 'Insérer un lien vers une autre note', type: 'noteLink', category: 'Lien' },
+  { id: 'chartBar', icon: '📊', label: 'Graphique à barres verticales', description: 'Barres verticales', type: 'chartBar', category: 'Graphiques' },
+  { id: 'chartBarH', icon: '📉', label: 'Graphique à barres horizontales', description: 'Barres horizontales', type: 'chartBarH', category: 'Graphiques' },
+  { id: 'chartLine', icon: '📈', label: 'Graphique en lignes', description: 'Courbe de données', type: 'chartLine', category: 'Graphiques' },
+  { id: 'chartDonut', icon: '🍩', label: 'Graphique en anneau', description: 'Diagramme circulaire', type: 'chartDonut', category: 'Graphiques' },
+  { id: 'chartNumber', icon: '#', label: 'Graphique numérique', description: 'Grand nombre mis en avant', type: 'chartNumber', category: 'Graphiques' },
+  { id: 'poll', icon: '📋', label: 'Sondage', description: 'Sondage à choix multiples', type: 'poll', category: 'Autre' },
+  { id: 'map', icon: '🗺', label: 'Vue Carte', description: 'Carte Google Maps', type: 'map', category: 'Autre' },
 ]
 
 // ─── Note picker ───
@@ -189,6 +209,12 @@ const showTablePicker = ref(false)
 const tablePickerPos = ref({ top: 0, left: 0 })
 const tablePickerRows = ref(3)
 const tablePickerCols = ref(3)
+
+const showChartEditor = ref(false)
+const chartEditorType = ref('bar')
+const chartEditorAttrs = ref(null)
+const chartEditorIsEditing = ref(false)
+const chartEditorNodePos = ref(null)
 
 const allNotes = computed(() => {
   const result = []
@@ -300,6 +326,34 @@ function insertTable(rows, cols) {
     .insertTable({ rows, cols, withHeaderRow: true })
     .run()
   closeTablePicker()
+}
+
+function openChartEditor(chartType, attrs = null, pos = null) {
+  chartEditorType.value = chartType
+  chartEditorAttrs.value = attrs
+  chartEditorIsEditing.value = !!attrs
+  chartEditorNodePos.value = pos
+  showChartEditor.value = true
+}
+
+function closeChartEditor() {
+  showChartEditor.value = false
+  chartEditorAttrs.value = null
+  chartEditorNodePos.value = null
+}
+
+function onChartEditorSave(data) {
+  if (chartEditorIsEditing.value && chartEditorNodePos.value !== null) {
+    editor.value.view.dispatch(
+      editor.value.view.state.tr.setNodeMarkup(chartEditorNodePos.value, undefined, data)
+    )
+  } else {
+    editor.value.chain().focus().insertContent({
+      type: 'chartBlock',
+      attrs: data
+    }).run()
+  }
+  closeChartEditor()
 }
 
 const filteredSlashItems = computed(() => {
@@ -488,6 +542,32 @@ switch (item.type) {
     }
     break
   }
+  case 'chartBar':    openChartEditor('bar'); break
+  case 'chartBarH':   openChartEditor('horizontalBar'); break
+  case 'chartLine':   openChartEditor('line'); break
+  case 'chartDonut':  openChartEditor('doughnut'); break
+  case 'chartNumber': openChartEditor('number'); break
+  case 'poll': {
+    const question = prompt('Question du sondage :')
+    if (!question) break
+    const raw = prompt('Options (séparées par des virgules) :') || 'Option A,Option B'
+    const options = raw.split(',').map(s => ({ text: s.trim(), votes: 0 })).filter(o => o.text)
+    editor.value.chain().focus().insertContent({
+      type: 'pollBlock',
+      attrs: { question: question.trim(), options: JSON.stringify(options) }
+    }).run()
+    break
+  }
+  case 'map': {
+    const address = prompt('Adresse ou lieu à afficher :')
+    if (address && address.trim()) {
+      editor.value.chain().focus().insertContent({
+        type: 'mapBlock',
+        attrs: { address: address.trim(), zoom: 15 }
+      }).run()
+    }
+    break
+  }
 }
 }
 
@@ -532,6 +612,9 @@ extensions: [
   DetailsNode,
   VideoNode,
   AudioNode,
+  ChartNode,
+  PollNode,
+  MapNode,
   PageNode,
   EmbedNode,
   DragHandle
@@ -766,15 +849,23 @@ function setupTableControls() {
   }
 }
 
+function onEditChart(e) {
+  openChartEditor(e.detail.attrs.chartType, e.detail.attrs, e.detail.pos)
+}
+
 onMounted(() => {
 setOpenSubPageCallback((pageId) => {
   store.openSubPage(pageId)
 })
-nextTick(() => setupTableControls())
+nextTick(() => {
+  setupTableControls()
+  blockRef.value?.addEventListener('edit-chart', onEditChart)
+})
 })
 
 onBeforeUnmount(() => {
 setOpenSubPageCallback(null)
+blockRef.value?.removeEventListener('edit-chart', onEditChart)
 if (tableCleanup) tableCleanup()
 editor.value?.destroy()
 })
