@@ -8,7 +8,8 @@ export const PollNode = Node.create({
   addAttributes() {
     return {
       question: { default: 'Sondage' },
-      options: { default: '[]' }
+      options: { default: '[]' },
+      myVote: { default: -1 }
     }
   },
 
@@ -30,10 +31,11 @@ export const PollNode = Node.create({
 
       function render() {
         dom.innerHTML = ''
-        const { question, options } = node.attrs
+        const { question, options, myVote } = node.attrs
         let parsedOptions
         try { parsedOptions = JSON.parse(options) } catch { parsedOptions = [] }
         const totalVotes = parsedOptions.reduce((sum, o) => sum + (o.votes || 0), 0)
+        const hasVoted = myVote >= 0 && myVote < parsedOptions.length
 
         const questionEl = document.createElement('div')
         questionEl.className = 'poll-question'
@@ -43,6 +45,7 @@ export const PollNode = Node.create({
         parsedOptions.forEach((opt, i) => {
           const optEl = document.createElement('div')
           optEl.className = 'poll-option'
+          if (myVote === i) optEl.classList.add('poll-option-selected')
 
           const pct = totalVotes > 0 ? Math.round((opt.votes || 0) / totalVotes * 100) : 0
 
@@ -66,13 +69,21 @@ export const PollNode = Node.create({
             e.preventDefault()
             const pos = getPos()
             if (pos == null) return
-            const newOptions = parsedOptions.map((o, j) =>
-              j === i ? { ...o, votes: (o.votes || 0) + 1 } : o
-            )
+
+            if (myVote === i) return
+
+            const newOptions = parsedOptions.map((o, j) => {
+              let v = o.votes || 0
+              if (hasVoted && j === myVote) v = Math.max(0, v - 1)
+              if (j === i) v++
+              return { ...o, votes: v }
+            })
+
             editor.view.dispatch(
               editor.view.state.tr.setNodeMarkup(pos, undefined, {
                 ...node.attrs,
-                options: JSON.stringify(newOptions)
+                options: JSON.stringify(newOptions),
+                myVote: i
               })
             )
           })
@@ -96,7 +107,8 @@ export const PollNode = Node.create({
           editor.view.dispatch(
             editor.view.state.tr.setNodeMarkup(pos, undefined, {
               ...node.attrs,
-              options: JSON.stringify(resetOptions)
+              options: JSON.stringify(resetOptions),
+              myVote: -1
             })
           )
         })

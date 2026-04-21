@@ -3843,6 +3843,15 @@
      border-color: var(--accent, #3b82f6);
    }
 
+   .poll-option-selected {
+     border-color: var(--accent, #3b82f6);
+     background: rgba(59,130,246,0.04);
+   }
+
+   .poll-option-selected .poll-option-bar {
+     background: rgba(59,130,246,0.18);
+   }
+
    .poll-option-bar {
      position: absolute;
      left: 0; top: 0; bottom: 0;
