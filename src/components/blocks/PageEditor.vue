@@ -136,8 +136,8 @@ import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { common, createLowlight } from 'lowlight'
+import { createCodeBlock } from '../../extensions/CodeBlockNode.js'
 import { Table } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
 import { TableCell } from '@tiptap/extension-table-cell'
@@ -586,11 +586,7 @@ extensions: [
     heading: { levels: [1, 2, 3, 4] },
     codeBlock: false
   }),
-  CodeBlockLowlight.configure({
-    lowlight: createLowlight(common),
-    defaultLanguage: 'plaintext',
-    HTMLAttributes: { class: 'code-block-highlight' }
-  }),
+  createCodeBlock(createLowlight(common)),
   Placeholder.configure({
     placeholder: ({ node }) => {
       if (node.type.name === 'heading') return 'Titre...'
