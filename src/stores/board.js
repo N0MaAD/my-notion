@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useAuthStore } from './auth.js'
+import { useWorkspaceStore } from './workspace.js'
 
 // ─── Colonnes permanentes ───
 export const ARCHIVE_COLUMN_ID = '__col_archive__'
@@ -797,24 +798,27 @@ export const useBoardStore = defineStore('board', () => {
 
   // ─── Firestore persistence ───
 
-  function getUserDocRef() {
-    const authStore = useAuthStore()
-    if (!authStore.user) return null
-    return doc(db, 'users', authStore.user.uid)
+  function getActiveDocRef() {
+    const wsStore = useWorkspaceStore()
+    if (!wsStore.activeWorkspaceId) return null
+    return doc(db, 'workspaces', wsStore.activeWorkspaceId)
   }
 
   function saveToFirestore() {
-    // Debounce : attend 500ms apres le dernier changement avant de sauvegarder
     clearTimeout(saveTimeout)
     saveTimeout = setTimeout(async () => {
-      const docRef = getUserDocRef()
+      const docRef = getActiveDocRef()
       if (!docRef) return
       try {
+        const wsSnap = await getDoc(docRef)
+        const existing = wsSnap.exists() ? wsSnap.data() : {}
         await setDoc(docRef, {
+          ...existing,
           columns: JSON.parse(JSON.stringify(columns.value)),
           pins: JSON.parse(JSON.stringify(pinnedNoteIds.value)),
           trash: JSON.parse(JSON.stringify(trash.value)),
-          tags: JSON.parse(JSON.stringify(tags.value))
+          tags: JSON.parse(JSON.stringify(tags.value)),
+          updatedAt: new Date().toISOString()
         })
       } catch (e) {
         console.error('Erreur sauvegarde Firestore:', e)
@@ -823,7 +827,7 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   async function loadFromFirestore() {
-    const docRef = getUserDocRef()
+    const docRef = getActiveDocRef()
     if (!docRef) return
     try {
       const snap = await getDoc(docRef)
@@ -834,6 +838,11 @@ export const useBoardStore = defineStore('board', () => {
         trash.value = data.trash || []
         tags.value = data.tags || []
         migrateNotes()
+      } else {
+        columns.value = []
+        pinnedNoteIds.value = []
+        trash.value = []
+        tags.value = []
       }
     } catch (e) {
       console.error('Erreur chargement Firestore:', e)

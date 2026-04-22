@@ -10,13 +10,14 @@ import {
   setPersistence
 } from 'firebase/auth'
 import { auth } from '../firebase.js'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db } from '../firebase.js'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const loading = ref(true)
 
-  // Ecoute les changements d'etat d'authentification
-  onAuthStateChanged(auth, (firebaseUser) => {
+  onAuthStateChanged(auth, async (firebaseUser) => {
     if (firebaseUser) {
       user.value = {
         uid: firebaseUser.uid,
@@ -24,6 +25,15 @@ export const useAuthStore = defineStore('auth', () => {
         email: firebaseUser.email,
         photoURL: firebaseUser.photoURL
       }
+      const userRef = doc(db, 'users', firebaseUser.uid)
+      const userSnap = await getDoc(userRef)
+      const existing = userSnap.exists() ? userSnap.data() : {}
+      await setDoc(userRef, {
+        ...existing,
+        email: firebaseUser.email,
+        displayName: firebaseUser.displayName,
+        photoURL: firebaseUser.photoURL
+      })
     } else {
       user.value = null
     }

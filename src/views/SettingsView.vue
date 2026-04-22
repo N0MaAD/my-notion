@@ -21,7 +21,7 @@
       <nav class="settings-nav">
         <div class="settings-nav-section-label">Préférences</div>
         <button
-          v-for="item in navItems"
+          v-for="item in prefItems"
           :key="item.id"
           class="settings-nav-item"
           :class="{ active: activeSection === item.id }"
@@ -29,6 +29,24 @@
         >
           <span class="settings-nav-icon">{{ item.icon }}</span>
           <span>{{ item.label }}</span>
+        </button>
+        <div class="settings-nav-section-label">Espaces de travail</div>
+        <button
+          class="settings-nav-item"
+          :class="{ active: activeSection === 'workspaces' }"
+          @click="activeSection = 'workspaces'"
+        >
+          <span class="settings-nav-icon">🏢</span>
+          <span>Mes espaces</span>
+        </button>
+        <button
+          v-if="wsStore.activeWorkspace"
+          class="settings-nav-item"
+          :class="{ active: activeSection === 'members' }"
+          @click="activeSection = 'members'; loadMembers()"
+        >
+          <span class="settings-nav-icon">👥</span>
+          <span>Membres</span>
         </button>
       </nav>
 
@@ -43,7 +61,7 @@
     <!-- Contenu principal -->
     <main class="settings-main">
       <div class="settings-main-header">
-        <h1 class="settings-main-title">{{ currentItem.label }}</h1>
+        <h1 class="settings-main-title">{{ currentItem?.label || 'Paramètres' }}</h1>
         <button class="settings-close-btn" @click="$emit('close')" title="Fermer (Échap)">✕</button>
       </div>
 
@@ -106,35 +124,208 @@
           </div>
         </div>
       </div>
+
+      <!-- Workspaces -->
+      <div v-else-if="activeSection === 'workspaces'" class="settings-section">
+        <div class="settings-block">
+          <h3 class="settings-block-title">Espaces de travail</h3>
+          <p class="settings-block-desc">Gère tes espaces pour organiser tes notes</p>
+
+          <div class="ws-settings-list">
+            <div
+              v-for="ws in wsStore.workspaces"
+              :key="ws.id"
+              class="ws-settings-item"
+              :class="{ active: ws.id === wsStore.activeWorkspaceId }"
+            >
+              <div class="ws-settings-item-left">
+                <span class="ws-settings-icon">{{ ws.icon }}</span>
+                <div class="ws-settings-info">
+                  <template v-if="editingWsId === ws.id">
+                    <input
+                      v-model="editWsName"
+                      class="ws-settings-edit-input"
+                      @keydown.enter="saveEditWs(ws.id)"
+                      @keydown.escape="editingWsId = null"
+                      ref="editInput"
+                    />
+                  </template>
+                  <template v-else>
+                    <span class="ws-settings-name">{{ ws.name }}</span>
+                    <span class="ws-settings-meta">
+                      {{ ws.role === 'owner' ? 'Propriétaire' : ws.role === 'editor' ? 'Éditeur' : 'Lecteur' }}
+                      · {{ ws.memberCount }} membre{{ ws.memberCount > 1 ? 's' : '' }}
+                    </span>
+                  </template>
+                </div>
+              </div>
+              <div class="ws-settings-item-actions">
+                <button
+                  v-if="ws.id === wsStore.activeWorkspaceId"
+                  class="ws-settings-badge"
+                >Actif</button>
+                <button
+                  v-if="ws.role === 'owner'"
+                  class="btn btn-ghost btn-sm"
+                  @click="startEditWs(ws)"
+                  title="Renommer"
+                >✏️</button>
+                <button
+                  v-if="ws.role === 'owner'"
+                  class="btn btn-ghost btn-sm"
+                  @click="showIconPicker = ws.id"
+                  title="Changer l'icône"
+                >{{ ws.icon }}</button>
+                <button
+                  v-if="ws.role === 'owner' && wsStore.workspaces.length > 1"
+                  class="btn btn-danger btn-sm"
+                  @click="confirmDeleteWs(ws)"
+                  title="Supprimer"
+                >✕</button>
+                <button
+                  v-if="ws.role !== 'owner'"
+                  class="btn btn-danger btn-sm"
+                  @click="leaveWs(ws)"
+                  title="Quitter"
+                >Quitter</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Icon picker popover -->
+          <div v-if="showIconPicker" class="ws-icon-picker-overlay" @click="showIconPicker = null">
+            <div class="ws-icon-picker" @click.stop>
+              <div class="ws-icon-picker-grid">
+                <button
+                  v-for="icon in ICONS"
+                  :key="icon"
+                  class="ws-icon-picker-btn"
+                  @click="changeWsIcon(showIconPicker, icon)"
+                >{{ icon }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Members -->
+      <div v-else-if="activeSection === 'members'" class="settings-section">
+        <div class="settings-block">
+          <h3 class="settings-block-title">Membres — {{ wsStore.activeWorkspace?.name }}</h3>
+          <p class="settings-block-desc">Invite des personnes pour collaborer sur cet espace</p>
+
+          <div v-if="wsStore.activeWorkspace?.role === 'owner'" class="ws-invite-form">
+            <input
+              v-model="inviteEmail"
+              class="ws-invite-input"
+              placeholder="Email du membre à inviter..."
+              @keydown.enter="doInvite"
+            />
+            <select v-model="inviteRole" class="ws-invite-role">
+              <option value="editor">Éditeur</option>
+              <option value="viewer">Lecteur</option>
+            </select>
+            <button class="btn btn-accent" @click="doInvite" :disabled="!inviteEmail.trim()">Inviter</button>
+          </div>
+          <div v-if="inviteMessage" class="ws-invite-message" :class="inviteMessageType">{{ inviteMessage }}</div>
+
+          <div class="ws-members-list">
+            <div
+              v-for="member in currentMembers"
+              :key="member.uid"
+              class="ws-member-item"
+            >
+              <div class="ws-member-left">
+                <img v-if="member.photoURL" :src="member.photoURL" class="ws-member-avatar" referrerpolicy="no-referrer" />
+                <div v-else class="ws-member-avatar ws-member-avatar-placeholder">{{ (member.displayName || member.email || '?')[0] }}</div>
+                <div class="ws-member-info">
+                  <span class="ws-member-name">{{ member.displayName || member.email }}</span>
+                  <span class="ws-member-email">{{ member.email }}</span>
+                </div>
+              </div>
+              <div class="ws-member-right">
+                <span class="ws-member-role" :class="'role-' + member.role">
+                  {{ member.role === 'owner' ? 'Propriétaire' : member.role === 'editor' ? 'Éditeur' : 'Lecteur' }}
+                </span>
+                <button
+                  v-if="wsStore.activeWorkspace?.role === 'owner' && member.role !== 'owner'"
+                  class="btn btn-danger btn-sm"
+                  @click="doRemoveMember(member.uid)"
+                  title="Retirer"
+                >✕</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pending invites -->
+          <div v-if="pendingInvites.length > 0" class="ws-pending">
+            <h4 class="ws-pending-title">Invitations en attente</h4>
+            <div v-for="inv in pendingInvites" :key="inv.email" class="ws-pending-item">
+              <span class="ws-pending-email">{{ inv.email }}</span>
+              <span class="ws-pending-role">{{ inv.role === 'editor' ? 'Éditeur' : 'Lecteur' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 </Teleport>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useThemeStore, THEMES } from '../stores/theme.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useBoardStore } from '../stores/board.js'
+import { useWorkspaceStore } from '../stores/workspace.js'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '../firebase.js'
+
+const props = defineProps({
+  initialSection: { type: String, default: 'appearance' }
+})
 
 const emit = defineEmits(['close', 'logout'])
 
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
 const store = useBoardStore()
+const wsStore = useWorkspaceStore()
 
 const TRASH_RETENTION_DAYS = 30
 
-const navItems = [
+const ICONS = ['🏠', '💼', '👥', '📁', '🎓', '🎨', '🔬', '🏗️', '🎮', '🎵', '📚', '🌍', '❤️', '⭐', '🚀', '💡']
+
+const prefItems = [
   { id: 'appearance', icon: '🎨', label: 'Apparence' },
   { id: 'trash', icon: '🗑️', label: 'Corbeille' }
 ]
 
-const activeSection = ref('appearance')
+const allItems = [
+  ...prefItems,
+  { id: 'workspaces', icon: '🏢', label: 'Mes espaces' },
+  { id: 'members', icon: '👥', label: 'Membres' }
+]
 
-const currentItem = computed(() => navItems.find(i => i.id === activeSection.value) || navItems[0])
+const activeSection = ref(props.initialSection || 'appearance')
+const editingWsId = ref(null)
+const editWsName = ref('')
+const showIconPicker = ref(null)
 
+const inviteEmail = ref('')
+const inviteRole = ref('editor')
+const inviteMessage = ref('')
+const inviteMessageType = ref('success')
+
+const currentMembers = ref([])
+const pendingInvites = ref([])
+
+const currentItem = computed(() => allItems.find(i => i.id === activeSection.value) || prefItems[0])
 const trashNotes = computed(() => store.trash || [])
+
+watch(() => props.initialSection, (v) => {
+  if (v) activeSection.value = v
+})
 
 function formatDeletedDate(ts) {
   if (!ts) return ''
@@ -159,6 +350,83 @@ function deleteForever(note) {
 function emptyTrash() {
   if (confirm('Vider la corbeille ? Cette action est irréversible.')) {
     store.emptyTrash()
+  }
+}
+
+function startEditWs(ws) {
+  editingWsId.value = ws.id
+  editWsName.value = ws.name
+}
+
+async function saveEditWs(wsId) {
+  if (editWsName.value.trim()) {
+    await wsStore.updateWorkspace(wsId, { name: editWsName.value.trim() })
+  }
+  editingWsId.value = null
+}
+
+async function changeWsIcon(wsId, icon) {
+  await wsStore.updateWorkspace(wsId, { icon })
+  showIconPicker.value = null
+}
+
+async function confirmDeleteWs(ws) {
+  if (confirm(`Supprimer l'espace « ${ws.name} » et toutes ses notes ? Cette action est irréversible.`)) {
+    await wsStore.deleteWorkspace(ws.id)
+    if (wsStore.activeWorkspaceId) {
+      store.dataLoaded = false
+      store.activeNoteId = null
+      store.openPagePath = []
+      await store.loadFromFirestore()
+    }
+  }
+}
+
+async function leaveWs(ws) {
+  if (confirm(`Quitter l'espace « ${ws.name} » ?`)) {
+    await wsStore.removeMember(ws.id, authStore.user.uid)
+    if (wsStore.activeWorkspaceId) {
+      store.dataLoaded = false
+      await store.loadFromFirestore()
+    }
+  }
+}
+
+async function loadMembers() {
+  if (!wsStore.activeWorkspaceId) return
+  const members = await wsStore.loadWorkspaceMembers(wsStore.activeWorkspaceId)
+  currentMembers.value = members
+
+  const wsRef = doc(db, 'workspaces', wsStore.activeWorkspaceId)
+  const wsSnap = await getDoc(wsRef)
+  if (wsSnap.exists()) {
+    pendingInvites.value = wsSnap.data().pendingInvites || []
+  }
+}
+
+async function doInvite() {
+  if (!inviteEmail.value.trim()) return
+  inviteMessage.value = ''
+  const result = await wsStore.inviteMember(wsStore.activeWorkspaceId, inviteEmail.value.trim(), inviteRole.value)
+  if (result.success) {
+    if (result.pending) {
+      inviteMessage.value = `Invitation envoyée à ${inviteEmail.value} (sera ajouté à sa prochaine connexion)`
+    } else {
+      inviteMessage.value = `${inviteEmail.value} ajouté avec succès !`
+    }
+    inviteMessageType.value = 'success'
+    inviteEmail.value = ''
+    await loadMembers()
+  } else {
+    inviteMessage.value = result.error
+    inviteMessageType.value = 'error'
+  }
+}
+
+async function doRemoveMember(uid) {
+  if (confirm('Retirer ce membre de l\'espace ?')) {
+    await wsStore.removeMember(wsStore.activeWorkspaceId, uid)
+    await loadMembers()
   }
 }
 

@@ -16,9 +16,12 @@
 <div v-else class="app-layout" :class="{ 'sidebar-fullscreen': isFullscreen }">
   <!-- User bar -->
   <div class="user-bar">
-    <div class="user-info" @click="showSettings = true">
-      <img v-if="authStore.user.photoURL" :src="authStore.user.photoURL" class="user-avatar" referrerpolicy="no-referrer" />
-      <span class="user-name">{{ authStore.user.displayName }}</span>
+    <div class="user-bar-left">
+      <div class="user-info" @click="showSettings = true">
+        <img v-if="authStore.user.photoURL" :src="authStore.user.photoURL" class="user-avatar" referrerpolicy="no-referrer" />
+        <span class="user-name">{{ authStore.user.displayName }}</span>
+      </div>
+      <WorkspaceSwitcher @manage="showSettings = true; settingsSection = 'workspaces'" />
     </div>
 
     <nav class="nav-tabs">
@@ -43,7 +46,8 @@
   <!-- Settings plein écran -->
   <SettingsView
     v-if="showSettings"
-    @close="showSettings = false"
+    :initial-section="settingsSection"
+    @close="showSettings = false; settingsSection = 'appearance'"
     @logout="authStore.logout(); showSettings = false"
   />
 
@@ -89,14 +93,18 @@ import SettingsView from './views/SettingsView.vue'
 import SearchModal from './components/SearchModal.vue'
 import NotificationToast from './components/NotificationToast.vue'
 import LoginView from './views/LoginView.vue'
+import WorkspaceSwitcher from './components/WorkspaceSwitcher.vue'
 import { useBoardStore } from './stores/board.js'
 import { useAuthStore } from './stores/auth.js'
 import { useThemeStore } from './stores/theme.js'
+import { useWorkspaceStore } from './stores/workspace.js'
 
 const store = useBoardStore()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const wsStore = useWorkspaceStore()
 const showSettings = ref(false)
+const settingsSection = ref('appearance')
 const sidebarWidth = ref(400)
 const isFullscreen = ref(false)
 const isDraggingCard = ref(false)
@@ -106,22 +114,24 @@ const currentView = ref('notes')
 let archiveCheckInterval = null
 let reminderCheckInterval = null
 
-// Charge les donnees Firestore quand l'utilisateur se connecte
+// Charge les workspaces puis les donnees Firestore quand l'utilisateur se connecte
 watch(() => authStore.user, async (user) => {
   if (user) {
+    await wsStore.loadWorkspaces()
+    await wsStore.checkPendingInvites()
     await store.loadFromFirestore()
-    // Re-vérifie les deadlines / nettoie l'archive toutes les heures
     if (archiveCheckInterval) clearInterval(archiveCheckInterval)
     archiveCheckInterval = setInterval(() => {
       store.cleanupOldArchive()
       store.checkExpiredDeadlines()
     }, 60 * 60 * 1000)
-    // Vérifie les rappels avec heure toutes les minutes
     store.checkUpcomingDeadlines()
     if (reminderCheckInterval) clearInterval(reminderCheckInterval)
     reminderCheckInterval = setInterval(() => {
       store.checkUpcomingDeadlines()
     }, 60 * 1000)
+  } else {
+    wsStore.cleanup()
   }
 }, { immediate: true })
 
