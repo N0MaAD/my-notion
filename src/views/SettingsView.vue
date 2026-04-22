@@ -278,8 +278,6 @@ import { useThemeStore, THEMES } from '../stores/theme.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useBoardStore } from '../stores/board.js'
 import { useWorkspaceStore } from '../stores/workspace.js'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../firebase.js'
 
 const props = defineProps({
   initialSection: { type: String, default: 'appearance' }
@@ -396,12 +394,7 @@ async function loadMembers() {
   if (!wsStore.activeWorkspaceId) return
   const members = await wsStore.loadWorkspaceMembers(wsStore.activeWorkspaceId)
   currentMembers.value = members
-
-  const wsRef = doc(db, 'workspaces', wsStore.activeWorkspaceId)
-  const wsSnap = await getDoc(wsRef)
-  if (wsSnap.exists()) {
-    pendingInvites.value = wsSnap.data().pendingInvites || []
-  }
+  pendingInvites.value = await wsStore.getPendingInvites(wsStore.activeWorkspaceId)
 }
 
 async function doInvite() {
@@ -409,11 +402,7 @@ async function doInvite() {
   inviteMessage.value = ''
   const result = await wsStore.inviteMember(wsStore.activeWorkspaceId, inviteEmail.value.trim(), inviteRole.value)
   if (result.success) {
-    if (result.pending) {
-      inviteMessage.value = `Invitation envoyée à ${inviteEmail.value} (sera ajouté à sa prochaine connexion)`
-    } else {
-      inviteMessage.value = `${inviteEmail.value} ajouté avec succès !`
-    }
+    inviteMessage.value = `Invitation envoyée à ${inviteEmail.value} — sera ajouté à sa prochaine connexion`
     inviteMessageType.value = 'success'
     inviteEmail.value = ''
     await loadMembers()
