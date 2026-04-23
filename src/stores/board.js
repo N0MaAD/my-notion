@@ -49,10 +49,6 @@ export const useBoardStore = defineStore('board', () => {
     }
     return null
   }
-  function archiveColumnForWs(wsId) {
-    return columns.value.find(c => c.archive && columnWorkspaceMap.value[c.id] === wsId)
-  }
-
   // Strip internal _ws* fields before persisting
   function cleanCol(col) {
     const { _wsId, _wsIcon, _wsName, ...clean } = col
@@ -138,17 +134,12 @@ export const useBoardStore = defineStore('board', () => {
       columns.value[inProgressIdx] = { id: newId, title: old.title || 'En cours', notes: old.notes || [] }
     }
 
-    // One archive column per active workspace
-    for (const wsId of wsStore.activeWorkspaceIds) {
-      const hasArchive = columns.value.some(c => c.archive && columnWorkspaceMap.value[c.id] === wsId)
-      if (!hasArchive) {
-        const archiveId = `__archive__${wsId}`
-        columnWorkspaceMap.value[archiveId] = wsId
-        columns.value.push({
-          id: archiveId, title: 'Archivé', notes: [],
-          permanent: true, archive: true, color: '#ef4444', opacity: 0.08
-        })
-      }
+    // Single merged archive column for all workspaces
+    if (!columns.value.some(c => c.id === '__col_archive__')) {
+      columns.value.push({
+        id: '__col_archive__', title: 'Archivé', notes: [],
+        permanent: true, archive: true, color: '#ef4444', opacity: 0.08
+      })
     }
   }
 
@@ -401,8 +392,13 @@ export const useBoardStore = defineStore('board', () => {
     recordSnapshot()
     const [note] = fromCol.notes.splice(noteIndex, 1)
 
-    if (isArchiveColumn(toCol)) note.archivedAt = new Date().toISOString()
-    else if (isArchiveColumn(fromCol)) delete note.archivedAt
+    if (isArchiveColumn(toCol)) {
+      note.archivedAt = new Date().toISOString()
+      note._wsId = getColumnWsId(fromCol.id)
+    } else if (isArchiveColumn(fromCol)) {
+      delete note.archivedAt
+      delete note._wsId
+    }
 
     toCol.notes.splice(newIndex, 0, note)
 
@@ -418,13 +414,14 @@ export const useBoardStore = defineStore('board', () => {
     const fromCol = findColumnOfNote(noteId)
     if (!fromCol || isArchiveColumn(fromCol)) return
     const wsId = getColumnWsId(fromCol.id)
-    const archiveCol = archiveColumnForWs(wsId)
+    const archiveCol = columns.value.find(c => c.id === '__col_archive__')
     if (!archiveCol) return
     const idx = fromCol.notes.findIndex(n => n.id === noteId)
     if (idx === -1) return
     recordSnapshot()
     const [note] = fromCol.notes.splice(idx, 1)
     note.archivedAt = new Date().toISOString()
+    note._wsId = wsId
     archiveCol.notes.push(note)
     if (!silent) addNotification(`« ${note.title} » a été archivée`, 'archive')
     return note
@@ -656,7 +653,27 @@ export const useBoardStore = defineStore('board', () => {
         byWs[wsId] = { columns: [], pins: [], trash: [], tags: [] }
       }
 
+      // Distribute archive notes by _wsId back to per-workspace archive columns
+      const archiveCol = columns.value.find(c => c.id === '__col_archive__')
+      if (archiveCol) {
+        const archiveNotesByWs = {}
+        for (const note of archiveCol.notes) {
+          const wsId = note._wsId || wsStore.primaryWorkspaceId
+          if (!archiveNotesByWs[wsId]) archiveNotesByWs[wsId] = []
+          archiveNotesByWs[wsId].push(cleanItem(note))
+        }
+        for (const wsId of wsStore.activeWorkspaceIds) {
+          if (byWs[wsId]) {
+            byWs[wsId].columns.push({
+              id: `__archive__${wsId}`, title: 'Archivé', notes: archiveNotesByWs[wsId] || [],
+              permanent: true, archive: true, color: '#ef4444', opacity: 0.08
+            })
+          }
+        }
+      }
+
       for (const col of columns.value) {
+        if (col.archive) continue  // Skip archive columns (handled above)
         const wsId = columnWorkspaceMap.value[col.id] || wsStore.primaryWorkspaceId
         if (byWs[wsId]) byWs[wsId].columns.push(cleanCol(col))
       }
@@ -706,6 +723,7 @@ export const useBoardStore = defineStore('board', () => {
     if (!wsStore.activeWorkspaceIds.length) return
 
     const allColumns = []
+    const allArchiveNotes = []
     const allPins = []
     const allTrash = []
     const allTags = []
@@ -721,8 +739,15 @@ export const useBoardStore = defineStore('board', () => {
         if (snap.exists()) {
           const data = snap.data()
           for (const col of (data.columns || [])) {
-            newCwMap[col.id] = wsId
-            allColumns.push({ ...col, _wsId: wsId, _wsIcon: wsIcon, _wsName: wsName })
+            if (col.archive) {
+              // Collect archive notes into merged pool
+              for (const note of (col.notes || [])) {
+                allArchiveNotes.push({ ...note, _wsId: wsId })
+              }
+            } else {
+              newCwMap[col.id] = wsId
+              allColumns.push({ ...col, _wsId: wsId, _wsIcon: wsIcon, _wsName: wsName })
+            }
           }
           allPins.push(...(data.pins || []))
           for (const item of (data.trash || [])) {
@@ -736,6 +761,12 @@ export const useBoardStore = defineStore('board', () => {
         console.warn('Erreur chargement workspace:', wsId, e)
       }
     }
+
+    // Single merged archive column at end
+    allColumns.push({
+      id: '__col_archive__', title: 'Archivé', notes: allArchiveNotes,
+      permanent: true, archive: true, color: '#ef4444', opacity: 0.08
+    })
 
     columnWorkspaceMap.value = newCwMap
     columns.value = allColumns
