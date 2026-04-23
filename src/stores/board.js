@@ -552,9 +552,12 @@ export const useBoardStore = defineStore('board', () => {
   function ensureDefaultTags() {
     const wsStore = useWorkspaceStore()
     for (const wsId of wsStore.activeWorkspaceIds) {
-      const hasFavoris = tags.value.some(t => t.name === FAVORIS_TAG_NAME && t._wsId === wsId)
-      if (!hasFavoris) {
-        tags.value.push({ id: crypto.randomUUID(), name: FAVORIS_TAG_NAME, color: '#f59e0b', _wsId: wsId })
+      const wsHasFavoris = tags.value.some(t => t.name === FAVORIS_TAG_NAME && t._wsId === wsId)
+      if (!wsHasFavoris) {
+        const anyFavoris = tags.value.some(t => t.name === FAVORIS_TAG_NAME)
+        if (!anyFavoris) {
+          tags.value.push({ id: crypto.randomUUID(), name: FAVORIS_TAG_NAME, color: '#f59e0b', _wsId: wsId })
+        }
       }
     }
   }
