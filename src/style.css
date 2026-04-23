@@ -5830,3 +5830,55 @@
      font-size: 0.7rem;
      color: var(--text-muted);
    }
+
+   /* ─── Workspace badge on columns ─── */
+   .column-ws-badge {
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     font-size: 0.85rem;
+     background: var(--bg-tertiary);
+     border: 1px solid var(--border-glass);
+     border-radius: 6px;
+     padding: 0.1rem 0.3rem;
+     margin-left: 0.3rem;
+     flex-shrink: 0;
+     cursor: default;
+     line-height: 1;
+   }
+
+   /* ─── Workspace switcher checkboxes ─── */
+   .ws-item-check {
+     cursor: pointer;
+     user-select: none;
+   }
+
+   .ws-checkbox {
+     width: 16px;
+     height: 16px;
+     border: 1.5px solid var(--border);
+     border-radius: 4px;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     font-size: 0.65rem;
+     font-weight: 700;
+     color: #fff;
+     flex-shrink: 0;
+     transition: all 0.15s;
+   }
+
+   .ws-checkbox.checked {
+     background: var(--accent);
+     border-color: var(--accent);
+   }
+
+   .ws-current-icons {
+     display: flex;
+     gap: 1px;
+   }
+
+   .ws-current-icon {
+     font-size: 0.9rem;
+     line-height: 1;
+   }

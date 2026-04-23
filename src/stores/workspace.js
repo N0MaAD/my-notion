@@ -6,13 +6,17 @@ import { useAuthStore } from './auth.js'
 
 export const useWorkspaceStore = defineStore('workspace', () => {
   const workspaces = ref([])
-  const activeWorkspaceId = ref(null)
+  const activeWorkspaceIds = ref([])
   const loading = ref(false)
   const membersInfo = ref({})
 
   const activeWorkspace = computed(() =>
-    workspaces.value.find(w => w.id === activeWorkspaceId.value) || null
+    workspaces.value.find(w => w.id === activeWorkspaceIds.value[0]) || null
   )
+
+  const primaryWorkspaceId = computed(() => activeWorkspaceIds.value[0] || null)
+
+  const multiWorkspaceActive = computed(() => activeWorkspaceIds.value.length > 1)
 
   function getWorkspaceDocRef(workspaceId) {
     return doc(db, 'workspaces', workspaceId)
@@ -60,7 +64,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
         }
       }
       workspaces.value = wsList
-      activeWorkspaceId.value = userData.activeWorkspaceId || wsList[0]?.id || null
+
+      // Restore active IDs (default: first workspace only)
+      const savedIds = userData.activeWorkspaceIds || []
+      const validIds = savedIds.filter(id => wsList.some(w => w.id === id))
+      activeWorkspaceIds.value = validIds.length > 0 ? validIds : (wsList[0] ? [wsList[0].id] : [])
     } else {
       await migrateToWorkspaces()
     }
@@ -88,62 +96,54 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       joinedAt: now
     }
 
-    const personalWs = {
-      name: 'Personnel',
-      icon: '🏠',
-      type: 'personal',
+    await setDoc(doc(db, 'workspaces', personalId), {
+      name: 'Personnel', icon: '🏠', type: 'personal',
       ownerId: authStore.user.uid,
       members: { [authStore.user.uid]: memberEntry },
-      columns: userData.columns || [],
-      pins: userData.pins || [],
-      trash: userData.trash || [],
-      tags: userData.tags || [],
-      pendingInvites: {},
-      createdAt: now,
-      updatedAt: now
-    }
+      columns: userData.columns || [], pins: userData.pins || [],
+      trash: userData.trash || [], tags: userData.tags || [],
+      pendingInvites: {}, createdAt: now, updatedAt: now
+    })
 
-    const proWs = {
-      name: 'Professionnel',
-      icon: '💼',
-      type: 'work',
+    await setDoc(doc(db, 'workspaces', proId), {
+      name: 'Professionnel', icon: '💼', type: 'work',
       ownerId: authStore.user.uid,
       members: { [authStore.user.uid]: memberEntry },
-      columns: [],
-      pins: [],
-      trash: [],
-      tags: [],
-      pendingInvites: {},
-      createdAt: now,
-      updatedAt: now
-    }
-
-    await setDoc(doc(db, 'workspaces', personalId), personalWs)
-    await setDoc(doc(db, 'workspaces', proId), proWs)
+      columns: [], pins: [], trash: [], tags: [],
+      pendingInvites: {}, createdAt: now, updatedAt: now
+    })
 
     await setDoc(userRef, {
       ...userData,
       workspaceIds: [personalId, proId],
-      activeWorkspaceId: personalId
+      activeWorkspaceIds: [personalId]
     })
 
     workspaces.value = [
       { id: personalId, name: 'Personnel', icon: '🏠', type: 'personal', role: 'owner', ownerId: authStore.user.uid, memberCount: 1 },
       { id: proId, name: 'Professionnel', icon: '💼', type: 'work', role: 'owner', ownerId: authStore.user.uid, memberCount: 1 }
     ]
-    activeWorkspaceId.value = personalId
+    activeWorkspaceIds.value = [personalId]
   }
 
-  async function switchWorkspace(workspaceId) {
-    if (workspaceId === activeWorkspaceId.value) return
-    activeWorkspaceId.value = workspaceId
-
-    const userRef = getUserDocRef()
-    if (userRef) {
-      const userSnap = await getDoc(userRef)
-      const userData = userSnap.exists() ? userSnap.data() : {}
-      await setDoc(userRef, { ...userData, activeWorkspaceId: workspaceId })
+  async function toggleWorkspace(workspaceId) {
+    const idx = activeWorkspaceIds.value.indexOf(workspaceId)
+    if (idx !== -1) {
+      if (activeWorkspaceIds.value.length <= 1) return false // must keep at least one
+      activeWorkspaceIds.value.splice(idx, 1)
+    } else {
+      activeWorkspaceIds.value.push(workspaceId)
     }
+    await persistActiveIds()
+    return true
+  }
+
+  async function persistActiveIds() {
+    const userRef = getUserDocRef()
+    if (!userRef) return
+    const userSnap = await getDoc(userRef)
+    const userData = userSnap.exists() ? userSnap.data() : {}
+    await setDoc(userRef, { ...userData, activeWorkspaceIds: activeWorkspaceIds.value })
   }
 
   async function createWorkspace(name, icon, type = 'shared') {
@@ -153,10 +153,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const wsId = crypto.randomUUID()
     const now = new Date().toISOString()
 
-    const wsData = {
-      name,
-      icon: icon || '📁',
-      type,
+    await setDoc(doc(db, 'workspaces', wsId), {
+      name, icon: icon || '📁', type,
       ownerId: authStore.user.uid,
       members: {
         [authStore.user.uid]: {
@@ -167,16 +165,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
           joinedAt: now
         }
       },
-      columns: [],
-      pins: [],
-      trash: [],
-      tags: [],
-      pendingInvites: {},
-      createdAt: now,
-      updatedAt: now
-    }
-
-    await setDoc(doc(db, 'workspaces', wsId), wsData)
+      columns: [], pins: [], trash: [], tags: [],
+      pendingInvites: {}, createdAt: now, updatedAt: now
+    })
 
     const userRef = getUserDocRef()
     const userSnap = await getDoc(userRef)
@@ -185,16 +176,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     wsIds.push(wsId)
     await setDoc(userRef, { ...userData, workspaceIds: wsIds })
 
-    workspaces.value.push({
-      id: wsId,
-      name,
-      icon: icon || '📁',
-      type,
-      role: 'owner',
-      ownerId: authStore.user.uid,
-      memberCount: 1
-    })
-
+    workspaces.value.push({ id: wsId, name, icon: icon || '📁', type, role: 'owner', ownerId: authStore.user.uid, memberCount: 1 })
     return wsId
   }
 
@@ -202,14 +184,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const wsRef = getWorkspaceDocRef(workspaceId)
     const wsSnap = await getDoc(wsRef)
     if (!wsSnap.exists()) return
-
     const wsData = wsSnap.data()
     if (updates.name !== undefined) wsData.name = updates.name
     if (updates.icon !== undefined) wsData.icon = updates.icon
     wsData.updatedAt = new Date().toISOString()
-
     await setDoc(wsRef, wsData)
-
     const ws = workspaces.value.find(w => w.id === workspaceId)
     if (ws) {
       if (updates.name !== undefined) ws.name = updates.name
@@ -219,7 +198,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   async function deleteWorkspace(workspaceId) {
     if (workspaces.value.length <= 1) return false
-
     const authStore = useAuthStore()
     const ws = workspaces.value.find(w => w.id === workspaceId)
     if (!ws || ws.ownerId !== authStore.user.uid) return false
@@ -230,17 +208,15 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const userSnap = await getDoc(userRef)
     const userData = userSnap.exists() ? userSnap.data() : {}
     userData.workspaceIds = (userData.workspaceIds || []).filter(id => id !== workspaceId)
-
-    if (userData.activeWorkspaceId === workspaceId) {
-      userData.activeWorkspaceId = userData.workspaceIds[0] || null
-    }
+    userData.activeWorkspaceIds = (userData.activeWorkspaceIds || []).filter(id => id !== workspaceId)
+    if (!userData.activeWorkspaceIds.length) userData.activeWorkspaceIds = [userData.workspaceIds[0]]
     await setDoc(userRef, userData)
 
     workspaces.value = workspaces.value.filter(w => w.id !== workspaceId)
-    if (activeWorkspaceId.value === workspaceId) {
-      activeWorkspaceId.value = workspaces.value[0]?.id || null
+    activeWorkspaceIds.value = activeWorkspaceIds.value.filter(id => id !== workspaceId)
+    if (!activeWorkspaceIds.value.length && workspaces.value.length) {
+      activeWorkspaceIds.value = [workspaces.value[0].id]
     }
-
     return true
   }
 
@@ -249,36 +225,23 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const wsRef = getWorkspaceDocRef(workspaceId)
     const wsSnap = await getDoc(wsRef)
     if (!wsSnap.exists()) return { success: false, error: 'Workspace introuvable' }
-
     const wsData = wsSnap.data()
 
     for (const [, info] of Object.entries(wsData.members || {})) {
       if (info.email === email) return { success: false, error: 'Déjà membre' }
     }
-
-    if (wsData.pendingInvites && wsData.pendingInvites[email]) {
-      return { success: false, error: 'Invitation déjà envoyée' }
-    }
+    if (wsData.pendingInvites?.[email]) return { success: false, error: 'Invitation déjà envoyée' }
 
     if (!wsData.pendingInvites) wsData.pendingInvites = {}
-    wsData.pendingInvites[email] = {
-      role,
-      invitedAt: new Date().toISOString(),
-      invitedBy: authStore.user.uid
-    }
+    wsData.pendingInvites[email] = { role, invitedAt: new Date().toISOString(), invitedBy: authStore.user.uid }
     wsData.updatedAt = new Date().toISOString()
     await setDoc(wsRef, wsData)
 
     await addDoc(collection(db, 'invites'), {
-      email,
-      workspaceId,
-      workspaceName: wsData.name,
-      role,
-      invitedBy: authStore.user.uid,
-      createdAt: new Date().toISOString()
+      email, workspaceId, workspaceName: wsData.name, role,
+      invitedBy: authStore.user.uid, createdAt: new Date().toISOString()
     })
-
-    return { success: true, pending: true }
+    return { success: true }
   }
 
   async function removeMember(workspaceId, memberUid) {
@@ -286,7 +249,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const wsRef = getWorkspaceDocRef(workspaceId)
     const wsSnap = await getDoc(wsRef)
     if (!wsSnap.exists()) return false
-
     const wsData = wsSnap.data()
     if (wsData.ownerId === memberUid) return false
     if (wsData.ownerId !== authStore.user.uid && memberUid !== authStore.user.uid) return false
@@ -300,21 +262,19 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
     if (memberUid === authStore.user.uid) {
       workspaces.value = workspaces.value.filter(w => w.id !== workspaceId)
-      if (activeWorkspaceId.value === workspaceId) {
-        activeWorkspaceId.value = workspaces.value[0]?.id || null
+      activeWorkspaceIds.value = activeWorkspaceIds.value.filter(id => id !== workspaceId)
+      if (!activeWorkspaceIds.value.length && workspaces.value.length) {
+        activeWorkspaceIds.value = [workspaces.value[0].id]
       }
       const userRef = getUserDocRef()
       const userSnap = await getDoc(userRef)
       if (userSnap.exists()) {
         const userData = userSnap.data()
         userData.workspaceIds = (userData.workspaceIds || []).filter(id => id !== workspaceId)
-        if (userData.activeWorkspaceId === workspaceId) {
-          userData.activeWorkspaceId = userData.workspaceIds[0] || null
-        }
+        userData.activeWorkspaceIds = activeWorkspaceIds.value
         await setDoc(userRef, userData)
       }
     }
-
     return true
   }
 
@@ -322,12 +282,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const wsRef = getWorkspaceDocRef(workspaceId)
     const wsSnap = await getDoc(wsRef)
     if (!wsSnap.exists()) return []
-
     const wsData = wsSnap.data()
-    const members = []
-    for (const [uid, info] of Object.entries(wsData.members || {})) {
-      members.push({ uid, ...info })
-    }
+    const members = Object.entries(wsData.members || {}).map(([uid, info]) => ({ uid, ...info }))
     membersInfo.value = { ...membersInfo.value, [workspaceId]: members }
     return members
   }
@@ -336,55 +292,29 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const wsRef = getWorkspaceDocRef(workspaceId)
     const wsSnap = await getDoc(wsRef)
     if (!wsSnap.exists()) return []
-
-    const wsData = wsSnap.data()
-    const pending = []
-    for (const [email, info] of Object.entries(wsData.pendingInvites || {})) {
-      pending.push({ email, ...info })
-    }
-    return pending
+    return Object.entries(wsSnap.data().pendingInvites || {}).map(([email, info]) => ({ email, ...info }))
   }
 
   async function checkPendingInvites() {
     const authStore = useAuthStore()
-    if (!authStore.user || !authStore.user.email) return
-
+    if (!authStore.user?.email) return
     try {
-      const invitesQuery = query(
-        collection(db, 'invites'),
-        where('email', '==', authStore.user.email)
-      )
-      const invitesSnap = await getDocs(invitesQuery)
-
+      const invitesSnap = await getDocs(query(collection(db, 'invites'), where('email', '==', authStore.user.email)))
       for (const inviteDoc of invitesSnap.docs) {
         const invite = inviteDoc.data()
-
         try {
           const wsRef = doc(db, 'workspaces', invite.workspaceId)
           const wsSnap = await getDoc(wsRef)
-          if (!wsSnap.exists()) {
-            await deleteDoc(inviteDoc.ref)
-            continue
-          }
-
+          if (!wsSnap.exists()) { await deleteDoc(inviteDoc.ref); continue }
           const wsData = wsSnap.data()
-
-          if (wsData.members[authStore.user.uid]) {
-            await deleteDoc(inviteDoc.ref)
-            continue
-          }
+          if (wsData.members[authStore.user.uid]) { await deleteDoc(inviteDoc.ref); continue }
 
           wsData.members[authStore.user.uid] = {
-            role: invite.role,
-            displayName: authStore.user.displayName || '',
-            email: authStore.user.email,
-            photoURL: authStore.user.photoURL || '',
+            role: invite.role, displayName: authStore.user.displayName || '',
+            email: authStore.user.email, photoURL: authStore.user.photoURL || '',
             joinedAt: new Date().toISOString()
           }
-
-          if (wsData.pendingInvites) {
-            delete wsData.pendingInvites[authStore.user.email]
-          }
+          if (wsData.pendingInvites) delete wsData.pendingInvites[authStore.user.email]
           wsData.updatedAt = new Date().toISOString()
           await setDoc(wsRef, wsData)
 
@@ -396,49 +326,28 @@ export const useWorkspaceStore = defineStore('workspace', () => {
             wsIds.push(invite.workspaceId)
             await setDoc(userRef, { ...userData, workspaceIds: wsIds })
           }
-
           workspaces.value.push({
-            id: invite.workspaceId,
-            name: wsData.name,
-            icon: wsData.icon,
-            type: wsData.type,
-            role: invite.role,
-            ownerId: wsData.ownerId,
+            id: invite.workspaceId, name: wsData.name, icon: wsData.icon,
+            type: wsData.type, role: invite.role, ownerId: wsData.ownerId,
             memberCount: Object.keys(wsData.members).length
           })
-
           await deleteDoc(inviteDoc.ref)
-        } catch (e) {
-          console.warn('Erreur acceptation invite:', invite.workspaceId, e)
-        }
+        } catch (e) { console.warn('Erreur acceptation invite:', e) }
       }
-    } catch (e) {
-      console.warn('Erreur vérification invites:', e)
-    }
+    } catch (e) { console.warn('Erreur vérification invites:', e) }
   }
 
   function cleanup() {
     workspaces.value = []
-    activeWorkspaceId.value = null
+    activeWorkspaceIds.value = []
     membersInfo.value = {}
   }
 
   return {
-    workspaces,
-    activeWorkspaceId,
-    activeWorkspace,
-    loading,
-    membersInfo,
-    loadWorkspaces,
-    switchWorkspace,
-    createWorkspace,
-    updateWorkspace,
-    deleteWorkspace,
-    inviteMember,
-    removeMember,
-    loadWorkspaceMembers,
-    getPendingInvites,
-    checkPendingInvites,
-    cleanup
+    workspaces, activeWorkspaceIds, activeWorkspace, primaryWorkspaceId,
+    multiWorkspaceActive, loading, membersInfo,
+    loadWorkspaces, toggleWorkspace, createWorkspace, updateWorkspace,
+    deleteWorkspace, inviteMember, removeMember, loadWorkspaceMembers,
+    getPendingInvites, checkPendingInvites, cleanup
   }
 })

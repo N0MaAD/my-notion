@@ -41,6 +41,11 @@
         @blur="submitRename"
         ref="renameRef"
       />
+      <span
+        v-if="wsStore.multiWorkspaceActive && column._wsIcon"
+        class="column-ws-badge"
+        :title="column._wsName"
+      >{{ column._wsIcon }}</span>
     </div>
     <div v-if="!column.permanent" class="column-actions">
       <button class="btn btn-ghost" @click="startRename" title="Renommer">✎</button>
@@ -98,8 +103,10 @@ import KanbanCard from './KanbanCard.vue'
 import AddCard from './AddCard.vue'
 import ColorPicker from './ColorPicker.vue'
 import { useBoardStore } from '../../stores/board.js'
+import { useWorkspaceStore } from '../../stores/workspace.js'
 
 const store = useBoardStore()
+const wsStore = useWorkspaceStore()
 const props = defineProps({ column: Object })
 
 const isRenaming = ref(false)

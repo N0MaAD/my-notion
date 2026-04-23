@@ -136,7 +136,7 @@
               v-for="ws in wsStore.workspaces"
               :key="ws.id"
               class="ws-settings-item"
-              :class="{ active: ws.id === wsStore.activeWorkspaceId }"
+              :class="{ active: ws.id === wsStore.activeWorkspaceIds[0] }"
             >
               <div class="ws-settings-item-left">
                 <span class="ws-settings-icon">{{ ws.icon }}</span>
@@ -161,7 +161,7 @@
               </div>
               <div class="ws-settings-item-actions">
                 <button
-                  v-if="ws.id === wsStore.activeWorkspaceId"
+                  v-if="ws.id === wsStore.activeWorkspaceIds[0]"
                   class="ws-settings-badge"
                 >Actif</button>
                 <button
@@ -371,7 +371,7 @@ async function changeWsIcon(wsId, icon) {
 async function confirmDeleteWs(ws) {
   if (confirm(`Supprimer l'espace « ${ws.name} » et toutes ses notes ? Cette action est irréversible.`)) {
     await wsStore.deleteWorkspace(ws.id)
-    if (wsStore.activeWorkspaceId) {
+    if (wsStore.activeWorkspaceIds[0]) {
       store.dataLoaded = false
       store.activeNoteId = null
       store.openPagePath = []
@@ -383,7 +383,7 @@ async function confirmDeleteWs(ws) {
 async function leaveWs(ws) {
   if (confirm(`Quitter l'espace « ${ws.name} » ?`)) {
     await wsStore.removeMember(ws.id, authStore.user.uid)
-    if (wsStore.activeWorkspaceId) {
+    if (wsStore.activeWorkspaceIds[0]) {
       store.dataLoaded = false
       await store.loadFromFirestore()
     }
@@ -391,16 +391,16 @@ async function leaveWs(ws) {
 }
 
 async function loadMembers() {
-  if (!wsStore.activeWorkspaceId) return
-  const members = await wsStore.loadWorkspaceMembers(wsStore.activeWorkspaceId)
+  if (!wsStore.activeWorkspaceIds[0]) return
+  const members = await wsStore.loadWorkspaceMembers(wsStore.activeWorkspaceIds[0])
   currentMembers.value = members
-  pendingInvites.value = await wsStore.getPendingInvites(wsStore.activeWorkspaceId)
+  pendingInvites.value = await wsStore.getPendingInvites(wsStore.activeWorkspaceIds[0])
 }
 
 async function doInvite() {
   if (!inviteEmail.value.trim()) return
   inviteMessage.value = ''
-  const result = await wsStore.inviteMember(wsStore.activeWorkspaceId, inviteEmail.value.trim(), inviteRole.value)
+  const result = await wsStore.inviteMember(wsStore.activeWorkspaceIds[0], inviteEmail.value.trim(), inviteRole.value)
   if (result.success) {
     inviteMessage.value = `Invitation envoyée à ${inviteEmail.value} — sera ajouté à sa prochaine connexion`
     inviteMessageType.value = 'success'
@@ -414,7 +414,7 @@ async function doInvite() {
 
 async function doRemoveMember(uid) {
   if (confirm('Retirer ce membre de l\'espace ?')) {
-    await wsStore.removeMember(wsStore.activeWorkspaceId, uid)
+    await wsStore.removeMember(wsStore.activeWorkspaceIds[0], uid)
     await loadMembers()
   }
 }
