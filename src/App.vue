@@ -64,7 +64,12 @@
   <aside v-if="store.activeNote" class="sidebar" :class="{ fullscreen: isFullscreen }" :style="!isFullscreen ? { width: sidebarWidth + 'px', minWidth: sidebarWidth + 'px' } : {}">
     <SidebarView :is-fullscreen="isFullscreen" @toggle-fullscreen="isFullscreen = !isFullscreen" />
   </aside>
-  <SearchModal />
+  <SearchModal
+    @navigate="currentView = $event"
+    @open-settings="showSettings = true; settingsSection = $event"
+    @quick-capture="quickCaptureRef?.open()"
+  />
+  <QuickCapture ref="quickCaptureRef" />
   <NotificationToast />
 
   <!-- Trash drop zone -->
@@ -91,6 +96,7 @@ import TagsView from './views/TagsView.vue'
 import SidebarView from './views/SidebarView.vue'
 import SettingsView from './views/SettingsView.vue'
 import SearchModal from './components/SearchModal.vue'
+import QuickCapture from './components/QuickCapture.vue'
 import NotificationToast from './components/NotificationToast.vue'
 import LoginView from './views/LoginView.vue'
 import WorkspaceSwitcher from './components/WorkspaceSwitcher.vue'
@@ -110,6 +116,7 @@ const isFullscreen = ref(false)
 const isDraggingCard = ref(false)
 const isOverTrash = ref(false)
 const currentView = ref('notes')
+const quickCaptureRef = ref(null)
 
 let archiveCheckInterval = null
 let reminderCheckInterval = null
@@ -156,6 +163,13 @@ function onGlobalKeyDown(e) {
     (target && target.isContentEditable)
   if (isEditable) return
 
+  if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault()
+    showSettings.value = true
+    settingsSection.value = 'shortcuts'
+    return
+  }
+
   const meta = e.ctrlKey || e.metaKey
   if (meta && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
     e.preventDefault()
@@ -163,6 +177,10 @@ function onGlobalKeyDown(e) {
   } else if (meta && ((e.key === 'z' || e.key === 'Z') && e.shiftKey || e.key === 'y' || e.key === 'Y')) {
     e.preventDefault()
     store.redo()
+  } else if (e.key === '?' && !meta) {
+    e.preventDefault()
+    showSettings.value = true
+    settingsSection.value = 'shortcuts'
   }
 }
 

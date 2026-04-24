@@ -125,6 +125,64 @@
         </div>
       </div>
 
+      <!-- Raccourcis -->
+      <div v-else-if="activeSection === 'shortcuts'" class="settings-section">
+        <div class="settings-block">
+          <h3 class="settings-block-title">Raccourcis clavier</h3>
+          <p class="settings-block-desc">Tous les raccourcis disponibles dans l'application</p>
+          <div class="shortcuts-list">
+            <div v-for="group in SHORTCUT_GROUPS" :key="group.label" class="shortcuts-group">
+              <div class="shortcuts-group-label">{{ group.label }}</div>
+              <div v-for="s in group.items" :key="s.key" class="shortcuts-row">
+                <span class="shortcuts-desc">{{ s.desc }}</span>
+                <kbd class="shortcuts-kbd">{{ s.key }}</kbd>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Import / Export -->
+      <div v-else-if="activeSection === 'export'" class="settings-section">
+        <div class="settings-block">
+          <h3 class="settings-block-title">Exporter</h3>
+          <p class="settings-block-desc">Télécharge toutes tes notes au format JSON</p>
+          <button class="btn btn-accent" @click="doExport">Exporter en JSON</button>
+        </div>
+
+        <div class="settings-block">
+          <h3 class="settings-block-title">Importer</h3>
+          <p class="settings-block-desc">Importe des notes depuis un fichier</p>
+          <div class="import-options">
+            <label class="import-option">
+              <input type="file" accept=".json" class="import-file-input" @change="doImportJSON" />
+              <span class="import-option-card">
+                <span class="import-option-icon">📄</span>
+                <span class="import-option-label">JSON (My Notion)</span>
+                <span class="import-option-desc">Fichier exporté depuis My Notion</span>
+              </span>
+            </label>
+            <label class="import-option">
+              <input type="file" accept=".json" class="import-file-input" @change="doImportTrello" />
+              <span class="import-option-card">
+                <span class="import-option-icon">📋</span>
+                <span class="import-option-label">Trello (JSON)</span>
+                <span class="import-option-desc">Export JSON d'un tableau Trello</span>
+              </span>
+            </label>
+            <label class="import-option">
+              <input type="file" accept=".md,.txt" multiple class="import-file-input" @change="doImportMarkdown" />
+              <span class="import-option-card">
+                <span class="import-option-icon">📝</span>
+                <span class="import-option-label">Markdown / Notion</span>
+                <span class="import-option-desc">Fichiers .md exportés depuis Notion</span>
+              </span>
+            </label>
+          </div>
+          <div v-if="importMessage" class="import-message" :class="importMessageType">{{ importMessage }}</div>
+        </div>
+      </div>
+
       <!-- Workspaces -->
       <div v-else-if="activeSection === 'workspaces'" class="settings-section">
         <div class="settings-block">
@@ -296,6 +354,8 @@ const ICONS = ['🏠', '💼', '👥', '📁', '🎓', '🎨', '🔬', '🏗️'
 
 const prefItems = [
   { id: 'appearance', icon: '🎨', label: 'Apparence' },
+  { id: 'shortcuts', icon: '⌨️', label: 'Raccourcis' },
+  { id: 'export', icon: '📤', label: 'Import / Export' },
   { id: 'trash', icon: '🗑️', label: 'Corbeille' }
 ]
 
@@ -303,6 +363,40 @@ const allItems = [
   ...prefItems,
   { id: 'workspaces', icon: '🏢', label: 'Mes espaces' },
   { id: 'members', icon: '👥', label: 'Membres' }
+]
+
+const SHORTCUT_GROUPS = [
+  {
+    label: 'Navigation',
+    items: [
+      { key: 'Ctrl + K', desc: 'Palette de commandes / recherche' },
+      { key: 'Ctrl + Shift + N', desc: 'Capture rapide' },
+      { key: '?', desc: 'Afficher les raccourcis (hors champ texte)' },
+      { key: 'Échap', desc: 'Fermer la note / modal actif' },
+    ]
+  },
+  {
+    label: 'Actions',
+    items: [
+      { key: 'Ctrl + Z', desc: 'Annuler la dernière action' },
+      { key: 'Ctrl + Y', desc: 'Rétablir' },
+      { key: 'Ctrl + Shift + Z', desc: 'Rétablir (alternatif)' },
+    ]
+  },
+  {
+    label: 'Éditeur de note',
+    items: [
+      { key: '/', desc: 'Menu slash — insérer un bloc' },
+      { key: 'Ctrl + B', desc: 'Gras' },
+      { key: 'Ctrl + I', desc: 'Italique' },
+      { key: 'Ctrl + U', desc: 'Souligné' },
+      { key: 'Ctrl + Shift + S', desc: 'Barré' },
+      { key: 'Ctrl + E', desc: 'Code inline' },
+      { key: 'Ctrl + Shift + 7', desc: 'Liste ordonnée' },
+      { key: 'Ctrl + Shift + 8', desc: 'Liste à puces' },
+      { key: 'Ctrl + Shift + 9', desc: 'Liste de tâches' },
+    ]
+  }
 ]
 
 const activeSection = ref(props.initialSection || 'appearance')
@@ -317,6 +411,8 @@ const inviteMessageType = ref('success')
 
 const currentMembers = ref([])
 const pendingInvites = ref([])
+const importMessage = ref('')
+const importMessageType = ref('success')
 
 const currentItem = computed(() => allItems.find(i => i.id === activeSection.value) || prefItems[0])
 const trashNotes = computed(() => store.trash || [])
@@ -349,6 +445,129 @@ function emptyTrash() {
   if (confirm('Vider la corbeille ? Cette action est irréversible.')) {
     store.emptyTrash()
   }
+}
+
+// ─── Export / Import ───
+function cleanForExport(obj) {
+  const { _wsId, _wsIcon, _wsName, ...clean } = obj
+  return clean
+}
+
+function doExport() {
+  const data = {
+    version: 1,
+    app: 'my-notion',
+    exportedAt: new Date().toISOString(),
+    columns: store.columns.map(col => ({
+      ...cleanForExport(col),
+      notes: col.notes.map(n => cleanForExport(n))
+    })),
+    tags: store.tags.map(t => cleanForExport(t)),
+    trash: store.trash.map(t => cleanForExport(t))
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `my-notion-export-${new Date().toISOString().slice(0, 10)}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+  store.addNotification('Export JSON téléchargé', 'info')
+}
+
+async function doImportJSON(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  importMessage.value = ''
+  try {
+    const text = await file.text()
+    const data = JSON.parse(text)
+    if (!data.columns || !Array.isArray(data.columns)) throw new Error('Format invalide')
+    let noteCount = 0
+    for (const col of data.columns) {
+      if (col.archive) continue
+      const id = crypto.randomUUID()
+      const notes = (col.notes || []).map(n => ({ ...n, id: crypto.randomUUID() }))
+      noteCount += notes.length
+      store.columns.splice(store.columns.length - 1, 0, { id, title: col.title || 'Importé', notes })
+    }
+    if (data.tags) {
+      for (const tag of data.tags) {
+        if (!store.tags.some(t => t.name === tag.name)) {
+          store.tags.push({ ...tag, id: crypto.randomUUID() })
+        }
+      }
+    }
+    importMessage.value = `Import réussi : ${noteCount} notes importées`
+    importMessageType.value = 'success'
+  } catch (err) {
+    importMessage.value = 'Erreur : ' + err.message
+    importMessageType.value = 'error'
+  }
+  e.target.value = ''
+}
+
+async function doImportTrello(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  importMessage.value = ''
+  try {
+    const text = await file.text()
+    const data = JSON.parse(text)
+    if (!data.lists || !data.cards) throw new Error('Format Trello invalide')
+    const listsMap = {}
+    for (const list of data.lists) {
+      if (list.closed) continue
+      listsMap[list.id] = { id: crypto.randomUUID(), title: list.name, notes: [] }
+    }
+    let noteCount = 0
+    for (const card of data.cards) {
+      if (card.closed || !listsMap[card.idList]) continue
+      const blocks = []
+      if (card.desc) blocks.push({ id: crypto.randomUUID(), type: 'text', content: card.desc.replace(/\n/g, '<br>') })
+      listsMap[card.idList].notes.push({ id: crypto.randomUUID(), title: card.name, type: 'note', blocks })
+      noteCount++
+    }
+    for (const col of Object.values(listsMap)) {
+      store.columns.splice(store.columns.length - 1, 0, col)
+    }
+    importMessage.value = `Import Trello réussi : ${Object.keys(listsMap).length} colonnes, ${noteCount} notes`
+    importMessageType.value = 'success'
+  } catch (err) {
+    importMessage.value = 'Erreur : ' + err.message
+    importMessageType.value = 'error'
+  }
+  e.target.value = ''
+}
+
+async function doImportMarkdown(e) {
+  const files = e.target.files
+  if (!files?.length) return
+  importMessage.value = ''
+  try {
+    const colId = crypto.randomUUID()
+    const notes = []
+    for (const file of files) {
+      const text = await file.text()
+      const lines = text.split('\n')
+      let title = file.name.replace(/\.(md|txt)$/i, '')
+      let contentLines = lines
+      if (lines[0]?.startsWith('# ')) {
+        title = lines[0].replace(/^#+\s*/, '')
+        contentLines = lines.slice(1)
+      }
+      const content = contentLines.join('\n').trim()
+      const blocks = content ? [{ id: crypto.randomUUID(), type: 'text', content: content.replace(/\n/g, '<br>') }] : []
+      notes.push({ id: crypto.randomUUID(), title, type: 'note', blocks })
+    }
+    store.columns.splice(store.columns.length - 1, 0, { id: colId, title: 'Import Markdown', notes })
+    importMessage.value = `Import réussi : ${notes.length} note${notes.length > 1 ? 's' : ''}`
+    importMessageType.value = 'success'
+  } catch (err) {
+    importMessage.value = 'Erreur : ' + err.message
+    importMessageType.value = 'error'
+  }
+  e.target.value = ''
 }
 
 function startEditWs(ws) {
