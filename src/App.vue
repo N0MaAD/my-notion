@@ -177,10 +177,6 @@ function onGlobalKeyDown(e) {
   } else if (meta && ((e.key === 'z' || e.key === 'Z') && e.shiftKey || e.key === 'y' || e.key === 'Y')) {
     e.preventDefault()
     store.redo()
-  } else if (e.key === '?' && !meta) {
-    e.preventDefault()
-    showSettings.value = true
-    settingsSection.value = 'shortcuts'
   }
 }
 
