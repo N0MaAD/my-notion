@@ -151,7 +151,7 @@
             <button class="btn btn-accent" @click="doExportMarkdown">📝 Markdown</button>
             <button class="btn btn-accent" @click="doExportCSV">📊 CSV</button>
             <button class="btn btn-accent" @click="doExportHTML">🌐 HTML</button>
-            <button class="btn btn-ghost" @click="doExportJSON">📄 JSON</button>
+            <button class="btn btn-accent" @click="doExportJSON">📄 JSON</button>
           </div>
         </div>
 
