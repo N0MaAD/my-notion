@@ -137,6 +137,7 @@ watch(() => authStore.user, async (user) => {
       store.checkUpcomingDeadlines()
     }, 60 * 1000)
   } else {
+    store.stopAllListeners()
     wsStore.cleanup()
   }
 }, { immediate: true })

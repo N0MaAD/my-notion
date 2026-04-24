@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useWorkspaceStore } from './workspace.js'
 
@@ -30,6 +30,9 @@ export const useBoardStore = defineStore('board', () => {
 
   let saveTimeout = null
   let notifId = 0
+  let isRemoteUpdate = false
+  const snapshotUnsubscribers = {}
+  let lastSavedJson = {}
 
   // ─── Helpers ───
   function isPermanentColumn(columnId) {
@@ -596,54 +599,68 @@ export const useBoardStore = defineStore('board', () => {
 
   // ─── Firestore persistence ───
 
+  function buildWsPayload() {
+    const wsStore = useWorkspaceStore()
+    if (!wsStore.activeWorkspaceIds.length) return null
+
+    const byWs = {}
+    for (const wsId of wsStore.activeWorkspaceIds) {
+      byWs[wsId] = { columns: [], pins: [], trash: [], tags: [] }
+    }
+
+    for (const col of columns.value) {
+      const wsId = columnWorkspaceMap.value[col.id] || wsStore.primaryWorkspaceId
+      if (byWs[wsId]) byWs[wsId].columns.push(cleanCol(col))
+    }
+
+    for (const noteId of pinnedNoteIds.value) {
+      for (const col of columns.value) {
+        if (col.notes.some(n => n.id === noteId)) {
+          const wsId = columnWorkspaceMap.value[col.id] || wsStore.primaryWorkspaceId
+          if (byWs[wsId]) byWs[wsId].pins.push(noteId)
+          break
+        }
+      }
+    }
+
+    for (const item of trash.value) {
+      const wsId = item._wsId || wsStore.primaryWorkspaceId
+      if (byWs[wsId]) byWs[wsId].trash.push(cleanItem(item))
+    }
+
+    for (const tag of tags.value) {
+      const wsId = tag._wsId || wsStore.primaryWorkspaceId
+      if (byWs[wsId]) byWs[wsId].tags.push(cleanItem(tag))
+    }
+
+    return byWs
+  }
+
   function saveToFirestore() {
     clearTimeout(saveTimeout)
     saveTimeout = setTimeout(async () => {
-      const wsStore = useWorkspaceStore()
-      if (!wsStore.activeWorkspaceIds.length) return
-
-      // Group data by workspace
-      const byWs = {}
-      for (const wsId of wsStore.activeWorkspaceIds) {
-        byWs[wsId] = { columns: [], pins: [], trash: [], tags: [] }
-      }
-
-      for (const col of columns.value) {
-        const wsId = columnWorkspaceMap.value[col.id] || wsStore.primaryWorkspaceId
-        if (byWs[wsId]) byWs[wsId].columns.push(cleanCol(col))
-      }
-
-      for (const noteId of pinnedNoteIds.value) {
-        for (const col of columns.value) {
-          if (col.notes.some(n => n.id === noteId)) {
-            const wsId = columnWorkspaceMap.value[col.id] || wsStore.primaryWorkspaceId
-            if (byWs[wsId]) byWs[wsId].pins.push(noteId)
-            break
-          }
-        }
-      }
-
-      for (const item of trash.value) {
-        const wsId = item._wsId || wsStore.primaryWorkspaceId
-        if (byWs[wsId]) byWs[wsId].trash.push(cleanItem(item))
-      }
-
-      for (const tag of tags.value) {
-        const wsId = tag._wsId || wsStore.primaryWorkspaceId
-        if (byWs[wsId]) byWs[wsId].tags.push(cleanItem(tag))
-      }
+      if (isRemoteUpdate) return
+      const byWs = buildWsPayload()
+      if (!byWs) return
 
       try {
         for (const [wsId, data] of Object.entries(byWs)) {
+          const payload = {
+            columns: JSON.parse(JSON.stringify(data.columns)),
+            pins:    JSON.parse(JSON.stringify(data.pins)),
+            trash:   JSON.parse(JSON.stringify(data.trash)),
+            tags:    JSON.parse(JSON.stringify(data.tags)),
+          }
+          const payloadJson = JSON.stringify(payload)
+          if (lastSavedJson[wsId] === payloadJson) continue
+
+          lastSavedJson[wsId] = payloadJson
           const docRef = doc(db, 'workspaces', wsId)
           const wsSnap = await getDoc(docRef)
           const existing = wsSnap.exists() ? wsSnap.data() : {}
           await setDoc(docRef, {
             ...existing,
-            columns: JSON.parse(JSON.stringify(data.columns)),
-            pins:    JSON.parse(JSON.stringify(data.pins)),
-            trash:   JSON.parse(JSON.stringify(data.trash)),
-            tags:    JSON.parse(JSON.stringify(data.tags)),
+            ...payload,
             updatedAt: new Date().toISOString()
           })
         }
@@ -653,10 +670,11 @@ export const useBoardStore = defineStore('board', () => {
     }, 500)
   }
 
-  async function loadFromFirestore() {
-    const wsStore = useWorkspaceStore()
-    if (!wsStore.activeWorkspaceIds.length) return
+  // Per-workspace cached snapshot data for merge
+  const wsDataCache = {}
 
+  function mergeAllWorkspaces() {
+    const wsStore = useWorkspaceStore()
     const allColumns = []
     const allPins = []
     const allTrash = []
@@ -664,48 +682,122 @@ export const useBoardStore = defineStore('board', () => {
     const newCwMap = {}
 
     for (const wsId of wsStore.activeWorkspaceIds) {
+      const cached = wsDataCache[wsId]
+      if (!cached) continue
       const ws = wsStore.workspaces.find(w => w.id === wsId)
       const wsIcon = ws?.icon || '📁'
       const wsName = ws?.name || ''
 
+      for (const col of (cached.columns || [])) {
+        if (col.archive) {
+          for (const note of (col.notes || [])) {
+            allTrash.push({
+              ...note, _wsId: wsId,
+              deletedAt: note.archivedAt || new Date().toISOString(),
+              fromColumnId: col.id
+            })
+          }
+        } else {
+          newCwMap[col.id] = wsId
+          allColumns.push({ ...col, _wsId: wsId, _wsIcon: wsIcon, _wsName: wsName })
+        }
+      }
+      allPins.push(...(cached.pins || []))
+      for (const item of (cached.trash || [])) {
+        allTrash.push({ ...item, _wsId: wsId })
+      }
+      for (const tag of (cached.tags || [])) {
+        allTags.push({ ...tag, _wsId: wsId })
+      }
+    }
+
+    isRemoteUpdate = true
+    columnWorkspaceMap.value = newCwMap
+    columns.value = allColumns
+    pinnedNoteIds.value = [...new Set(allPins)]
+    trash.value = allTrash
+    tags.value = allTags
+    setTimeout(() => { isRemoteUpdate = false }, 0)
+  }
+
+  function stopAllListeners() {
+    for (const [wsId, unsub] of Object.entries(snapshotUnsubscribers)) {
+      unsub()
+      delete snapshotUnsubscribers[wsId]
+    }
+  }
+
+  function startListenerForWorkspace(wsId) {
+    if (snapshotUnsubscribers[wsId]) return
+    const docRef = doc(db, 'workspaces', wsId)
+
+    const unsub = onSnapshot(docRef, (snap) => {
+      if (!snap.exists()) return
+      const data = snap.data()
+
+      const incomingPayload = JSON.stringify({
+        columns: data.columns || [],
+        pins: data.pins || [],
+        trash: data.trash || [],
+        tags: data.tags || []
+      })
+
+      if (lastSavedJson[wsId] === incomingPayload) return
+
+      wsDataCache[wsId] = {
+        columns: data.columns || [],
+        pins: data.pins || [],
+        trash: data.trash || [],
+        tags: data.tags || []
+      }
+
+      lastSavedJson[wsId] = incomingPayload
+      mergeAllWorkspaces()
+
+      if (dataLoaded.value) {
+        migrateNotes()
+        ensurePermanentColumns()
+        ensureDefaultTags()
+        syncPinsWithFavorisTag()
+      }
+    }, (error) => {
+      console.warn('Erreur listener workspace:', wsId, error)
+    })
+
+    snapshotUnsubscribers[wsId] = unsub
+  }
+
+  async function loadFromFirestore() {
+    const wsStore = useWorkspaceStore()
+    if (!wsStore.activeWorkspaceIds.length) return
+
+    stopAllListeners()
+
+    // Initial load with getDoc for each workspace, then attach listeners
+    for (const wsId of wsStore.activeWorkspaceIds) {
       try {
         const snap = await getDoc(doc(db, 'workspaces', wsId))
         if (snap.exists()) {
           const data = snap.data()
-          for (const col of (data.columns || [])) {
-            if (col.archive) {
-              // Migrate archived notes to trash
-              for (const note of (col.notes || [])) {
-                allTrash.push({
-                  ...note, _wsId: wsId,
-                  deletedAt: note.archivedAt || new Date().toISOString(),
-                  fromColumnId: col.id
-                })
-              }
-            } else {
-              newCwMap[col.id] = wsId
-              allColumns.push({ ...col, _wsId: wsId, _wsIcon: wsIcon, _wsName: wsName })
-            }
+          wsDataCache[wsId] = {
+            columns: data.columns || [],
+            pins: data.pins || [],
+            trash: data.trash || [],
+            tags: data.tags || []
           }
-          allPins.push(...(data.pins || []))
-          for (const item of (data.trash || [])) {
-            allTrash.push({ ...item, _wsId: wsId })
-          }
-          for (const tag of (data.tags || [])) {
-            allTags.push({ ...tag, _wsId: wsId })
-          }
+          lastSavedJson[wsId] = JSON.stringify({
+            columns: data.columns || [],
+            pins: data.pins || [],
+            trash: data.trash || [],
+            tags: data.tags || []
+          })
         }
       } catch (e) {
         console.warn('Erreur chargement workspace:', wsId, e)
       }
     }
 
-    columnWorkspaceMap.value = newCwMap
-    columns.value = allColumns
-    pinnedNoteIds.value = [...new Set(allPins)]
-    trash.value = allTrash
-    tags.value = allTags
-
+    mergeAllWorkspaces()
     migrateNotes()
     ensurePermanentColumns()
     ensureDefaultTags()
@@ -713,10 +805,15 @@ export const useBoardStore = defineStore('board', () => {
     cleanupOldTrash()
     checkExpiredDeadlines()
     dataLoaded.value = true
+
+    // Start real-time listeners after initial load
+    for (const wsId of wsStore.activeWorkspaceIds) {
+      startListenerForWorkspace(wsId)
+    }
   }
 
   watch([columns, pinnedNoteIds, trash, tags], () => {
-    if (dataLoaded.value) saveToFirestore()
+    if (dataLoaded.value && !isRemoteUpdate) saveToFirestore()
   }, { deep: true })
 
   return {
@@ -733,6 +830,6 @@ export const useBoardStore = defineStore('board', () => {
     togglePin, isPinned,
     restoreFromTrash, deleteForever, emptyTrash,
     addTag, deleteTag, updateTag, setColumnTags, toggleNoteTag, getNotesForTag,
-    loadFromFirestore
+    loadFromFirestore, stopAllListeners
   }
 })
