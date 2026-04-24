@@ -6098,6 +6098,13 @@
       IMPORT / EXPORT SETTINGS
       ============================================================ */
 
+   .export-options {
+     display: flex;
+     gap: 0.6rem;
+     flex-wrap: wrap;
+     margin-top: 0.5rem;
+   }
+
    .import-options {
      display: grid;
      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

@@ -51,7 +51,7 @@ const selectedColId = ref(null)
 const titleRef = ref(null)
 const contentRef = ref(null)
 
-const targetCols = computed(() => store.columns.filter(c => !c.archive))
+const targetCols = computed(() => store.columns)
 
 function open() {
   isOpen.value = true

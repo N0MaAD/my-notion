@@ -13,8 +13,8 @@ function getAutoData(metric) {
   const store = useBoardStore()
   switch (metric) {
     case 'notesByColumn': {
-      const labels = store.columns.filter(c => c.id !== '__col_archive__').map(c => c.title)
-      const values = store.columns.filter(c => c.id !== '__col_archive__').map(c => c.notes.length)
+      const labels = store.columns.map(c => c.title)
+      const values = store.columns.map(c => c.notes.length)
       return { labels, values }
     }
     case 'notesByTag': {

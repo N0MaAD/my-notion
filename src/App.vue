@@ -118,7 +118,7 @@ const isOverTrash = ref(false)
 const currentView = ref('notes')
 const quickCaptureRef = ref(null)
 
-let archiveCheckInterval = null
+let deadlineCheckInterval = null
 let reminderCheckInterval = null
 
 // Charge les workspaces puis les donnees Firestore quand l'utilisateur se connecte
@@ -127,9 +127,8 @@ watch(() => authStore.user, async (user) => {
     await wsStore.loadWorkspaces()
     await wsStore.checkPendingInvites()
     await store.loadFromFirestore()
-    if (archiveCheckInterval) clearInterval(archiveCheckInterval)
-    archiveCheckInterval = setInterval(() => {
-      store.cleanupOldArchive()
+    if (deadlineCheckInterval) clearInterval(deadlineCheckInterval)
+    deadlineCheckInterval = setInterval(() => {
       store.checkExpiredDeadlines()
     }, 60 * 60 * 1000)
     store.checkUpcomingDeadlines()
@@ -190,7 +189,7 @@ onUnmounted(() => {
   document.removeEventListener('dragstart', onGlobalDragStart)
   document.removeEventListener('dragend', onGlobalDragEnd)
   document.removeEventListener('keydown', onGlobalKeyDown)
-  if (archiveCheckInterval) clearInterval(archiveCheckInterval)
+  if (deadlineCheckInterval) clearInterval(deadlineCheckInterval)
   if (reminderCheckInterval) clearInterval(reminderCheckInterval)
 })
 

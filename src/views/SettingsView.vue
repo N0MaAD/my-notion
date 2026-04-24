@@ -146,8 +146,13 @@
       <div v-else-if="activeSection === 'export'" class="settings-section">
         <div class="settings-block">
           <h3 class="settings-block-title">Exporter</h3>
-          <p class="settings-block-desc">Télécharge toutes tes notes au format JSON</p>
-          <button class="btn btn-accent" @click="doExport">Exporter en JSON</button>
+          <p class="settings-block-desc">Télécharge toutes tes notes dans le format de ton choix</p>
+          <div class="export-options">
+            <button class="btn btn-accent" @click="doExportMarkdown">📝 Markdown</button>
+            <button class="btn btn-accent" @click="doExportCSV">📊 CSV</button>
+            <button class="btn btn-accent" @click="doExportHTML">🌐 HTML</button>
+            <button class="btn btn-ghost" @click="doExportJSON">📄 JSON</button>
+          </div>
         </div>
 
         <div class="settings-block">
@@ -447,34 +452,94 @@ function emptyTrash() {
   }
 }
 
-// ─── Export / Import ───
+// ─── Export ───
 function cleanForExport(obj) {
   const { _wsId, _wsIcon, _wsName, ...clean } = obj
   return clean
 }
 
-function doExport() {
-  const data = {
-    version: 1,
-    app: 'my-notion',
-    exportedAt: new Date().toISOString(),
-    columns: store.columns.map(col => ({
-      ...cleanForExport(col),
-      notes: col.notes.map(n => cleanForExport(n))
-    })),
-    tags: store.tags.map(t => cleanForExport(t)),
-    trash: store.trash.map(t => cleanForExport(t))
-  }
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `my-notion-export-${new Date().toISOString().slice(0, 10)}.json`
+  a.download = filename
   a.click()
   URL.revokeObjectURL(url)
+}
+
+function blocksToText(blocks) {
+  if (!blocks?.length) return ''
+  let text = ''
+  for (const b of blocks) {
+    if (b.content) text += b.content.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim() + '\n\n'
+    if (b.type === 'page') text += `### ${b.title || 'Sans titre'}\n\n` + blocksToText(b.blocks)
+  }
+  return text
+}
+
+function doExportMarkdown() {
+  let md = `# My Notion — Export ${new Date().toLocaleDateString('fr-FR')}\n\n`
+  for (const col of store.columns) {
+    md += `## ${col.title}\n\n`
+    for (const note of col.notes) {
+      md += `### ${note.title || 'Sans titre'}\n\n`
+      md += blocksToText(note.blocks)
+      md += '---\n\n'
+    }
+  }
+  downloadFile(md, `my-notion-${new Date().toISOString().slice(0, 10)}.md`, 'text/markdown')
+  store.addNotification('Export Markdown téléchargé', 'info')
+}
+
+function doExportCSV() {
+  const escape = v => `"${(v || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`
+  let csv = 'Colonne,Titre,Type,Contenu,Tags\n'
+  for (const col of store.columns) {
+    for (const note of col.notes) {
+      const content = blocksToText(note.blocks).trim()
+      const noteTags = (note.tagIds || []).map(id => store.tags.find(t => t.id === id)?.name).filter(Boolean).join(', ')
+      csv += `${escape(col.title)},${escape(note.title)},${escape(note.type)},${escape(content)},${escape(noteTags)}\n`
+    }
+  }
+  downloadFile('﻿' + csv, `my-notion-${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv;charset=utf-8')
+  store.addNotification('Export CSV téléchargé', 'info')
+}
+
+function doExportHTML() {
+  let body = ''
+  for (const col of store.columns) {
+    body += `<h2>${col.title}</h2>\n`
+    for (const note of col.notes) {
+      body += `<div class="note"><h3>${note.title || 'Sans titre'}</h3>\n`
+      for (const b of (note.blocks || [])) {
+        if (b.content) body += `<p>${b.content}</p>\n`
+        if (b.type === 'page') body += `<h4>${b.title || ''}</h4>\n`
+      }
+      body += '</div><hr>\n'
+    }
+  }
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>My Notion Export</title>
+<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#222}
+h2{color:#0ea5e9;border-bottom:2px solid #0ea5e9;padding-bottom:.3rem}h3{margin:.5rem 0}
+.note{margin:1rem 0;padding:.5rem 0}hr{border:none;border-top:1px solid #ddd;margin:1.5rem 0}</style>
+</head><body><h1>My Notion — Export ${new Date().toLocaleDateString('fr-FR')}</h1>\n${body}</body></html>`
+  downloadFile(html, `my-notion-${new Date().toISOString().slice(0, 10)}.html`, 'text/html')
+  store.addNotification('Export HTML téléchargé', 'info')
+}
+
+function doExportJSON() {
+  const data = {
+    version: 1, app: 'my-notion', exportedAt: new Date().toISOString(),
+    columns: store.columns.map(col => ({ ...cleanForExport(col), notes: col.notes.map(n => cleanForExport(n)) })),
+    tags: store.tags.map(t => cleanForExport(t)),
+    trash: store.trash.map(t => cleanForExport(t))
+  }
+  downloadFile(JSON.stringify(data, null, 2), `my-notion-${new Date().toISOString().slice(0, 10)}.json`, 'application/json')
   store.addNotification('Export JSON téléchargé', 'info')
 }
 
+// ─── Import ───
 async function doImportJSON(e) {
   const file = e.target.files?.[0]
   if (!file) return
@@ -485,11 +550,10 @@ async function doImportJSON(e) {
     if (!data.columns || !Array.isArray(data.columns)) throw new Error('Format invalide')
     let noteCount = 0
     for (const col of data.columns) {
-      if (col.archive) continue
       const id = crypto.randomUUID()
       const notes = (col.notes || []).map(n => ({ ...n, id: crypto.randomUUID() }))
       noteCount += notes.length
-      store.columns.splice(store.columns.length - 1, 0, { id, title: col.title || 'Importé', notes })
+      store.columns.push({ id, title: col.title || 'Importé', notes })
     }
     if (data.tags) {
       for (const tag of data.tags) {
@@ -529,7 +593,7 @@ async function doImportTrello(e) {
       noteCount++
     }
     for (const col of Object.values(listsMap)) {
-      store.columns.splice(store.columns.length - 1, 0, col)
+      store.columns.push( col)
     }
     importMessage.value = `Import Trello réussi : ${Object.keys(listsMap).length} colonnes, ${noteCount} notes`
     importMessageType.value = 'success'
@@ -560,7 +624,7 @@ async function doImportMarkdown(e) {
       const blocks = content ? [{ id: crypto.randomUUID(), type: 'text', content: content.replace(/\n/g, '<br>') }] : []
       notes.push({ id: crypto.randomUUID(), title, type: 'note', blocks })
     }
-    store.columns.splice(store.columns.length - 1, 0, { id: colId, title: 'Import Markdown', notes })
+    store.columns.push( { id: colId, title: 'Import Markdown', notes })
     importMessage.value = `Import réussi : ${notes.length} note${notes.length > 1 ? 's' : ''}`
     importMessageType.value = 'success'
   } catch (err) {

@@ -5,7 +5,6 @@
     :class="{
       'column-dragging': isColumnDragging,
       'column-drop-target': isColumnDropTarget,
-      'column-archive': column.archive,
       'column-permanent': column.permanent
     }"
     @dragover.prevent="onColumnDragOver"
@@ -21,9 +20,7 @@
     @dragstart.stop="onColumnDragStart"
     @dragend="onColumnDragEnd"
   >⠿</span>
-    <span v-else class="column-permanent-icon" :title="column.archive ? 'Colonne archive' : 'Colonne permanente'">
-      {{ column.archive ? '🗄️' : '📌' }}
-    </span>
+    <span v-else class="column-permanent-icon" title="Colonne permanente">📌</span>
       <ColorPicker
         v-if="!column.permanent"
         :color="column.color || null"
@@ -140,12 +137,6 @@ function removeColumnTag(tagId) {
 }
 
 const columnStyle = computed(() => {
-if (props.column.archive) {
-  return {
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-    borderTop: '3px solid #ef4444'
-  }
-}
 if (!props.column.color) return {}
 const r = parseInt(props.column.color.slice(1, 3), 16)
 const g = parseInt(props.column.color.slice(3, 5), 16)

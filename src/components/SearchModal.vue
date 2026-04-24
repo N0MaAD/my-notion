@@ -115,7 +115,6 @@ const recentNotes = computed(() => {
   const found = []
   for (const id of recentNoteIds.value) {
     for (const col of store.columns) {
-      if (col.archive) continue
       const note = col.notes.find(n => n.id === id)
       if (note) { found.push({ id, type: 'note', title: note.title, path: col.title, noteId: id, pagePath: [] }); break }
     }
