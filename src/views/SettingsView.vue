@@ -370,7 +370,7 @@ const SHORTCUT_GROUPS = [
     label: 'Navigation',
     items: [
       { key: 'Ctrl + K', desc: 'Palette de commandes / recherche' },
-      { key: 'Ctrl + Shift + N', desc: 'Capture rapide' },
+      { key: 'Alt + N', desc: 'Capture rapide' },
       { key: '?', desc: 'Afficher les raccourcis (hors champ texte)' },
       { key: 'Échap', desc: 'Fermer la note / modal actif' },
     ]

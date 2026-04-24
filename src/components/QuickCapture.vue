@@ -86,7 +86,7 @@ function capture(andOpen) {
 }
 
 function onKeydown(e) {
-  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'N' || e.key === 'n')) {
+  if (e.altKey && (e.key === 'n' || e.key === 'N')) {
     e.preventDefault()
     isOpen.value ? close() : open()
   }

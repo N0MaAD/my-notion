@@ -126,7 +126,7 @@ const recentNotes = computed(() => {
 
 // ─── Commands ───
 const commands = computed(() => [
-  { id: 'quick-capture', icon: '⚡', label: 'Capture rapide',       shortcut: 'Ctrl+Shift+N', action: () => { emit('quick-capture'); close() } },
+  { id: 'quick-capture', icon: '⚡', label: 'Capture rapide',       shortcut: 'Alt+N', action: () => { emit('quick-capture'); close() } },
   { id: 'notes',         icon: '📋', label: 'Vue Notes',            action: () => { emit('navigate', 'notes');    close() } },
   { id: 'agenda',        icon: '📅', label: 'Vue Agenda',           action: () => { emit('navigate', 'agenda');   close() } },
   { id: 'tags',          icon: '🏷️',  label: 'Vue Tags',            action: () => { emit('navigate', 'tags');     close() } },
