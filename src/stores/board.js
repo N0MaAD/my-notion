@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch, nextTick } from 'vue'
-import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore'
+import { doc, getDoc, getDocFromServer, setDoc, updateDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useWorkspaceStore } from './workspace.js'
 
@@ -705,39 +705,89 @@ export const useBoardStore = defineStore('board', () => {
       unsub()
       delete snapshotUnsubscribers[wsId]
     }
+    if (visibilityHandler) {
+      document.removeEventListener('visibilitychange', visibilityHandler)
+      visibilityHandler = null
+    }
   }
 
   function startListenerForWorkspace(wsId) {
     if (snapshotUnsubscribers[wsId]) return
     const docRef = doc(db, 'workspaces', wsId)
+    let skipFirst = true
 
     const unsub = onSnapshot(docRef, (snap) => {
       if (!snap.exists()) return
-      const data = snap.data()
-
       if (snap.metadata.hasPendingWrites) return
+
+      if (skipFirst) { skipFirst = false; return }
+
+      const data = snap.data()
       if (data._lastModifiedBy === clientId) return
 
-      wsDataCache[wsId] = {
-        columns: data.columns || [],
-        pins: data.pins || [],
-        trash: data.trash || [],
-        tags: data.tags || []
-      }
-
-      mergeAllWorkspaces()
-
-      if (dataLoaded.value) {
-        migrateNotes()
-        ensurePermanentColumns()
-        ensureDefaultTags()
-        syncPinsWithFavorisTag()
-      }
+      applyRemoteData(wsId, data)
     }, (error) => {
-      console.warn('Erreur listener workspace:', wsId, error)
+      console.error('[sync] Listener error:', wsId, error)
     })
 
     snapshotUnsubscribers[wsId] = unsub
+  }
+
+  function applyRemoteData(wsId, data) {
+    wsDataCache[wsId] = {
+      columns: data.columns || [],
+      pins: data.pins || [],
+      trash: data.trash || [],
+      tags: data.tags || []
+    }
+
+    mergeAllWorkspaces()
+
+    if (dataLoaded.value) {
+      migrateNotes()
+      ensurePermanentColumns()
+      ensureDefaultTags()
+      syncPinsWithFavorisTag()
+    }
+  }
+
+  let visibilityHandler = null
+
+  async function refreshFromServer() {
+    const wsStore = useWorkspaceStore()
+    if (!wsStore.activeWorkspaceIds.length) return
+    let changed = false
+
+    for (const wsId of wsStore.activeWorkspaceIds) {
+      try {
+        const snap = await getDocFromServer(doc(db, 'workspaces', wsId))
+        if (!snap.exists()) continue
+        const data = snap.data()
+        if (data._lastModifiedBy === clientId) continue
+
+        const prev = wsDataCache[wsId]
+        const incoming = {
+          columns: data.columns || [],
+          pins: data.pins || [],
+          trash: data.trash || [],
+          tags: data.tags || []
+        }
+        if (JSON.stringify(prev) !== JSON.stringify(incoming)) {
+          wsDataCache[wsId] = incoming
+          changed = true
+        }
+      } catch (e) {
+        console.warn('[sync] Refresh error:', wsId, e)
+      }
+    }
+
+    if (changed) {
+      mergeAllWorkspaces()
+      migrateNotes()
+      ensurePermanentColumns()
+      ensureDefaultTags()
+      syncPinsWithFavorisTag()
+    }
   }
 
   async function loadFromFirestore() {
@@ -748,7 +798,12 @@ export const useBoardStore = defineStore('board', () => {
 
     for (const wsId of wsStore.activeWorkspaceIds) {
       try {
-        const snap = await getDoc(doc(db, 'workspaces', wsId))
+        let snap
+        try {
+          snap = await getDocFromServer(doc(db, 'workspaces', wsId))
+        } catch {
+          snap = await getDoc(doc(db, 'workspaces', wsId))
+        }
         if (snap.exists()) {
           const data = snap.data()
           wsDataCache[wsId] = {
@@ -775,6 +830,11 @@ export const useBoardStore = defineStore('board', () => {
     for (const wsId of wsStore.activeWorkspaceIds) {
       startListenerForWorkspace(wsId)
     }
+
+    visibilityHandler = () => {
+      if (document.visibilityState === 'visible') refreshFromServer()
+    }
+    document.addEventListener('visibilitychange', visibilityHandler)
   }
 
   watch([columns, pinnedNoteIds, trash, tags], () => {
