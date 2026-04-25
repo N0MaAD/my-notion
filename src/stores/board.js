@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore'
+import { ref, computed, watch, nextTick } from 'vue'
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useWorkspaceStore } from './workspace.js'
+
+const clientId = crypto.randomUUID()
 
 export const NOTE_TYPES = {
   note:  { id: 'note',  label: 'Note',   icon: '📄', color: null,      description: 'Note classique' },
@@ -32,7 +34,6 @@ export const useBoardStore = defineStore('board', () => {
   let notifId = 0
   let isRemoteUpdate = false
   const snapshotUnsubscribers = {}
-  let lastSavedJson = {}
 
   // ─── Helpers ───
   function isPermanentColumn(columnId) {
@@ -599,49 +600,40 @@ export const useBoardStore = defineStore('board', () => {
 
   // ─── Firestore persistence ───
 
-  function buildWsPayload() {
-    const wsStore = useWorkspaceStore()
-    if (!wsStore.activeWorkspaceIds.length) return null
-
-    const byWs = {}
-    for (const wsId of wsStore.activeWorkspaceIds) {
-      byWs[wsId] = { columns: [], pins: [], trash: [], tags: [] }
-    }
-
-    for (const col of columns.value) {
-      const wsId = columnWorkspaceMap.value[col.id] || wsStore.primaryWorkspaceId
-      if (byWs[wsId]) byWs[wsId].columns.push(cleanCol(col))
-    }
-
-    for (const noteId of pinnedNoteIds.value) {
-      for (const col of columns.value) {
-        if (col.notes.some(n => n.id === noteId)) {
-          const wsId = columnWorkspaceMap.value[col.id] || wsStore.primaryWorkspaceId
-          if (byWs[wsId]) byWs[wsId].pins.push(noteId)
-          break
-        }
-      }
-    }
-
-    for (const item of trash.value) {
-      const wsId = item._wsId || wsStore.primaryWorkspaceId
-      if (byWs[wsId]) byWs[wsId].trash.push(cleanItem(item))
-    }
-
-    for (const tag of tags.value) {
-      const wsId = tag._wsId || wsStore.primaryWorkspaceId
-      if (byWs[wsId]) byWs[wsId].tags.push(cleanItem(tag))
-    }
-
-    return byWs
-  }
+  const wsDataCache = {}
 
   function saveToFirestore() {
     clearTimeout(saveTimeout)
     saveTimeout = setTimeout(async () => {
       if (isRemoteUpdate) return
-      const byWs = buildWsPayload()
-      if (!byWs) return
+      const wsStore = useWorkspaceStore()
+      if (!wsStore.activeWorkspaceIds.length) return
+
+      const byWs = {}
+      for (const wsId of wsStore.activeWorkspaceIds) {
+        byWs[wsId] = { columns: [], pins: [], trash: [], tags: [] }
+      }
+      for (const col of columns.value) {
+        const wsId = columnWorkspaceMap.value[col.id] || wsStore.primaryWorkspaceId
+        if (byWs[wsId]) byWs[wsId].columns.push(cleanCol(col))
+      }
+      for (const noteId of pinnedNoteIds.value) {
+        for (const col of columns.value) {
+          if (col.notes.some(n => n.id === noteId)) {
+            const wsId = columnWorkspaceMap.value[col.id] || wsStore.primaryWorkspaceId
+            if (byWs[wsId]) byWs[wsId].pins.push(noteId)
+            break
+          }
+        }
+      }
+      for (const item of trash.value) {
+        const wsId = item._wsId || wsStore.primaryWorkspaceId
+        if (byWs[wsId]) byWs[wsId].trash.push(cleanItem(item))
+      }
+      for (const tag of tags.value) {
+        const wsId = tag._wsId || wsStore.primaryWorkspaceId
+        if (byWs[wsId]) byWs[wsId].tags.push(cleanItem(tag))
+      }
 
       try {
         for (const [wsId, data] of Object.entries(byWs)) {
@@ -650,28 +642,16 @@ export const useBoardStore = defineStore('board', () => {
             pins:    JSON.parse(JSON.stringify(data.pins)),
             trash:   JSON.parse(JSON.stringify(data.trash)),
             tags:    JSON.parse(JSON.stringify(data.tags)),
+            updatedAt: new Date().toISOString(),
+            _lastModifiedBy: clientId
           }
-          const payloadJson = JSON.stringify(payload)
-          if (lastSavedJson[wsId] === payloadJson) continue
-
-          lastSavedJson[wsId] = payloadJson
-          const docRef = doc(db, 'workspaces', wsId)
-          const wsSnap = await getDoc(docRef)
-          const existing = wsSnap.exists() ? wsSnap.data() : {}
-          await setDoc(docRef, {
-            ...existing,
-            ...payload,
-            updatedAt: new Date().toISOString()
-          })
+          await updateDoc(doc(db, 'workspaces', wsId), payload)
         }
       } catch (e) {
         console.error('Erreur sauvegarde Firestore:', e)
       }
     }, 500)
   }
-
-  // Per-workspace cached snapshot data for merge
-  const wsDataCache = {}
 
   function mergeAllWorkspaces() {
     const wsStore = useWorkspaceStore()
@@ -717,7 +697,7 @@ export const useBoardStore = defineStore('board', () => {
     pinnedNoteIds.value = [...new Set(allPins)]
     trash.value = allTrash
     tags.value = allTags
-    setTimeout(() => { isRemoteUpdate = false }, 0)
+    nextTick(() => { isRemoteUpdate = false })
   }
 
   function stopAllListeners() {
@@ -735,14 +715,8 @@ export const useBoardStore = defineStore('board', () => {
       if (!snap.exists()) return
       const data = snap.data()
 
-      const incomingPayload = JSON.stringify({
-        columns: data.columns || [],
-        pins: data.pins || [],
-        trash: data.trash || [],
-        tags: data.tags || []
-      })
-
-      if (lastSavedJson[wsId] === incomingPayload) return
+      if (snap.metadata.hasPendingWrites) return
+      if (data._lastModifiedBy === clientId) return
 
       wsDataCache[wsId] = {
         columns: data.columns || [],
@@ -751,7 +725,6 @@ export const useBoardStore = defineStore('board', () => {
         tags: data.tags || []
       }
 
-      lastSavedJson[wsId] = incomingPayload
       mergeAllWorkspaces()
 
       if (dataLoaded.value) {
@@ -773,7 +746,6 @@ export const useBoardStore = defineStore('board', () => {
 
     stopAllListeners()
 
-    // Initial load with getDoc for each workspace, then attach listeners
     for (const wsId of wsStore.activeWorkspaceIds) {
       try {
         const snap = await getDoc(doc(db, 'workspaces', wsId))
@@ -785,12 +757,6 @@ export const useBoardStore = defineStore('board', () => {
             trash: data.trash || [],
             tags: data.tags || []
           }
-          lastSavedJson[wsId] = JSON.stringify({
-            columns: data.columns || [],
-            pins: data.pins || [],
-            trash: data.trash || [],
-            tags: data.tags || []
-          })
         }
       } catch (e) {
         console.warn('Erreur chargement workspace:', wsId, e)
@@ -806,7 +772,6 @@ export const useBoardStore = defineStore('board', () => {
     checkExpiredDeadlines()
     dataLoaded.value = true
 
-    // Start real-time listeners after initial load
     for (const wsId of wsStore.activeWorkspaceIds) {
       startListenerForWorkspace(wsId)
     }
