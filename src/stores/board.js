@@ -34,6 +34,8 @@ export const useBoardStore = defineStore('board', () => {
   let notifId = 0
   let isRemoteUpdate = false
   const snapshotUnsubscribers = {}
+  let pollInterval = null
+  let visibilityHandler = null
 
   // ─── Helpers ───
   function isPermanentColumn(columnId) {
@@ -700,11 +702,12 @@ export const useBoardStore = defineStore('board', () => {
     nextTick(() => { isRemoteUpdate = false })
   }
 
-  function stopAllListeners() {
+  function stopSync() {
     for (const [wsId, unsub] of Object.entries(snapshotUnsubscribers)) {
       unsub()
       delete snapshotUnsubscribers[wsId]
     }
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null }
     if (visibilityHandler) {
       document.removeEventListener('visibilitychange', visibilityHandler)
       visibilityHandler = null
@@ -717,32 +720,24 @@ export const useBoardStore = defineStore('board', () => {
     let skipFirst = true
 
     const unsub = onSnapshot(docRef, (snap) => {
-      if (!snap.exists()) return
-      if (snap.metadata.hasPendingWrites) return
-
+      if (!snap.exists() || snap.metadata.hasPendingWrites) return
       if (skipFirst) { skipFirst = false; return }
-
       const data = snap.data()
       if (data._lastModifiedBy === clientId) return
-
-      applyRemoteData(wsId, data)
-    }, (error) => {
-      console.error('[sync] Listener error:', wsId, error)
-    })
+      applyRemoteWorkspace(wsId, data)
+    }, () => {})
 
     snapshotUnsubscribers[wsId] = unsub
   }
 
-  function applyRemoteData(wsId, data) {
+  function applyRemoteWorkspace(wsId, data) {
     wsDataCache[wsId] = {
       columns: data.columns || [],
       pins: data.pins || [],
       trash: data.trash || [],
       tags: data.tags || []
     }
-
     mergeAllWorkspaces()
-
     if (dataLoaded.value) {
       migrateNotes()
       ensurePermanentColumns()
@@ -751,9 +746,8 @@ export const useBoardStore = defineStore('board', () => {
     }
   }
 
-  let visibilityHandler = null
-
-  async function refreshFromServer() {
+  async function pollForChanges() {
+    if (isRemoteUpdate) return
     const wsStore = useWorkspaceStore()
     if (!wsStore.activeWorkspaceIds.length) return
     let changed = false
@@ -765,19 +759,19 @@ export const useBoardStore = defineStore('board', () => {
         const data = snap.data()
         if (data._lastModifiedBy === clientId) continue
 
-        const prev = wsDataCache[wsId]
         const incoming = {
           columns: data.columns || [],
           pins: data.pins || [],
           trash: data.trash || [],
           tags: data.tags || []
         }
-        if (JSON.stringify(prev) !== JSON.stringify(incoming)) {
+        const prev = wsDataCache[wsId]
+        if (!prev || JSON.stringify(prev) !== JSON.stringify(incoming)) {
           wsDataCache[wsId] = incoming
           changed = true
         }
-      } catch (e) {
-        console.warn('[sync] Refresh error:', wsId, e)
+      } catch {
+        // offline or transient error — skip this cycle
       }
     }
 
@@ -794,16 +788,13 @@ export const useBoardStore = defineStore('board', () => {
     const wsStore = useWorkspaceStore()
     if (!wsStore.activeWorkspaceIds.length) return
 
-    stopAllListeners()
+    stopSync()
 
     for (const wsId of wsStore.activeWorkspaceIds) {
       try {
         let snap
-        try {
-          snap = await getDocFromServer(doc(db, 'workspaces', wsId))
-        } catch {
-          snap = await getDoc(doc(db, 'workspaces', wsId))
-        }
+        try { snap = await getDocFromServer(doc(db, 'workspaces', wsId)) }
+        catch { snap = await getDoc(doc(db, 'workspaces', wsId)) }
         if (snap.exists()) {
           const data = snap.data()
           wsDataCache[wsId] = {
@@ -827,12 +818,17 @@ export const useBoardStore = defineStore('board', () => {
     checkExpiredDeadlines()
     dataLoaded.value = true
 
+    // Real-time listeners (best-effort)
     for (const wsId of wsStore.activeWorkspaceIds) {
       startListenerForWorkspace(wsId)
     }
 
+    // Polling fallback every 10s
+    pollInterval = setInterval(pollForChanges, 10_000)
+
+    // Also refresh when tab regains focus
     visibilityHandler = () => {
-      if (document.visibilityState === 'visible') refreshFromServer()
+      if (document.visibilityState === 'visible') pollForChanges()
     }
     document.addEventListener('visibilitychange', visibilityHandler)
   }
@@ -855,6 +851,6 @@ export const useBoardStore = defineStore('board', () => {
     togglePin, isPinned,
     restoreFromTrash, deleteForever, emptyTrash,
     addTag, deleteTag, updateTag, setColumnTags, toggleNoteTag, getNotesForTag,
-    loadFromFirestore, stopAllListeners
+    loadFromFirestore, stopSync
   }
 })
