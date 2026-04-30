@@ -6172,3 +6172,106 @@
      color: #ef4444;
      border: 1px solid rgba(239, 68, 68, 0.2);
    }
+
+   /* ============================================================
+      MOBILE RESPONSIVE
+      ============================================================ */
+
+   @media (max-width: 768px) {
+     .board-area {
+       padding: 0.75rem;
+       overflow-x: auto;
+       overflow-y: auto;
+     }
+
+     .board {
+       flex-direction: column;
+       gap: 0.75rem;
+       height: auto;
+     }
+
+     .column {
+       width: 100% !important;
+       min-width: 0 !important;
+       max-height: none;
+     }
+
+     .column-cards {
+       max-height: none;
+       overflow-y: visible;
+     }
+
+     .card {
+       min-height: 44px;
+       padding: 0.75rem;
+     }
+
+     .card p {
+       font-size: 0.95rem;
+     }
+
+     .pinned-bar {
+       padding: 0.5rem 0.75rem;
+       overflow-x: auto;
+     }
+
+     .pinned-note {
+       min-width: 120px;
+       min-height: 44px;
+     }
+
+     .sidebar {
+       display: none !important;
+     }
+
+     .sidebar-resizer {
+       display: none !important;
+     }
+
+     .trash-zone {
+       display: none !important;
+     }
+
+     .settings-page {
+       flex-direction: column;
+     }
+
+     .settings-sidebar {
+       width: 100%;
+       max-height: 40vh;
+       overflow-y: auto;
+     }
+
+     .settings-main {
+       flex: 1;
+       overflow-y: auto;
+     }
+
+     .agenda-container {
+       padding: 0.5rem;
+     }
+
+     .agenda-calendar {
+       font-size: 0.85rem;
+     }
+
+     .tags-view {
+       padding: 0.75rem;
+     }
+
+     .tag-card {
+       min-height: 44px;
+     }
+
+     .search-modal {
+       width: 95vw;
+       max-width: none;
+       margin: 1rem auto;
+     }
+
+     .btn-pin {
+       min-width: 44px;
+       min-height: 44px;
+       font-size: 1.1rem;
+     }
+   }

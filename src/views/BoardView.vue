@@ -9,7 +9,7 @@
         :key="note.id"
         class="pinned-note"
         :class="{ active: store.activeNoteId === note.id }"
-        @click="store.setActiveNote(note.id)"
+        @click="onPinnedClick(note.id)"
       >
         <span class="pinned-note-title">{{ note.title }}</span>
         <span class="pinned-note-col">{{ note.columnTitle }}</span>
@@ -29,9 +29,21 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
 import KanbanColumn from '../components/kanban/KanbanColumn.vue'
 import AddColumn from '../components/kanban/AddColumn.vue'
 import { useBoardStore } from '../stores/board.js'
+import { useIsMobile } from '../composables/useIsMobile.js'
 
 const store = useBoardStore()
+const router = useRouter()
+const isMobile = useIsMobile()
+
+function onPinnedClick(noteId) {
+  if (isMobile.value) {
+    router.push('/notes/' + noteId)
+  } else {
+    store.setActiveNote(noteId)
+  }
+}
 </script>

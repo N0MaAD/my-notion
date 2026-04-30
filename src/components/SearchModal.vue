@@ -88,11 +88,15 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import { useBoardStore } from '../stores/board.js'
 import { useWorkspaceStore } from '../stores/workspace.js'
+import { useIsMobile } from '../composables/useIsMobile.js'
 
 const store = useBoardStore()
 const wsStore = useWorkspaceStore()
+const router = useRouter()
+const isMobile = useIsMobile()
 const emit = defineEmits(['navigate', 'open-settings', 'quick-capture'])
 
 const isOpen = ref(false)
@@ -235,8 +239,12 @@ function selectItem() {
 
 function openResult(result) {
   addRecent(result.noteId)
-  store.activeNoteId = result.noteId
-  store.openPagePath = result.pagePath || []
+  if (isMobile.value) {
+    router.push('/notes/' + result.noteId)
+  } else {
+    store.activeNoteId = result.noteId
+    store.openPagePath = result.pagePath || []
+  }
   close()
 }
 

@@ -6,10 +6,10 @@
     { active: store.activeNoteId === note.id, dragging: isDragging, checked: note.checked }
   ]"
   :style="cardBorderStyle"
-  draggable="true"
+  :draggable="!isMobile"
   @dragstart="onDragStart"
   @dragend="onDragEnd"
-  @click="store.setActiveNote(note.id)"
+  @click="onCardClick"
   @contextmenu.prevent="openContextMenu"
 >
   <div class="card-header">
@@ -88,10 +88,14 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useBoardStore, NOTE_TYPES } from '../../stores/board.js'
+import { useIsMobile } from '../../composables/useIsMobile.js'
 import CardContextMenu from './CardContextMenu.vue'
 
 const store = useBoardStore()
+const router = useRouter()
+const isMobile = useIsMobile()
 const props = defineProps({
   note: Object,
   columnId: String,
@@ -141,6 +145,14 @@ function formatDurationRange(start, end) {
   if (start) return `depuis ${fmt(start)}`
   if (end) return `jusqu'au ${fmt(end)}`
   return ''
+}
+
+function onCardClick() {
+  if (isMobile.value) {
+    router.push('/notes/' + props.note.id)
+  } else {
+    store.setActiveNote(props.note.id)
+  }
 }
 
 function onDragStart(e) {
