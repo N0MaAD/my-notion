@@ -11,6 +11,9 @@
   @dragend="onDragEnd"
   @click="onCardClick"
   @contextmenu.prevent="openContextMenu"
+  @touchstart.passive="onTouchStart"
+  @touchend="onTouchEnd"
+  @touchmove.passive="onTouchMove"
 >
   <div class="card-header">
     <!-- Checkbox pour les tâches -->
@@ -170,6 +173,38 @@ function openContextMenu(e) {
   contextX.value = e.clientX
   contextY.value = e.clientY
   showContextMenu.value = true
+}
+
+let longPressTimer = null
+let touchMoved = false
+
+function onTouchStart(e) {
+  if (!isMobile.value) return
+  touchMoved = false
+  longPressTimer = setTimeout(() => {
+    if (!touchMoved) {
+      const touch = e.touches[0]
+      contextX.value = touch.clientX
+      contextY.value = touch.clientY
+      showContextMenu.value = true
+      longPressTimer = null
+    }
+  }, 500)
+}
+
+function onTouchMove() {
+  touchMoved = true
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+  }
+}
+
+function onTouchEnd() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+  }
 }
 </script>
 

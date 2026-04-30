@@ -189,6 +189,26 @@ function close() {
   min-width: 200px;
   padding: 0.4rem;
   animation: contextIn 0.12s ease-out;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .context-menu {
+    left: 50% !important;
+    top: auto !important;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 16px 16px 0 0;
+    padding: 0.6rem;
+    padding-bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
+    min-width: 0;
+  }
+  .context-menu-item {
+    min-height: 44px;
+  }
 }
 
 @keyframes contextIn {

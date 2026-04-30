@@ -1,9 +1,10 @@
 <template>
-<div class="mobile-layout">
+<div class="mobile-layout" @touchstart="onSwipeStart" @touchmove="onSwipeMove" @touchend="onSwipeEnd">
   <MobileTopBar
     v-if="!isNoteRoute"
     @open-settings="showSettings = true; settingsSection = $event"
     @open-search="openSearch"
+    @open-drawer="drawerOpen = true"
   />
 
   <SettingsView
@@ -18,6 +19,11 @@
   </main>
 
   <BottomNav v-if="!isNoteRoute" />
+
+  <MobileDrawer
+    v-model="drawerOpen"
+    @open-settings="showSettings = true; settingsSection = $event"
+  />
 
   <SearchModal
     @navigate="onNavigate"
@@ -34,6 +40,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MobileTopBar from '../components/mobile/MobileTopBar.vue'
 import BottomNav from '../components/mobile/BottomNav.vue'
+import MobileDrawer from '../components/mobile/MobileDrawer.vue'
 import SettingsView from '../views/SettingsView.vue'
 import SearchModal from '../components/SearchModal.vue'
 import QuickCapture from '../components/QuickCapture.vue'
@@ -47,6 +54,7 @@ const router = useRouter()
 const showSettings = ref(false)
 const settingsSection = ref('appearance')
 const quickCaptureRef = ref(null)
+const drawerOpen = ref(false)
 
 const isNoteRoute = computed(() => route.name === 'note')
 
@@ -56,6 +64,22 @@ function onNavigate(view) {
 
 function openSearch() {
   document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))
+}
+
+let swipeStartX = 0
+let swipeStartY = 0
+function onSwipeStart(e) {
+  swipeStartX = e.touches[0].clientX
+  swipeStartY = e.touches[0].clientY
+}
+function onSwipeMove() {}
+function onSwipeEnd(e) {
+  if (drawerOpen.value || showSettings.value || isNoteRoute.value) return
+  const dx = e.changedTouches[0].clientX - swipeStartX
+  const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY)
+  if (swipeStartX < 30 && dx > 60 && dy < 100) {
+    drawerOpen.value = true
+  }
 }
 </script>
 
