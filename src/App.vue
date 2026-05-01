@@ -39,7 +39,7 @@ const themeStore = useThemeStore()
 const wsStore = useWorkspaceStore()
 const isMobile = useIsMobile()
 
-const isJoinRoute = computed(() => route.name === 'join')
+const isJoinRoute = computed(() => route.path.startsWith('/join/'))
 
 let deadlineCheckInterval = null
 let reminderCheckInterval = null
