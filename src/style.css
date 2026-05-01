@@ -5831,6 +5831,95 @@
      color: var(--text-muted);
    }
 
+   /* ─── Share link ─── */
+   .ws-share-link-section {
+     margin-top: 1.5rem;
+     padding-top: 1.5rem;
+     border-top: 1px solid var(--border);
+   }
+
+   .ws-share-link-title {
+     font-size: 0.95rem;
+     font-weight: 600;
+     color: var(--text-primary);
+     margin: 0 0 0.25rem;
+   }
+
+   .ws-share-link-desc {
+     font-size: 0.8rem;
+     color: var(--text-muted);
+     margin: 0 0 1rem;
+   }
+
+   .ws-share-link-form {
+     display: flex;
+     align-items: center;
+     gap: 0.5rem;
+     margin-bottom: 0.75rem;
+   }
+
+   .ws-generated-link {
+     display: flex;
+     align-items: center;
+     gap: 0.5rem;
+     margin-bottom: 1rem;
+   }
+
+   .ws-link-input {
+     flex: 1;
+     padding: 0.5rem 0.75rem;
+     border-radius: var(--radius-sm);
+     border: 1px solid var(--border);
+     background: var(--bg-tertiary);
+     color: var(--text-primary);
+     font-size: 0.8rem;
+     font-family: monospace;
+     cursor: pointer;
+   }
+
+   .ws-link-input:focus {
+     outline: none;
+     border-color: var(--accent);
+   }
+
+   .ws-active-links {
+     margin-top: 1rem;
+   }
+
+   .ws-active-links-title {
+     font-size: 0.8rem;
+     font-weight: 600;
+     color: var(--text-secondary);
+     margin: 0 0 0.5rem;
+   }
+
+   .ws-active-link-item {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     padding: 0.5rem 0.6rem;
+     border-radius: var(--radius-sm);
+     background: var(--bg-tertiary);
+     margin-bottom: 0.35rem;
+   }
+
+   .ws-active-link-info {
+     display: flex;
+     align-items: center;
+     gap: 0.75rem;
+   }
+
+   .ws-active-link-role {
+     font-size: 0.8rem;
+     font-weight: 500;
+     color: var(--text-primary);
+   }
+
+   .ws-active-link-date {
+     font-size: 0.72rem;
+     color: var(--text-muted);
+   }
+
    /* ─── Workspace badge on columns ─── */
    .column-ws-badge {
      display: inline-flex;

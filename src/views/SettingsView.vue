@@ -328,6 +328,40 @@
               <span class="ws-pending-role">{{ inv.role === 'editor' ? 'Éditeur' : 'Lecteur' }}</span>
             </div>
           </div>
+
+          <!-- Share link -->
+          <div v-if="wsStore.activeWorkspace?.role === 'owner'" class="ws-share-link-section">
+            <h4 class="ws-share-link-title">Partager avec un lien</h4>
+            <p class="ws-share-link-desc">Génère un lien unique pour inviter quelqu'un sans connaître son email.</p>
+
+            <div class="ws-share-link-form">
+              <select v-model="shareLinkRole" class="ws-invite-role">
+                <option value="editor">Éditeur</option>
+                <option value="viewer">Lecteur</option>
+              </select>
+              <button class="btn btn-accent" @click="doGenerateLink" :disabled="generatingLink">
+                {{ generatingLink ? 'Génération...' : 'Générer un lien' }}
+              </button>
+            </div>
+
+            <div v-if="generatedLink" class="ws-generated-link">
+              <input class="ws-link-input" :value="generatedLink" readonly ref="linkInputRef" @click="copyLink" />
+              <button class="btn btn-ghost" @click="copyLink" :title="linkCopied ? 'Copié !' : 'Copier'">
+                {{ linkCopied ? '✓' : '📋' }}
+              </button>
+            </div>
+
+            <div v-if="activeShareLinks.length > 0" class="ws-active-links">
+              <h5 class="ws-active-links-title">Liens actifs</h5>
+              <div v-for="link in activeShareLinks" :key="link.id" class="ws-active-link-item">
+                <div class="ws-active-link-info">
+                  <span class="ws-active-link-role">{{ link.role === 'editor' ? 'Éditeur' : 'Lecteur' }}</span>
+                  <span class="ws-active-link-date">{{ formatLinkDate(link.createdAt) }}</span>
+                </div>
+                <button class="btn btn-danger btn-sm" @click="doRevokeLink(link.id)" title="Révoquer">✕</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -416,6 +450,12 @@ const inviteMessageType = ref('success')
 
 const currentMembers = ref([])
 const pendingInvites = ref([])
+const shareLinkRole = ref('editor')
+const generatingLink = ref(false)
+const generatedLink = ref('')
+const linkCopied = ref(false)
+const activeShareLinks = ref([])
+const linkInputRef = ref(null)
 const importMessage = ref('')
 const importMessageType = ref('success')
 
@@ -678,6 +718,7 @@ async function loadMembers() {
   const members = await wsStore.loadWorkspaceMembers(wsStore.activeWorkspaceIds[0])
   currentMembers.value = members
   pendingInvites.value = await wsStore.getPendingInvites(wsStore.activeWorkspaceIds[0])
+  await loadShareLinks()
 }
 
 async function doInvite() {
@@ -700,6 +741,45 @@ async function doRemoveMember(uid) {
     await wsStore.removeMember(wsStore.activeWorkspaceIds[0], uid)
     await loadMembers()
   }
+}
+
+async function doGenerateLink() {
+  generatingLink.value = true
+  generatedLink.value = ''
+  linkCopied.value = false
+  const token = await wsStore.generateShareLink(wsStore.activeWorkspaceIds[0], shareLinkRole.value)
+  if (token) {
+    generatedLink.value = `${window.location.origin}/join/${token}`
+    await loadShareLinks()
+  }
+  generatingLink.value = false
+}
+
+async function copyLink() {
+  try {
+    await navigator.clipboard.writeText(generatedLink.value)
+    linkCopied.value = true
+    setTimeout(() => { linkCopied.value = false }, 2000)
+  } catch {
+    linkInputRef.value?.select()
+  }
+}
+
+async function loadShareLinks() {
+  if (!wsStore.activeWorkspaceIds[0]) return
+  activeShareLinks.value = await wsStore.getShareLinks(wsStore.activeWorkspaceIds[0])
+}
+
+async function doRevokeLink(token) {
+  if (confirm('Révoquer ce lien ? Les personnes qui ne l\'ont pas encore utilisé ne pourront plus rejoindre.')) {
+    await wsStore.revokeShareLink(token)
+    await loadShareLinks()
+  }
+}
+
+function formatLinkDate(isoStr) {
+  if (!isoStr) return ''
+  return new Date(isoStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function onKeyDown(e) {

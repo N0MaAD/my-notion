@@ -35,6 +35,22 @@ service cloud.firestore {
         && resource.data.ownerId == request.auth.uid;
     }
 
+    // ─── Share links ───
+    match /shareLinks/{token} {
+      // Tout le monde peut lire un lien (pour voir l'info avant de rejoindre)
+      allow read: if request.auth != null;
+
+      // Seul un membre du workspace peut créer un lien
+      allow create: if request.auth != null;
+
+      // Le créateur ou le owner du workspace peut modifier (révoquer)
+      allow update: if request.auth != null
+        && resource.data.createdBy == request.auth.uid;
+
+      allow delete: if request.auth != null
+        && resource.data.createdBy == request.auth.uid;
+    }
+
     // ─── Invitations ───
     // Collection séparée pour la découverte cross-user
     match /invites/{inviteId} {

@@ -1,6 +1,9 @@
 <template>
+<!-- Join page (accessible without auth) -->
+<router-view v-if="isJoinRoute" />
+
 <!-- Loading screen -->
-<div v-if="authStore.loading" class="login-page">
+<div v-else-if="authStore.loading" class="login-page">
   <div class="login-card">
     <div class="login-header">
       <h1 class="login-title">My Notion</h1>
@@ -18,7 +21,8 @@
 </template>
 
 <script setup>
-import { watch, onMounted, onUnmounted } from 'vue'
+import { watch, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import LoginView from './views/LoginView.vue'
 import DesktopLayout from './layouts/DesktopLayout.vue'
 import MobileLayout from './layouts/MobileLayout.vue'
@@ -28,11 +32,14 @@ import { useThemeStore } from './stores/theme.js'
 import { useWorkspaceStore } from './stores/workspace.js'
 import { useIsMobile } from './composables/useIsMobile.js'
 
+const route = useRoute()
 const store = useBoardStore()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const wsStore = useWorkspaceStore()
 const isMobile = useIsMobile()
+
+const isJoinRoute = computed(() => route.name === 'join')
 
 let deadlineCheckInterval = null
 let reminderCheckInterval = null

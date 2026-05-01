@@ -295,6 +295,96 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     return Object.entries(wsSnap.data().pendingInvites || {}).map(([email, info]) => ({ email, ...info }))
   }
 
+  async function generateShareLink(workspaceId, role = 'editor') {
+    const authStore = useAuthStore()
+    if (!authStore.user) return null
+    const wsRef = getWorkspaceDocRef(workspaceId)
+    const wsSnap = await getDoc(wsRef)
+    if (!wsSnap.exists()) return null
+    const wsData = wsSnap.data()
+    if (wsData.ownerId !== authStore.user.uid) return null
+
+    const token = crypto.randomUUID()
+    await setDoc(doc(db, 'shareLinks', token), {
+      workspaceId,
+      workspaceName: wsData.name,
+      workspaceIcon: wsData.icon || '📁',
+      role,
+      createdBy: authStore.user.uid,
+      createdAt: new Date().toISOString(),
+      active: true
+    })
+    return token
+  }
+
+  async function getShareLinks(workspaceId) {
+    const snap = await getDocs(query(collection(db, 'shareLinks'), where('workspaceId', '==', workspaceId), where('active', '==', true)))
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  }
+
+  async function revokeShareLink(token) {
+    const linkRef = doc(db, 'shareLinks', token)
+    const snap = await getDoc(linkRef)
+    if (!snap.exists()) return
+    await setDoc(linkRef, { ...snap.data(), active: false })
+  }
+
+  async function joinViaShareLink(token) {
+    const authStore = useAuthStore()
+    if (!authStore.user) return { success: false, error: 'Non connecté' }
+
+    const linkRef = doc(db, 'shareLinks', token)
+    const linkSnap = await getDoc(linkRef)
+    if (!linkSnap.exists()) return { success: false, error: 'Lien invalide ou expiré' }
+    const linkData = linkSnap.data()
+    if (!linkData.active) return { success: false, error: 'Ce lien a été révoqué' }
+
+    const wsRef = getWorkspaceDocRef(linkData.workspaceId)
+    const wsSnap = await getDoc(wsRef)
+    if (!wsSnap.exists()) return { success: false, error: 'Espace introuvable' }
+    const wsData = wsSnap.data()
+
+    if (wsData.members[authStore.user.uid]) {
+      return { success: true, alreadyMember: true, workspaceId: linkData.workspaceId }
+    }
+
+    wsData.members[authStore.user.uid] = {
+      role: linkData.role,
+      displayName: authStore.user.displayName || '',
+      email: authStore.user.email || '',
+      photoURL: authStore.user.photoURL || '',
+      joinedAt: new Date().toISOString()
+    }
+    wsData.updatedAt = new Date().toISOString()
+    await setDoc(wsRef, wsData)
+
+    const userRef = getUserDocRef()
+    const userSnap = await getDoc(userRef)
+    const userData = userSnap.exists() ? userSnap.data() : {}
+    const wsIds = userData.workspaceIds || []
+    if (!wsIds.includes(linkData.workspaceId)) {
+      wsIds.push(linkData.workspaceId)
+      await setDoc(userRef, { ...userData, workspaceIds: wsIds })
+    }
+
+    workspaces.value.push({
+      id: linkData.workspaceId, name: wsData.name, icon: wsData.icon,
+      type: wsData.type, role: linkData.role, ownerId: wsData.ownerId,
+      memberCount: Object.keys(wsData.members).length
+    })
+
+    return { success: true, workspaceId: linkData.workspaceId }
+  }
+
+  async function getShareLinkInfo(token) {
+    const linkRef = doc(db, 'shareLinks', token)
+    const linkSnap = await getDoc(linkRef)
+    if (!linkSnap.exists()) return null
+    const data = linkSnap.data()
+    if (!data.active) return null
+    return data
+  }
+
   async function checkPendingInvites() {
     const authStore = useAuthStore()
     if (!authStore.user?.email) return
@@ -348,6 +438,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     multiWorkspaceActive, loading, membersInfo,
     loadWorkspaces, toggleWorkspace, createWorkspace, updateWorkspace,
     deleteWorkspace, inviteMember, removeMember, loadWorkspaceMembers,
-    getPendingInvites, checkPendingInvites, cleanup
+    getPendingInvites, checkPendingInvites, cleanup,
+    generateShareLink, getShareLinks, revokeShareLink, joinViaShareLink, getShareLinkInfo
   }
 })
