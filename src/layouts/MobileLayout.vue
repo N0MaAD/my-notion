@@ -88,12 +88,17 @@ function onSwipeEnd(e) {
   display: flex;
   flex-direction: column;
   height: 100dvh;
+  width: 100vw;
   overflow: hidden;
+  position: relative;
 }
 .mobile-main {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 56px;
+  overflow-x: hidden;
+  width: 100vw;
+  padding-bottom: 8dvh;
+  -webkit-overflow-scrolling: touch;
 }
 .mobile-layout:has(.mobile-note-view) .mobile-main {
   padding-bottom: 0;

@@ -21,7 +21,7 @@
   position: fixed;
   bottom: 0;
   left: 0;
-  right: 0;
+  width: 100vw;
   z-index: 100;
   background: var(--bg-secondary, #1a1a2e);
   border-top: 1px solid var(--border, rgba(255,255,255,0.08));
@@ -33,9 +33,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 10px 0;
-  min-height: 56px;
+  gap: 0.5dvh;
+  padding: 1.2dvh 0;
+  min-height: 7dvh;
   color: var(--text-secondary, #8892b0);
   text-decoration: none;
   transition: color 0.15s;
@@ -45,11 +45,11 @@
   color: var(--accent, #38bdf8);
 }
 .bottom-nav-icon {
-  font-size: 1.3rem;
+  font-size: 5vw;
   line-height: 1;
 }
 .bottom-nav-label {
-  font-size: 0.7rem;
+  font-size: 2.8vw;
   font-weight: 500;
 }
 </style>

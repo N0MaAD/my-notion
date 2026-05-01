@@ -177,9 +177,9 @@ function onTouchEnd(e) {
   position: absolute;
   top: 0;
   left: 0;
-  bottom: 0;
-  width: 85vw;
-  max-width: 320px;
+  height: 100dvh;
+  width: 82vw;
+  max-width: 82vw;
   background: var(--bg-primary, #0f0f23);
   display: flex;
   flex-direction: column;
@@ -191,13 +191,13 @@ function onTouchEnd(e) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: 2dvh 4vw;
   border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
   flex-shrink: 0;
 }
 
 .drawer-title {
-  font-size: 1.1rem;
+  font-size: 4.5vw;
   font-weight: 600;
   color: var(--text-primary, #e2e8f0);
   margin: 0;
@@ -207,15 +207,15 @@ function onTouchEnd(e) {
   background: none;
   border: none;
   color: var(--text-secondary, #8892b0);
-  font-size: 1.2rem;
-  padding: 8px;
-  min-width: 44px;
-  min-height: 44px;
+  font-size: 5vw;
+  padding: 2vw;
+  min-width: 10vw;
+  min-height: 6dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 2vw;
 }
 
 .drawer-close:active {
@@ -223,26 +223,26 @@ function onTouchEnd(e) {
 }
 
 .drawer-section {
-  padding: 12px 16px;
+  padding: 1.5dvh 4vw;
   border-bottom: 1px solid var(--border, rgba(255,255,255,0.05));
 }
 
 .drawer-section-label {
-  font-size: 0.7rem;
+  font-size: 2.8vw;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted, #64748b);
-  margin-bottom: 8px;
+  margin-bottom: 1dvh;
   font-weight: 600;
 }
 
 .drawer-ws-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  min-height: 44px;
+  gap: 2.5vw;
+  padding: 1.2dvh 3vw;
+  border-radius: 2vw;
+  min-height: 6dvh;
   cursor: pointer;
   color: var(--text-primary, #e2e8f0);
   transition: background 0.15s;
@@ -257,12 +257,12 @@ function onTouchEnd(e) {
 }
 
 .drawer-ws-icon {
-  font-size: 1.2rem;
+  font-size: 5vw;
 }
 
 .drawer-ws-name {
   flex: 1;
-  font-size: 0.9rem;
+  font-size: 3.6vw;
 }
 
 .drawer-check {
@@ -278,14 +278,14 @@ function onTouchEnd(e) {
 .drawer-col-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 8px;
-  font-size: 0.8rem;
+  gap: 1.5vw;
+  padding: 1dvh 2vw;
+  font-size: 3.2vw;
   font-weight: 600;
   color: var(--text-secondary, #8892b0);
   cursor: pointer;
-  min-height: 40px;
-  border-radius: 6px;
+  min-height: 5dvh;
+  border-radius: 1.5vw;
 }
 
 .drawer-col-title:active {
@@ -293,14 +293,14 @@ function onTouchEnd(e) {
 }
 
 .drawer-col-arrow {
-  width: 16px;
+  width: 4vw;
   text-align: center;
-  font-size: 0.7rem;
+  font-size: 2.8vw;
 }
 
 .drawer-col-count {
   margin-left: auto;
-  font-size: 0.7rem;
+  font-size: 2.8vw;
   color: var(--text-muted, #64748b);
   font-weight: 400;
 }
@@ -308,11 +308,11 @@ function onTouchEnd(e) {
 .drawer-note-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px 8px 28px;
-  min-height: 44px;
+  gap: 2vw;
+  padding: 1dvh 3vw 1dvh 7vw;
+  min-height: 6dvh;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 1.5vw;
   color: var(--text-primary, #e2e8f0);
   transition: background 0.15s;
 }
@@ -327,13 +327,13 @@ function onTouchEnd(e) {
 }
 
 .drawer-note-icon {
-  font-size: 0.85rem;
+  font-size: 3.5vw;
   flex-shrink: 0;
 }
 
 .drawer-note-title {
   flex: 1;
-  font-size: 0.88rem;
+  font-size: 3.5vw;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -343,23 +343,23 @@ function onTouchEnd(e) {
   background: none;
   border: none;
   color: var(--text-muted, #64748b);
-  font-size: 0.7rem;
-  padding: 4px 8px;
-  min-width: 32px;
-  min-height: 32px;
+  font-size: 2.8vw;
+  padding: 1vw 2vw;
+  min-width: 8vw;
+  min-height: 5dvh;
   cursor: pointer;
 }
 
 .drawer-subpage-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px 6px 48px;
-  min-height: 40px;
+  gap: 2vw;
+  padding: 0.8dvh 3vw 0.8dvh 12vw;
+  min-height: 5dvh;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 1.5vw;
   color: var(--text-secondary, #8892b0);
-  font-size: 0.84rem;
+  font-size: 3.3vw;
 }
 
 .drawer-subpage-item:active {
@@ -368,22 +368,22 @@ function onTouchEnd(e) {
 
 .drawer-actions {
   flex-shrink: 0;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(2dvh + env(safe-area-inset-bottom, 0px));
 }
 
 .drawer-action-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 2.5vw;
   width: 100%;
-  padding: 10px 12px;
-  min-height: 44px;
+  padding: 1.2dvh 3vw;
+  min-height: 6dvh;
   border: none;
   background: none;
   color: var(--text-secondary, #8892b0);
-  font-size: 0.88rem;
+  font-size: 3.5vw;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 2vw;
   text-align: left;
 }
 

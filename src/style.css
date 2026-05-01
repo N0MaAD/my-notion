@@ -495,7 +495,7 @@
      background-size: 400% 400%;
      animation: gradientShift 18s ease infinite;
      color: var(--text-primary);
-     height: 100vh;
+     height: 100dvh;
      overflow: hidden;
      position: relative;
    }
@@ -529,10 +529,12 @@
    }
    
    #app {
-     height: 100vh;
+     height: 100dvh;
+     width: 100vw;
      display: flex;
      position: relative;
      z-index: 1;
+     overflow: hidden;
    }
    
    ::selection {
@@ -6267,22 +6269,35 @@
       ============================================================ */
 
    @media (max-width: 768px) {
+     body {
+       height: 100dvh;
+     }
+
+     #app {
+       height: 100dvh;
+       width: 100vw;
+       flex-direction: column;
+     }
+
      .board-area {
-       padding: 0.75rem;
-       overflow-x: auto;
+       padding: 2vw;
+       overflow-x: hidden;
        overflow-y: auto;
+       width: 100vw;
      }
 
      .board {
        flex-direction: column;
-       gap: 0.75rem;
+       gap: 2vw;
        height: auto;
+       width: 100%;
      }
 
      .column {
        width: 100% !important;
        min-width: 0 !important;
        max-height: none;
+       border-radius: 2vw;
      }
 
      .column-cards {
@@ -6291,22 +6306,23 @@
      }
 
      .card {
-       min-height: 44px;
-       padding: 0.75rem;
+       min-height: 6dvh;
+       padding: 3vw;
      }
 
      .card p {
-       font-size: 0.95rem;
+       font-size: 3.8vw;
      }
 
      .pinned-bar {
-       padding: 0.5rem 0.75rem;
+       padding: 1.5vw 2vw;
        overflow-x: auto;
+       width: 100vw;
      }
 
      .pinned-note {
-       min-width: 120px;
-       min-height: 44px;
+       min-width: 30vw;
+       min-height: 6dvh;
      }
 
      .sidebar {
@@ -6321,46 +6337,55 @@
        display: none !important;
      }
 
+     .user-bar {
+       display: none !important;
+     }
+
      .settings-page {
        flex-direction: column;
+       height: 100dvh;
+       width: 100vw;
      }
 
      .settings-sidebar {
-       width: 100%;
-       max-height: 40vh;
+       width: 100vw;
+       max-height: 30dvh;
        overflow-y: auto;
      }
 
      .settings-main {
        flex: 1;
        overflow-y: auto;
+       width: 100vw;
      }
 
      .agenda-container {
-       padding: 0.5rem;
+       padding: 2vw;
+       width: 100vw;
      }
 
      .agenda-calendar {
-       font-size: 0.85rem;
+       font-size: 3.4vw;
      }
 
      .tags-view {
-       padding: 0.75rem;
+       padding: 2vw;
+       width: 100vw;
      }
 
      .tag-card {
-       min-height: 44px;
+       min-height: 6dvh;
      }
 
      .search-modal {
-       width: 95vw;
+       width: 96vw;
        max-width: none;
-       margin: 1rem auto;
+       margin: 2dvh auto;
      }
 
      .btn-pin {
-       min-width: 44px;
-       min-height: 44px;
-       font-size: 1.1rem;
+       min-width: 10vw;
+       min-height: 6dvh;
+       font-size: 4.5vw;
      }
    }

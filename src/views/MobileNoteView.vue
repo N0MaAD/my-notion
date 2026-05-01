@@ -53,21 +53,23 @@ onBeforeUnmount(() => {
 .mobile-note-view {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100dvh;
+  width: 100vw;
   overflow: hidden;
 }
 .mobile-note-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 1dvh 3vw;
   border-bottom: 1px solid var(--border);
   background: var(--bg-secondary);
   flex-shrink: 0;
+  width: 100vw;
 }
 .mobile-back-btn {
-  font-size: 1rem;
-  min-height: 44px;
+  font-size: 4vw;
+  min-height: 6dvh;
 }
 .mobile-note-loading {
   display: flex;
@@ -79,12 +81,13 @@ onBeforeUnmount(() => {
 .mobile-note-view :deep(.note-content) {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: 2dvh 3vw;
+  width: 100vw;
 }
 .mobile-note-view :deep(.sidebar-header) {
-  padding: 0 0 8px;
+  padding: 0 0 1dvh;
 }
 .mobile-note-view :deep(.sidebar-title) {
-  font-size: 1.4rem;
+  font-size: 5.5vw;
 }
 </style>
