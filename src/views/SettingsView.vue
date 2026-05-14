@@ -91,6 +91,51 @@
             </button>
           </div>
         </div>
+
+        <!-- Arrière-plan -->
+        <div class="settings-block">
+          <h3 class="settings-block-title">Arrière-plan</h3>
+          <p class="settings-block-desc">Personnalise le fond de l'application</p>
+
+          <!-- Current background preview -->
+          <div v-if="themeStore.backgroundImage" class="bg-current">
+            <div class="bg-current-preview" :style="{ backgroundImage: 'url(' + themeStore.backgroundImage + ')' }"></div>
+            <button class="btn btn-danger btn-sm" @click="themeStore.removeBackground()">Supprimer le fond</button>
+          </div>
+
+          <!-- Preset backgrounds grid -->
+          <div v-if="PRESET_BACKGROUNDS.length > 0" class="bg-presets-grid">
+            <button
+              v-for="bg in PRESET_BACKGROUNDS"
+              :key="bg.id"
+              class="bg-preset-card"
+              :class="{ active: themeStore.backgroundImage === bg.url }"
+              @click="themeStore.setBackground(bg.url, bg.theme)"
+            >
+              <div class="bg-preset-preview" :style="{ backgroundImage: 'url(' + bg.url + ')' }"></div>
+              <span class="bg-preset-label">{{ bg.label }}</span>
+            </button>
+          </div>
+
+          <div v-if="PRESET_BACKGROUNDS.length === 0 && !themeStore.backgroundImage" class="bg-empty">
+            <span class="bg-empty-icon">🖼️</span>
+            <p>Aucun fond prédéfini pour le moment</p>
+          </div>
+
+          <!-- Import custom photo -->
+          <div class="bg-import-section">
+            <label class="btn btn-accent bg-import-btn">
+              📷 Importer une photo
+              <input
+                type="file"
+                accept="image/*"
+                class="bg-import-input"
+                @change="onBgFileChange"
+              />
+            </label>
+            <p class="bg-import-hint">JPG, PNG ou WebP recommandé</p>
+          </div>
+        </div>
       </div>
 
       <!-- Corbeille -->
@@ -371,7 +416,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useThemeStore, THEMES } from '../stores/theme.js'
+import { useThemeStore, THEMES, PRESET_BACKGROUNDS } from '../stores/theme.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useBoardStore } from '../stores/board.js'
 import { useWorkspaceStore } from '../stores/workspace.js'
@@ -780,6 +825,13 @@ async function doRevokeLink(token) {
 function formatLinkDate(isoStr) {
   if (!isoStr) return ''
   return new Date(isoStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+async function onBgFileChange(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  await themeStore.setCustomBackground(file)
+  store.addNotification('Arrière-plan appliqué', 'info')
 }
 
 function onKeyDown(e) {
