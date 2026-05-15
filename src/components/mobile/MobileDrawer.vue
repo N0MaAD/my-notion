@@ -69,7 +69,7 @@
           <button class="drawer-action-item" @click="$emit('open-settings', 'appearance'); close()">
             <span>⚙️</span><span>Paramètres</span>
           </button>
-          <button class="drawer-action-item" @click="$emit('open-settings', 'trash'); close()">
+          <button class="drawer-action-item" @click="goToTrash">
             <span>🗑️</span><span>Corbeille</span>
           </button>
           <button class="drawer-action-item" @click="$emit('open-settings', 'export'); close()">
@@ -146,6 +146,11 @@ function openSubPage(noteId, blockId) {
   store.activeNoteId = noteId
   store.openPagePath = [blockId]
   router.push('/notes/' + noteId)
+  close()
+}
+
+function goToTrash() {
+  router.push('/trash')
   close()
 }
 

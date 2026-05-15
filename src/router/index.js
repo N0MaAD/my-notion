@@ -6,6 +6,7 @@ const routes = [
   { path: '/notes/:id', name: 'note', component: () => import('../views/MobileNoteView.vue') },
   { path: '/agenda', name: 'agenda', component: () => import('../views/AgendaView.vue') },
   { path: '/tags', name: 'tags', component: () => import('../views/TagsView.vue') },
+  { path: '/trash', name: 'trash', component: () => import('../views/TrashView.vue') },
   { path: '/join/:token', name: 'join', component: () => import('../views/JoinView.vue') },
   { path: '/:pathMatch(.*)*', redirect: '/notes' }
 ]
