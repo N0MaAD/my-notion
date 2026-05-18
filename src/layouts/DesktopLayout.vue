@@ -14,6 +14,7 @@
       <router-link class="nav-tab" active-class="active" to="/notes">Notes</router-link>
       <router-link class="nav-tab" active-class="active" to="/agenda">Agenda</router-link>
       <router-link class="nav-tab" active-class="active" to="/tags">Tags</router-link>
+      <router-link class="nav-tab" active-class="active" to="/trash">🗑️ Corbeille</router-link>
     </nav>
   </div>
 

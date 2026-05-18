@@ -87,6 +87,13 @@
         @input="localTime = $event.target.value; applyTime()"
       />
     </div>
+
+    <!-- Delete -->
+    <div class="context-menu-divider" />
+    <div class="context-menu-item context-menu-delete" @click="deleteNote">
+      <span class="context-menu-icon">🗑️</span>
+      <span class="context-menu-text">Supprimer</span>
+    </div>
   </div>
 </Teleport>
 </template>
@@ -165,6 +172,11 @@ function toggleHasTime(checked) {
 
 function applyTime() {
   store.setNoteTime(props.noteId, localTime.value || null)
+}
+
+function deleteNote() {
+  store.archiveNote(props.noteId)
+  close()
 }
 
 function close() {
@@ -318,5 +330,13 @@ function close() {
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+.context-menu-delete {
+  color: #ef4444;
+}
+
+.context-menu-delete:hover {
+  background: #fef2f2;
 }
 </style>

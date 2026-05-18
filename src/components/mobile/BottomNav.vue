@@ -12,6 +12,10 @@
     <span class="bottom-nav-icon">🏷️</span>
     <span class="bottom-nav-label">Tags</span>
   </router-link>
+  <router-link to="/trash" class="bottom-nav-item" active-class="active">
+    <span class="bottom-nav-icon">🗑️</span>
+    <span class="bottom-nav-label">Corbeille</span>
+  </router-link>
 </nav>
 </template>
 
