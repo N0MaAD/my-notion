@@ -443,6 +443,53 @@ export const useBoardStore = defineStore('board', () => {
     return note
   }
 
+  // ─── Remote change detection ───
+  function describeChanges(prev, incoming, wsId) {
+    const wsStore = useWorkspaceStore()
+    const ws = wsStore.workspaces.find(w => w.id === wsId)
+    const wsLabel = ws ? ws.name : ''
+
+    const prevNotes = new Map()
+    for (const col of prev.columns || []) {
+      for (const n of col.notes || []) prevNotes.set(n.id, n.title || 'Sans titre')
+    }
+    const incomingNotes = new Map()
+    for (const col of incoming.columns || []) {
+      for (const n of col.notes || []) incomingNotes.set(n.id, n.title || 'Sans titre')
+    }
+
+    const added = []
+    const removed = []
+    const modified = []
+
+    for (const [id, title] of incomingNotes) {
+      if (!prevNotes.has(id)) added.push(title)
+    }
+    for (const [id, title] of prevNotes) {
+      if (!incomingNotes.has(id)) removed.push(title)
+    }
+    if (added.length === 0 && removed.length === 0) {
+      for (const col of incoming.columns || []) {
+        const prevCol = (prev.columns || []).find(c => c.id === col.id)
+        if (!prevCol) continue
+        for (const n of col.notes || []) {
+          const prevNote = (prevCol.notes || []).find(pn => pn.id === n.id)
+          if (prevNote && JSON.stringify(prevNote) !== JSON.stringify(n)) {
+            modified.push(n.title || 'Sans titre')
+          }
+        }
+      }
+    }
+
+    const parts = []
+    if (added.length) parts.push(`+ ${added[0]}${added.length > 1 ? ` (+${added.length - 1})` : ''}`)
+    if (removed.length) parts.push(`- ${removed[0]}${removed.length > 1 ? ` (+${removed.length - 1})` : ''}`)
+    if (modified.length) parts.push(`${modified[0]} modifiée${modified.length > 1 ? ` (+${modified.length - 1})` : ''}`)
+    if (parts.length === 0) return null
+    const prefix = wsLabel ? `[${wsLabel}] ` : ''
+    return prefix + parts.join(' · ')
+  }
+
   // ─── Notifications navigateur ───
   function requestBrowserNotificationPermission() {
     if (typeof Notification === 'undefined') return Promise.resolve('unsupported')
@@ -746,12 +793,23 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   function applyRemoteWorkspace(wsId, data) {
-    wsDataCache[wsId] = {
+    const prev = wsDataCache[wsId]
+    const incoming = {
       columns: data.columns || [],
       pins: data.pins || [],
       trash: data.trash || [],
       tags: data.tags || []
     }
+    wsDataCache[wsId] = incoming
+
+    if (dataLoaded.value && prev) {
+      const diff = describeChanges(prev, incoming, wsId)
+      if (diff) {
+        addNotification(diff, 'info')
+        fireBrowserNotification('My Notion', diff)
+      }
+    }
+
     mergeAllWorkspaces()
     if (dataLoaded.value) {
       migrateNotes()

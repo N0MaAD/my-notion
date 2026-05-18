@@ -31,6 +31,7 @@ import { useAuthStore } from './stores/auth.js'
 import { useThemeStore } from './stores/theme.js'
 import { useWorkspaceStore } from './stores/workspace.js'
 import { useIsMobile } from './composables/useIsMobile.js'
+import { registerPush, listenForegroundMessages } from './push.js'
 
 const route = useRoute()
 const store = useBoardStore()
@@ -58,6 +59,11 @@ watch(() => authStore.user, async (user) => {
     reminderCheckInterval = setInterval(() => {
       store.checkUpcomingDeadlines()
     }, 60 * 1000)
+    registerPush(user.uid).catch(() => {})
+    listenForegroundMessages((payload) => {
+      const n = payload.notification
+      if (n?.title) store.addNotification(n.title + (n.body ? ' — ' + n.body : ''), 'info')
+    })
   } else {
     store.stopSync()
     wsStore.cleanup()
