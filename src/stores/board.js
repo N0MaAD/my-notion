@@ -699,7 +699,7 @@ export const useBoardStore = defineStore('board', () => {
     pinnedNoteIds.value = [...new Set(allPins)]
     trash.value = allTrash
     tags.value = allTags
-    nextTick(() => { isRemoteUpdate = false })
+    nextTick(() => { setTimeout(() => { isRemoteUpdate = false }, 50) })
   }
 
   function stopSync() {
@@ -717,15 +717,30 @@ export const useBoardStore = defineStore('board', () => {
   function startListenerForWorkspace(wsId) {
     if (snapshotUnsubscribers[wsId]) return
     const docRef = doc(db, 'workspaces', wsId)
-    let skipFirst = true
+    let isFirstSnapshot = true
 
     const unsub = onSnapshot(docRef, (snap) => {
       if (!snap.exists() || snap.metadata.hasPendingWrites) return
-      if (skipFirst) { skipFirst = false; return }
       const data = snap.data()
+      if (isFirstSnapshot) {
+        isFirstSnapshot = false
+        return
+      }
       if (data._lastModifiedBy === clientId) return
+      const incoming = {
+        columns: data.columns || [],
+        pins: data.pins || [],
+        trash: data.trash || [],
+        tags: data.tags || []
+      }
+      const prev = wsDataCache[wsId]
+      if (prev && JSON.stringify(prev) === JSON.stringify(incoming)) return
       applyRemoteWorkspace(wsId, data)
-    }, () => {})
+    }, (err) => {
+      console.warn('onSnapshot error for workspace', wsId, err)
+      delete snapshotUnsubscribers[wsId]
+      setTimeout(() => startListenerForWorkspace(wsId), 2000)
+    })
 
     snapshotUnsubscribers[wsId] = unsub
   }
@@ -823,8 +838,8 @@ export const useBoardStore = defineStore('board', () => {
       startListenerForWorkspace(wsId)
     }
 
-    // Polling fallback every 10s
-    pollInterval = setInterval(pollForChanges, 10_000)
+    // Polling fallback every 5s in case onSnapshot misses updates
+    pollInterval = setInterval(pollForChanges, 5_000)
 
     // Also refresh when tab regains focus
     visibilityHandler = () => {
