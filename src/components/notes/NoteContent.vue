@@ -63,6 +63,8 @@
   </div>
 
   <PageEditor :key="store.currentPage?.id || store.activeNoteId" />
+
+  <NoteComments v-if="store.openPagePath.length === 0" />
 </div>
 </template>
 
@@ -70,6 +72,7 @@
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useBoardStore } from '../../stores/board.js'
 import PageEditor from '../blocks/PageEditor.vue'
+import NoteComments from './NoteComments.vue'
 
 defineProps({
   isMobileMode: { type: Boolean, default: false }

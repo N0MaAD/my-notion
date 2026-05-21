@@ -922,7 +922,7 @@ export const useBoardStore = defineStore('board', () => {
     setActiveNote, addBlock, updateBlock, deleteBlock, openSubPage, goBackTo,
     moveNote, archiveNote, checkExpiredDeadlines, checkUpcomingDeadlines,
     requestBrowserNotificationPermission, addDateNote, isPermanentColumn,
-    addNotification, removeNotification,
+    addNotification, removeNotification, fireBrowserNotification,
     togglePin, isPinned,
     restoreFromTrash, deleteForever, emptyTrash,
     addTag, deleteTag, updateTag, setColumnTags, toggleNoteTag, getNotesForTag,
