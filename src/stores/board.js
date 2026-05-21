@@ -32,10 +32,11 @@ export const useBoardStore = defineStore('board', () => {
 
   let saveTimeout = null
   let notifId = 0
-  let isRemoteUpdate = false
+  let remoteUpdateDepth = 0
   const snapshotUnsubscribers = {}
   let pollInterval = null
   let visibilityHandler = null
+  let lastSaveHash = ''
 
   // ─── Helpers ───
   function isPermanentColumn(columnId) {
@@ -651,10 +652,19 @@ export const useBoardStore = defineStore('board', () => {
 
   const wsDataCache = {}
 
+  function buildIncoming(data) {
+    return {
+      columns: data.columns || [],
+      pins: data.pins || [],
+      trash: data.trash || [],
+      tags: data.tags || []
+    }
+  }
+
   function saveToFirestore() {
     clearTimeout(saveTimeout)
     saveTimeout = setTimeout(async () => {
-      if (isRemoteUpdate) return
+      if (remoteUpdateDepth > 0) return
       const wsStore = useWorkspaceStore()
       if (!wsStore.activeWorkspaceIds.length) return
 
@@ -686,11 +696,16 @@ export const useBoardStore = defineStore('board', () => {
 
       try {
         for (const [wsId, data] of Object.entries(byWs)) {
-          const payload = {
+          const clean = {
             columns: JSON.parse(JSON.stringify(data.columns)),
             pins:    JSON.parse(JSON.stringify(data.pins)),
             trash:   JSON.parse(JSON.stringify(data.trash)),
-            tags:    JSON.parse(JSON.stringify(data.tags)),
+            tags:    JSON.parse(JSON.stringify(data.tags))
+          }
+          lastSaveHash = JSON.stringify(clean)
+          wsDataCache[wsId] = clean
+          const payload = {
+            ...clean,
             updatedAt: new Date().toISOString(),
             _lastModifiedBy: clientId
           }
@@ -740,13 +755,13 @@ export const useBoardStore = defineStore('board', () => {
       }
     }
 
-    isRemoteUpdate = true
+    remoteUpdateDepth++
     columnWorkspaceMap.value = newCwMap
     columns.value = allColumns
     pinnedNoteIds.value = [...new Set(allPins)]
     trash.value = allTrash
     tags.value = allTags
-    nextTick(() => { setTimeout(() => { isRemoteUpdate = false }, 50) })
+    nextTick(() => { setTimeout(() => { remoteUpdateDepth-- }, 200) })
   }
 
   function stopSync() {
@@ -768,20 +783,13 @@ export const useBoardStore = defineStore('board', () => {
 
     const unsub = onSnapshot(docRef, (snap) => {
       if (!snap.exists() || snap.metadata.hasPendingWrites) return
+      if (isFirstSnapshot) { isFirstSnapshot = false; return }
       const data = snap.data()
-      if (isFirstSnapshot) {
-        isFirstSnapshot = false
-        return
-      }
-      if (data._lastModifiedBy === clientId) return
-      const incoming = {
-        columns: data.columns || [],
-        pins: data.pins || [],
-        trash: data.trash || [],
-        tags: data.tags || []
-      }
+      const incoming = buildIncoming(data)
+      const incomingHash = JSON.stringify(incoming)
       const prev = wsDataCache[wsId]
-      if (prev && JSON.stringify(prev) === JSON.stringify(incoming)) return
+      if (prev && JSON.stringify(prev) === incomingHash) return
+      if (incomingHash === lastSaveHash) return
       applyRemoteWorkspace(wsId, data)
     }, (err) => {
       console.warn('onSnapshot error for workspace', wsId, err)
@@ -820,7 +828,7 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   async function pollForChanges() {
-    if (isRemoteUpdate) return
+    if (remoteUpdateDepth > 0) return
     const wsStore = useWorkspaceStore()
     if (!wsStore.activeWorkspaceIds.length) return
     let changed = false
@@ -830,19 +838,13 @@ export const useBoardStore = defineStore('board', () => {
         const snap = await getDocFromServer(doc(db, 'workspaces', wsId))
         if (!snap.exists()) continue
         const data = snap.data()
-        if (data._lastModifiedBy === clientId) continue
-
-        const incoming = {
-          columns: data.columns || [],
-          pins: data.pins || [],
-          trash: data.trash || [],
-          tags: data.tags || []
-        }
+        const incoming = buildIncoming(data)
+        const incomingHash = JSON.stringify(incoming)
         const prev = wsDataCache[wsId]
-        if (!prev || JSON.stringify(prev) !== JSON.stringify(incoming)) {
-          wsDataCache[wsId] = incoming
-          changed = true
-        }
+        if (prev && JSON.stringify(prev) === incomingHash) continue
+        if (incomingHash === lastSaveHash) continue
+        wsDataCache[wsId] = incoming
+        changed = true
       } catch {
         // offline or transient error — skip this cycle
       }
@@ -907,7 +909,7 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   watch([columns, pinnedNoteIds, trash, tags], () => {
-    if (dataLoaded.value && !isRemoteUpdate) saveToFirestore()
+    if (dataLoaded.value && remoteUpdateDepth === 0) saveToFirestore()
   }, { deep: true })
 
   return {
