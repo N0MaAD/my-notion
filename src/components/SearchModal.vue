@@ -181,8 +181,15 @@ function searchSubPages(page, pathStr, noteId, currentPath, q, found, wsIcon) {
   }
 }
 
+const debouncedQuery = ref('')
+let searchTimer = null
+watch(query, (v) => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => { debouncedQuery.value = v }, 150)
+})
+
 const results = computed(() => {
-  const q = query.value.trim().toLowerCase()
+  const q = debouncedQuery.value.trim().toLowerCase()
   if (q.length < 1) return []
   const found = []
   for (const col of store.columns) {
@@ -205,11 +212,24 @@ const results = computed(() => {
   return found.slice(0, 25)
 })
 
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 function highlight(text) {
-  if (!text || !query.value) return text
-  const q = query.value.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  if (!q) return text
-  return text.replace(new RegExp(`(${q})`, 'gi'), '<mark>$1</mark>')
+  if (!text || !query.value) return escapeHtml(text || '')
+  const q = query.value.trim()
+  if (!q) return escapeHtml(text)
+  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
+  const parts = []
+  let last = 0
+  text.replace(re, (match, offset) => {
+    parts.push(escapeHtml(text.slice(last, offset)))
+    parts.push('<mark>' + escapeHtml(match) + '</mark>')
+    last = offset + match.length
+  })
+  parts.push(escapeHtml(text.slice(last)))
+  return parts.join('')
 }
 
 // ─── Keyboard navigation ───

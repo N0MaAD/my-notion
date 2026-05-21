@@ -141,11 +141,13 @@ function handleDelete() {
 
 function getPageTitle(pathIndex) {
   let page = store.activeNote
+  if (!page) return '?'
   for (let i = 0; i <= pathIndex; i++) {
+    if (!page.blocks) return '?'
     const block = page.blocks.find(b => b.id === store.openPagePath[i])
-    if (!block) return '?'
+    if (!block) { store.openPagePath = store.openPagePath.slice(0, i); return '?' }
     page = block
   }
-  return page.title
+  return page.title || 'Sans titre'
 }
 </script>

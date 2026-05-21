@@ -6501,7 +6501,15 @@
      .settings-main {
        flex: 1;
        overflow-y: auto;
+       overflow-x: hidden;
        width: 100vw;
+       -webkit-overflow-scrolling: touch;
+     }
+
+     .settings-section {
+       overflow-y: visible;
+       flex: none;
+       padding: 1rem;
      }
 
      .agenda-container {
@@ -6530,7 +6538,22 @@
 
      .btn-pin {
        min-width: 10vw;
-       min-height: 6dvh;
+       min-height: 44px;
        font-size: 4.5vw;
+     }
+
+     .btn, button {
+       min-height: 44px;
+       min-width: 44px;
+     }
+
+     .card p, .card-header, .trash-item-title, .drawer-note-title, .search-result-title {
+       overflow: hidden;
+       text-overflow: ellipsis;
+       white-space: nowrap;
+     }
+
+     .search-result-item {
+       min-height: 44px;
      }
    }
