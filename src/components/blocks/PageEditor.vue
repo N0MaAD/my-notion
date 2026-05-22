@@ -400,17 +400,6 @@ slashFilter.value = ''
 selectedIndex.value = 0
 }
 
-function deleteSlashText() {
-const { $from } = editor.value.state.selection
-const textBefore = $from.parent.textContent.slice(0, $from.parentOffset)
-const slashMatch = textBefore.match(/\/([^\s]*)$/)
-if (slashMatch) {
-  const from = editor.value.state.selection.from - slashMatch[0].length
-  const to = editor.value.state.selection.from
-  editor.value.chain().focus().deleteRange({ from, to }).run()
-}
-}
-
 function toEmbedUrl(url) {
 const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/)
 if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`
@@ -435,76 +424,91 @@ return url
 }
 
 function executeSlashCommand(item) {
-deleteSlashText()
+const { $from } = editor.value.state.selection
+const textBefore = $from.parent.textContent.slice(0, $from.parentOffset)
+const slashMatch = textBefore.match(/\/([^\s]*)$/)
+
+let slashFrom = null, slashTo = null
+if (slashMatch) {
+  slashFrom = editor.value.state.selection.from - slashMatch[0].length
+  slashTo = editor.value.state.selection.from
+}
+
 closeSlashMenu()
+
+function cmd() {
+  const c = editor.value.chain().focus()
+  return slashFrom !== null ? c.deleteRange({ from: slashFrom, to: slashTo }) : c
+}
 
 switch (item.type) {
   case 'text':
-    editor.value.chain().focus().setParagraph().run()
+    cmd().setParagraph().run()
     break
   case 'heading1':
-    editor.value.chain().focus().toggleHeading({ level: 1 }).run()
+    cmd().toggleHeading({ level: 1 }).run()
     break
   case 'heading2':
-    editor.value.chain().focus().toggleHeading({ level: 2 }).run()
+    cmd().toggleHeading({ level: 2 }).run()
     break
   case 'heading3':
-    editor.value.chain().focus().toggleHeading({ level: 3 }).run()
+    cmd().toggleHeading({ level: 3 }).run()
     break
   case 'heading4':
-    editor.value.chain().focus().toggleHeading({ level: 4 }).run()
+    cmd().toggleHeading({ level: 4 }).run()
     break
   case 'bullet':
-    editor.value.chain().focus().toggleBulletList().run()
+    cmd().toggleBulletList().run()
     break
   case 'ordered':
-    editor.value.chain().focus().toggleOrderedList().run()
+    cmd().toggleOrderedList().run()
     break
   case 'taskList':
-    editor.value.chain().focus().toggleTaskList().run()
+    cmd().toggleTaskList().run()
     break
   case 'toggle': {
     const summary = prompt('Titre du menu dépliant :') || 'Menu dépliant'
-    editor.value.chain().focus().insertContent({
+    cmd().insertContent({
       type: 'detailsBlock',
       attrs: { summary, open: true },
       content: [{ type: 'paragraph' }]
     }).run()
     break
   }
-  case 'callout': {
-    editor.value.chain().focus().insertContent({
+  case 'callout':
+    cmd().insertContent({
       type: 'calloutBlock',
       attrs: { emoji: '💡' },
       content: [{ type: 'paragraph' }]
     }).run()
     break
-  }
   case 'quote':
-    editor.value.chain().focus().toggleBlockquote().run()
+    cmd().toggleBlockquote().run()
     break
   case 'code':
-    editor.value.chain().focus().toggleCodeBlock().run()
+    cmd().toggleCodeBlock().run()
     break
   case 'divider':
-    editor.value.chain().focus().setHorizontalRule().run()
+    cmd().setHorizontalRule().run()
     break
   case 'table':
+    cmd().run()
     openTablePicker()
     break
   case 'noteLink':
+    cmd().run()
     openNotePicker()
     break
   case 'image':
+    cmd().run()
     triggerImagePicker()
     break
   case 'video': {
     const url = prompt('URL de la vidéo (YouTube, Vimeo, lien direct...) :')
     if (url && url.trim()) {
-      editor.value.chain().focus().insertContent({
-        type: 'videoBlock',
-        attrs: { src: url.trim() }
-      }).run()
+      cmd().insertContent({ type: 'videoBlock', attrs: { src: url.trim() } }).run()
+    } else {
+      cmd().run()
     }
     break
   }
@@ -512,10 +516,9 @@ switch (item.type) {
     const url = prompt('URL du fichier audio :')
     if (url && url.trim()) {
       const title = prompt('Titre (optionnel) :') || ''
-      editor.value.chain().focus().insertContent({
-        type: 'audioBlock',
-        attrs: { src: url.trim(), title }
-      }).run()
+      cmd().insertContent({ type: 'audioBlock', attrs: { src: url.trim(), title } }).run()
+    } else {
+      cmd().run()
     }
     break
   }
@@ -525,10 +528,12 @@ switch (item.type) {
       store.addBlock('page', { title: title.trim() })
       const page = store.currentPage
       const newBlock = page.blocks[page.blocks.length - 1]
-      editor.value.chain().focus().insertContent({
+      cmd().insertContent({
         type: 'pageBlock',
         attrs: { pageId: newBlock.id, title: title.trim() }
       }).run()
+    } else {
+      cmd().run()
     }
     break
   }
@@ -537,24 +542,26 @@ switch (item.type) {
     if (url && url.trim()) {
       const label = prompt('Label (optionnel) :') || url
       const embedUrl = toEmbedUrl(url.trim())
-      editor.value.chain().focus().insertContent({
+      cmd().insertContent({
         type: 'embedBlock',
         attrs: { url: embedUrl, label: label.trim() }
       }).run()
+    } else {
+      cmd().run()
     }
     break
   }
-  case 'chartBar':    openChartEditor('bar'); break
-  case 'chartBarH':   openChartEditor('horizontalBar'); break
-  case 'chartLine':   openChartEditor('line'); break
-  case 'chartDonut':  openChartEditor('doughnut'); break
-  case 'chartNumber': openChartEditor('number'); break
+  case 'chartBar':    cmd().run(); openChartEditor('bar'); break
+  case 'chartBarH':   cmd().run(); openChartEditor('horizontalBar'); break
+  case 'chartLine':   cmd().run(); openChartEditor('line'); break
+  case 'chartDonut':  cmd().run(); openChartEditor('doughnut'); break
+  case 'chartNumber': cmd().run(); openChartEditor('number'); break
   case 'poll': {
     const question = prompt('Question du sondage :')
-    if (!question) break
+    if (!question) { cmd().run(); break }
     const raw = prompt('Options (séparées par des virgules) :') || 'Option A,Option B'
     const options = raw.split(',').map(s => ({ text: s.trim(), votes: 0 })).filter(o => o.text)
-    editor.value.chain().focus().insertContent({
+    cmd().insertContent({
       type: 'pollBlock',
       attrs: { question: question.trim(), options: JSON.stringify(options) }
     }).run()
@@ -563,10 +570,12 @@ switch (item.type) {
   case 'map': {
     const address = prompt('Adresse ou lieu à afficher :')
     if (address && address.trim()) {
-      editor.value.chain().focus().insertContent({
+      cmd().insertContent({
         type: 'mapBlock',
         attrs: { address: address.trim(), zoom: 15 }
       }).run()
+    } else {
+      cmd().run()
     }
     break
   }
