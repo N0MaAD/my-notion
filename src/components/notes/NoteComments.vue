@@ -182,13 +182,6 @@ function submitComment() {
   if (!store.activeNote.comments) store.activeNote.comments = []
   store.activeNote.comments.push(comment)
   newComment.value = ''
-
-  if (mentions.length > 0) {
-    for (const m of mentions) {
-      store.addNotification(`💬 ${comment.userName} vous a mentionné`, 'info')
-    }
-    store.fireBrowserNotification('My Notion', `${comment.userName} vous a mentionné dans un commentaire`)
-  }
 }
 
 function deleteComment(commentId) {
