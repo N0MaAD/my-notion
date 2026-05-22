@@ -713,6 +713,7 @@ export const useBoardStore = defineStore('board', () => {
         }
       } catch (e) {
         console.error('Erreur sauvegarde Firestore:', e)
+        addNotification('❌ Erreur de sauvegarde — vos modifications seront re-tentées', 'archive')
       }
     }, 500)
   }
@@ -793,6 +794,7 @@ export const useBoardStore = defineStore('board', () => {
       applyRemoteWorkspace(wsId, data)
     }, (err) => {
       console.warn('onSnapshot error for workspace', wsId, err)
+      addNotification('⚠️ Connexion temps réel perdue — reconnexion…', 'archive')
       delete snapshotUnsubscribers[wsId]
       setTimeout(() => startListenerForWorkspace(wsId), 2000)
     })
@@ -881,6 +883,7 @@ export const useBoardStore = defineStore('board', () => {
         }
       } catch (e) {
         console.warn('Erreur chargement workspace:', wsId, e)
+        addNotification('⚠️ Impossible de charger un workspace — vérifiez votre connexion', 'archive')
       }
     }
 

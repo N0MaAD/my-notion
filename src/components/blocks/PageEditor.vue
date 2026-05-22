@@ -731,7 +731,8 @@ let tableCleanup = null
 function setupTableControls() {
   if (tableCleanup) tableCleanup()
   const editorEl = blockRef.value?.querySelector('.ProseMirror')
-  if (!editorEl) return
+  const container = blockRef.value
+  if (!editorEl || !container) return
 
   let addRowBtn = null
   let addColBtn = null
@@ -743,9 +744,7 @@ function setupTableControls() {
     btn.className = 'table-add-btn'
     btn.textContent = label
     btn.style.display = 'none'
-    btn.contentEditable = 'false'
-    btn.setAttribute('data-not-content', 'true')
-    editorEl.appendChild(btn)
+    container.appendChild(btn)
     return btn
   }
 
@@ -766,24 +765,21 @@ function setupTableControls() {
 
     hoveredTable = table
     const tableRect = table.getBoundingClientRect()
-    const editorRect = editorEl.getBoundingClientRect()
+    const containerRect = container.getBoundingClientRect()
     const cellRect = cell.getBoundingClientRect()
     const row = cell.closest('tr')
     hoveredRow = row
 
-    // Highlight row
     table.querySelectorAll('tr').forEach(r => r.classList.remove('table-row-hover'))
     if (row) row.classList.add('table-row-hover')
 
-    // Row add button — on the left edge of the table, aligned to the hovered row
     addRowBtn.style.display = 'flex'
-    addRowBtn.style.top = (cellRect.top + cellRect.height / 2 - editorRect.top - 12) + 'px'
-    addRowBtn.style.left = (tableRect.left - editorRect.left - 28) + 'px'
+    addRowBtn.style.top = (cellRect.top + cellRect.height / 2 - containerRect.top + container.scrollTop - 12) + 'px'
+    addRowBtn.style.left = (tableRect.left - containerRect.left - 28) + 'px'
 
-    // Column add button — on top edge, aligned to the hovered column
     addColBtn.style.display = 'flex'
-    addColBtn.style.top = (tableRect.top - editorRect.top - 28) + 'px'
-    addColBtn.style.left = (cellRect.left + cellRect.width / 2 - editorRect.left - 12) + 'px'
+    addColBtn.style.top = (tableRect.top - containerRect.top + container.scrollTop - 28) + 'px'
+    addColBtn.style.left = (cellRect.left + cellRect.width / 2 - containerRect.left - 12) + 'px'
   }
 
   function hideAll() {
