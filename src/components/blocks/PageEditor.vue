@@ -525,13 +525,12 @@ switch (item.type) {
   case 'page': {
     const title = prompt('Nom de la sous-page :')
     if (title && title.trim()) {
-      store.addBlock('page', { title: title.trim() })
-      const page = store.currentPage
-      const newBlock = page.blocks[page.blocks.length - 1]
+      const pageId = crypto.randomUUID()
       cmd().insertContent({
         type: 'pageBlock',
-        attrs: { pageId: newBlock.id, title: title.trim() }
+        attrs: { pageId, title: title.trim() }
       }).run()
+      store.addBlock('page', { id: pageId, title: title.trim() })
     } else {
       cmd().run()
     }
