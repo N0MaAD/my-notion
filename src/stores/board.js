@@ -332,7 +332,9 @@ export const useBoardStore = defineStore('board', () => {
   function addBlock(type, data = {}) {
     const page = currentPage.value
     if (!page) return
-    page.blocks.push({ id: crypto.randomUUID(), type, ...getDefaultBlockData(type, data) })
+    const id = data.id || crypto.randomUUID()
+    const { id: _, ...rest } = data
+    page.blocks.push({ id, type, ...getDefaultBlockData(type, rest) })
   }
 
   function getDefaultBlockData(type, data) {
