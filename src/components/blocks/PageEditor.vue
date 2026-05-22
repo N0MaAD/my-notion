@@ -156,6 +156,7 @@ import { MapNode } from '../../extensions/MapNode.js'
 import ChartEditor from './ChartEditor.vue'
 import { useBoardStore } from '../../stores/board.js'
 import { DragHandle } from '../../extensions/DragHandle.js'
+import { DateNode } from '../../extensions/DateNode.js'
 import { uploadImage } from '../../lib/uploadImage.js'
 
 const store = useBoardStore()
@@ -195,6 +196,7 @@ const slashItems = [
   { id: 'chartLine', icon: '📈', label: 'Graphique en lignes', description: 'Courbe de données', type: 'chartLine', category: 'Graphiques' },
   { id: 'chartDonut', icon: '🍩', label: 'Graphique en anneau', description: 'Diagramme circulaire', type: 'chartDonut', category: 'Graphiques' },
   { id: 'chartNumber', icon: '#', label: 'Graphique numérique', description: 'Grand nombre mis en avant', type: 'chartNumber', category: 'Graphiques' },
+  { id: 'date', icon: '📅', label: 'Date / Événement', description: 'Ajouter un événement à l\'agenda', type: 'date', category: 'Autre' },
   { id: 'poll', icon: '📋', label: 'Sondage', description: 'Sondage à choix multiples', type: 'poll', category: 'Autre' },
   { id: 'map', icon: '🗺', label: 'Vue Carte', description: 'Carte Google Maps', type: 'map', category: 'Autre' },
 ]
@@ -555,6 +557,30 @@ switch (item.type) {
   case 'chartLine':   cmd().run(); openChartEditor('line'); break
   case 'chartDonut':  cmd().run(); openChartEditor('doughnut'); break
   case 'chartNumber': cmd().run(); openChartEditor('number'); break
+  case 'date': {
+    const title = prompt('Titre de l\'événement :')
+    if (!title || !title.trim()) { cmd().run(); break }
+    const isDeadlineStr = prompt('Type :\n1 = Date unique (deadline)\n2 = Période (début → fin)\n\nEntrez 1 ou 2 :') || '1'
+    const isDeadline = isDeadlineStr.trim() !== '2'
+    const startDate = prompt(isDeadline ? 'Date (AAAA-MM-JJ) :' : 'Date de début (AAAA-MM-JJ) :')
+    if (!startDate || !startDate.trim()) { cmd().run(); break }
+    let endDate = null
+    if (!isDeadline) {
+      endDate = prompt('Date de fin (AAAA-MM-JJ) :') || null
+    }
+    const noteId = crypto.randomUUID()
+    cmd().insertContent({
+      type: 'dateBlock',
+      attrs: { noteId, title: title.trim(), date: startDate.trim(), endDate: endDate?.trim() || null, isDeadline }
+    }).run()
+    const note = store.addDateNote({
+      title: title.trim(),
+      startDate: startDate.trim(),
+      endDate: endDate?.trim() || null,
+      isDeadline
+    })
+    break
+  }
   case 'poll': {
     const question = prompt('Question du sondage :')
     if (!question) { cmd().run(); break }
@@ -629,6 +655,7 @@ extensions: [
   MapNode,
   PageNode,
   EmbedNode,
+  DateNode,
   DragHandle
 ],
 onUpdate({ editor }) {

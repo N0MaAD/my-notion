@@ -2368,6 +2368,49 @@
      color: var(--accent);
    }
    
+   .node-date-block {
+     display: flex;
+     align-items: center;
+     gap: 0.5rem;
+     padding: 0.6rem 0.75rem;
+     margin: 0.4rem 0;
+     background: var(--bg-tertiary);
+     border: 1px solid var(--surface-card-border);
+     border-left: 3px solid var(--accent, #38bdf8);
+     border-radius: var(--radius-sm);
+     position: relative;
+     user-select: none;
+     transition: all var(--transition);
+   }
+
+   .node-date-block:hover {
+     background: var(--bg-hover);
+     border-color: var(--accent);
+     box-shadow: var(--shadow-sm);
+   }
+
+   .node-date-icon {
+     font-size: 1rem;
+   }
+
+   .node-date-title {
+     flex: 1;
+     font-size: 0.875rem;
+     font-weight: 600;
+     color: var(--text-primary);
+   }
+
+   .node-date-value {
+     font-size: 0.78rem;
+     color: var(--accent, #38bdf8);
+     font-weight: 500;
+     white-space: nowrap;
+   }
+
+   .node-date-block:hover .node-delete-btn {
+     opacity: 1;
+   }
+
    .node-embed-block {
      margin: 0.5rem 0;
      user-select: none;
