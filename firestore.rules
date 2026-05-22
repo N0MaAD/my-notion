@@ -61,6 +61,11 @@ service cloud.firestore {
       allow read: if request.auth != null;
     }
 
+    // ─── Workspace Chat ───
+    match /workspaceChats/{wsId}/messages/{msgId} {
+      allow read, write: if request.auth != null;
+    }
+
     // ─── Invitations ───
     // Collection séparée pour la découverte cross-user
     match /invites/{inviteId} {
