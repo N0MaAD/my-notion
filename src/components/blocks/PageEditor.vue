@@ -126,6 +126,12 @@
     @close="closeChartEditor"
     @save="onChartEditorSave"
   />
+
+  <DateEventModal
+    :visible="showDateModal"
+    @close="showDateModal = false"
+    @save="onDateModalSave"
+  />
 </div>
 </template>
 
@@ -154,6 +160,7 @@ import { ChartNode } from '../../extensions/ChartNode.js'
 import { PollNode } from '../../extensions/PollNode.js'
 import { MapNode } from '../../extensions/MapNode.js'
 import ChartEditor from './ChartEditor.vue'
+import DateEventModal from '../DateEventModal.vue'
 import { useBoardStore } from '../../stores/board.js'
 import { DragHandle } from '../../extensions/DragHandle.js'
 import { DateNode } from '../../extensions/DateNode.js'
@@ -208,6 +215,9 @@ const notePickerFilter = ref('')
 const notePickerIndex = ref(0)
 const notePickerInputRef = ref(null)
 const fileInputRef = ref(null)
+
+const showDateModal = ref(false)
+const dateModalCmd = ref(null)
 
 const showTablePicker = ref(false)
 const tablePickerPos = ref({ top: 0, left: 0 })
@@ -358,6 +368,33 @@ function onChartEditorSave(data) {
     }).run()
   }
   closeChartEditor()
+}
+
+function onDateModalSave(data) {
+  showDateModal.value = false
+  const noteId = crypto.randomUUID()
+  if (dateModalCmd.value) {
+    dateModalCmd.value.insertContent({
+      type: 'dateBlock',
+      attrs: {
+        noteId,
+        title: data.title,
+        date: data.startDate,
+        endDate: data.endDate,
+        isDeadline: data.isDeadline
+      }
+    }).run()
+    dateModalCmd.value = null
+  }
+  store.addDateNote({
+    title: data.title,
+    startDate: data.startDate,
+    endDate: data.endDate,
+    isDeadline: data.isDeadline,
+    color: data.color,
+    startTime: data.startTime
+  })
+  if (data.startTime) store.requestBrowserNotificationPermission?.()
 }
 
 const filteredSlashItems = computed(() => {
@@ -557,30 +594,10 @@ switch (item.type) {
   case 'chartLine':   cmd().run(); openChartEditor('line'); break
   case 'chartDonut':  cmd().run(); openChartEditor('doughnut'); break
   case 'chartNumber': cmd().run(); openChartEditor('number'); break
-  case 'date': {
-    const title = prompt('Titre de l\'événement :')
-    if (!title || !title.trim()) { cmd().run(); break }
-    const isDeadlineStr = prompt('Type :\n1 = Date unique (deadline)\n2 = Période (début → fin)\n\nEntrez 1 ou 2 :') || '1'
-    const isDeadline = isDeadlineStr.trim() !== '2'
-    const startDate = prompt(isDeadline ? 'Date (AAAA-MM-JJ) :' : 'Date de début (AAAA-MM-JJ) :')
-    if (!startDate || !startDate.trim()) { cmd().run(); break }
-    let endDate = null
-    if (!isDeadline) {
-      endDate = prompt('Date de fin (AAAA-MM-JJ) :') || null
-    }
-    const noteId = crypto.randomUUID()
-    cmd().insertContent({
-      type: 'dateBlock',
-      attrs: { noteId, title: title.trim(), date: startDate.trim(), endDate: endDate?.trim() || null, isDeadline }
-    }).run()
-    const note = store.addDateNote({
-      title: title.trim(),
-      startDate: startDate.trim(),
-      endDate: endDate?.trim() || null,
-      isDeadline
-    })
+  case 'date':
+    dateModalCmd.value = cmd()
+    showDateModal.value = true
     break
-  }
   case 'poll': {
     const question = prompt('Question du sondage :')
     if (!question) { cmd().run(); break }

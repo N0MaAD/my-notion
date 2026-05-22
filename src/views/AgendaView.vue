@@ -44,82 +44,21 @@
     </div>
   </div>
 
-  <!-- Modal création / édition -->
-  <Teleport to="body">
-    <div v-if="modalVisible" class="agenda-modal-overlay" @click="closeModal">
-      <div class="agenda-modal" @click.stop>
-        <div class="agenda-modal-header">
-          <h3>{{ editingNote ? 'Modifier la note' : 'Nouvelle date' }}</h3>
-          <button class="agenda-modal-close" @click="closeModal">×</button>
-        </div>
-
-        <div class="agenda-modal-body">
-          <label class="agenda-modal-label">Titre</label>
-          <input
-            v-model="form.title"
-            type="text"
-            class="agenda-modal-input"
-            placeholder="Titre de la note..."
-            @keyup.enter="submitModal"
-            ref="titleInputRef"
-          />
-
-          <label class="agenda-modal-checkbox">
-            <input type="checkbox" v-model="form.isDeadline" />
-            <span>Deadline (date unique)</span>
-          </label>
-
-          <label class="agenda-modal-label">{{ form.isDeadline ? '📅 Date' : '🗓️ Début' }}</label>
-          <input v-model="form.startDate" type="date" class="agenda-modal-input" />
-
-          <template v-if="!form.isDeadline">
-            <label class="agenda-modal-label">🗓️ Fin</label>
-            <input v-model="form.endDate" type="date" class="agenda-modal-input" />
-          </template>
-
-          <label class="agenda-modal-checkbox">
-            <input type="checkbox" v-model="form.hasTime" />
-            <span>⏰ Définir une heure (rappel)</span>
-          </label>
-
-          <input
-            v-if="form.hasTime"
-            v-model="form.startTime"
-            type="time"
-            class="agenda-modal-input"
-          />
-
-          <label class="agenda-modal-label">Couleur</label>
-          <div class="agenda-modal-colors">
-            <button
-              v-for="c in colorPalette"
-              :key="c.value || 'none'"
-              class="agenda-color-swatch"
-              :class="{ active: form.color === c.value }"
-              :style="{ background: c.value || 'transparent', borderColor: c.value || '#999' }"
-              :title="c.label"
-              @click="form.color = c.value"
-            >
-              <span v-if="!c.value">∅</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="agenda-modal-footer">
-          <button v-if="editingNote" class="btn btn-danger" @click="deleteFromModal">Supprimer</button>
-          <span class="agenda-modal-spacer"></span>
-          <button class="btn btn-ghost" @click="closeModal">Annuler</button>
-          <button class="btn btn-accent" @click="submitModal">{{ editingNote ? 'Enregistrer' : 'Créer' }}</button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
+  <DateEventModal
+    :visible="modalVisible"
+    :editing="!!editingNote"
+    :initial-data="modalInitialData"
+    @close="closeModal"
+    @save="onModalSave"
+    @delete="deleteFromModal"
+  />
 </div>
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import { useBoardStore, NOTE_TYPES } from '../stores/board.js'
+import DateEventModal from '../components/DateEventModal.vue'
 
 const store = useBoardStore()
 
@@ -137,17 +76,6 @@ const monthNames = [
 ]
 
 const monthLabel = computed(() => `${monthNames[currentMonth.value]} ${currentYear.value}`)
-
-const colorPalette = [
-  { value: null, label: 'Défaut' },
-  { value: '#f59e0b', label: 'Orange' },
-  { value: '#ef4444', label: 'Rouge' },
-  { value: '#3b82f6', label: 'Bleu' },
-  { value: '#14b8a6', label: 'Turquoise' },
-  { value: '#a855f7', label: 'Violet' },
-  { value: '#22c55e', label: 'Vert' },
-  { value: '#ec4899', label: 'Rose' }
-]
 
 // Toutes les notes de type 'date' avec au moins une date renseignee
 const dateNotes = computed(() => {
@@ -243,16 +171,7 @@ function noteStyle(note) {
 // ─── Modal ───
 const modalVisible = ref(false)
 const editingNote = ref(null)
-const titleInputRef = ref(null)
-const form = ref({
-  title: '',
-  isDeadline: true,
-  startDate: '',
-  endDate: '',
-  hasTime: false,
-  startTime: '09:00',
-  color: null
-})
+const modalInitialData = ref(null)
 
 function isoDate(d) {
   const yyyy = d.getFullYear()
@@ -261,36 +180,16 @@ function isoDate(d) {
   return `${yyyy}-${mm}-${dd}`
 }
 
-async function openCreateModal(date) {
+function openCreateModal(date) {
   editingNote.value = null
-  form.value = {
-    title: '',
-    isDeadline: true,
-    startDate: isoDate(date),
-    endDate: '',
-    hasTime: false,
-    startTime: '09:00',
-    color: null
-  }
+  modalInitialData.value = { startDate: isoDate(date) }
   modalVisible.value = true
-  await nextTick()
-  titleInputRef.value?.focus()
 }
 
-async function openEditModal(note) {
+function openEditModal(note) {
   editingNote.value = note
-  form.value = {
-    title: note.title || '',
-    isDeadline: !!note.isDeadline,
-    startDate: note.startDate ? note.startDate.slice(0, 10) : '',
-    endDate: note.endDate ? note.endDate.slice(0, 10) : '',
-    hasTime: !!note.startTime,
-    startTime: note.startTime || '09:00',
-    color: note.customColor || null
-  }
+  modalInitialData.value = note
   modalVisible.value = true
-  await nextTick()
-  titleInputRef.value?.focus()
 }
 
 function closeModal() {
@@ -298,35 +197,24 @@ function closeModal() {
   editingNote.value = null
 }
 
-function submitModal() {
-  const title = form.value.title.trim()
-  if (!title) return
-
-  const time = form.value.hasTime ? form.value.startTime : null
-
+function onModalSave(data) {
   if (editingNote.value) {
-    store.renameNote(editingNote.value.id, title)
-    store.setNoteIsDeadline(editingNote.value.id, form.value.isDeadline)
-    store.setNoteDuration(
-      editingNote.value.id,
-      form.value.startDate || null,
-      form.value.isDeadline ? null : (form.value.endDate || null)
-    )
-    store.setNoteTime(editingNote.value.id, time)
-    store.setNoteColor(editingNote.value.id, form.value.color)
+    store.renameNote(editingNote.value.id, data.title)
+    store.setNoteIsDeadline(editingNote.value.id, data.isDeadline)
+    store.setNoteDuration(editingNote.value.id, data.startDate, data.endDate)
+    store.setNoteTime(editingNote.value.id, data.startTime)
+    store.setNoteColor(editingNote.value.id, data.color)
   } else {
     store.addDateNote({
-      title,
-      startDate: form.value.startDate || null,
-      endDate: form.value.endDate || null,
-      isDeadline: form.value.isDeadline,
-      color: form.value.color,
-      startTime: time
+      title: data.title,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      isDeadline: data.isDeadline,
+      color: data.color,
+      startTime: data.startTime
     })
   }
-
-  if (time) store.requestBrowserNotificationPermission()
-
+  if (data.startTime) store.requestBrowserNotificationPermission?.()
   closeModal()
 }
 
