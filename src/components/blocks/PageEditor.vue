@@ -743,6 +743,8 @@ function setupTableControls() {
     btn.className = 'table-add-btn'
     btn.textContent = label
     btn.style.display = 'none'
+    btn.contentEditable = 'false'
+    btn.setAttribute('data-not-content', 'true')
     editorEl.appendChild(btn)
     return btn
   }

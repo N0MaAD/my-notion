@@ -3512,6 +3512,12 @@
      transform: scale(1.15);
    }
 
+   @media (max-width: 768px) {
+     .table-add-btn {
+       display: none !important;
+     }
+   }
+
    /* ---- Table row hover ---- */
    .tiptap-editor tr.table-row-hover td,
    .tiptap-editor tr.table-row-hover th {
