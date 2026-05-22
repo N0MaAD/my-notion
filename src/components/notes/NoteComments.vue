@@ -4,6 +4,7 @@
     <span class="comments-toggle">{{ expanded ? '▾' : '›' }}</span>
     <span class="comments-title">💬 Commentaires</span>
     <span v-if="comments.length" class="comments-count">{{ comments.length }}</span>
+    <button class="open-chat-btn" @click.stop="$emit('open-chat')" title="Chat workspace">💭</button>
   </div>
 
   <div v-if="expanded" class="comments-body">
@@ -76,6 +77,8 @@ import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useBoardStore } from '../../stores/board.js'
 import { useWorkspaceStore } from '../../stores/workspace.js'
 import { useAuthStore } from '../../stores/auth.js'
+
+defineEmits(['open-chat'])
 
 const store = useBoardStore()
 const wsStore = useWorkspaceStore()
@@ -259,6 +262,23 @@ watch(() => wsStore.activeWorkspaceIds[0], loadMembers)
 
 .comments-header:hover {
   color: var(--text-primary, #e2e8f0);
+}
+
+.open-chat-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.open-chat-btn:hover {
+  opacity: 1;
+  background: rgba(255,255,255,0.06);
 }
 
 .comments-toggle {

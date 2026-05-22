@@ -64,7 +64,8 @@
 
   <PageEditor :key="store.currentPage?.id || store.activeNoteId" />
 
-  <NoteComments v-if="store.openPagePath.length === 0" />
+  <NoteComments v-if="store.openPagePath.length === 0 && !showChat" @open-chat="showChat = true" />
+  <WorkspaceChat v-if="store.openPagePath.length === 0 && showChat" @close="showChat = false" />
 </div>
 </template>
 
@@ -73,6 +74,7 @@ import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useBoardStore } from '../../stores/board.js'
 import PageEditor from '../blocks/PageEditor.vue'
 import NoteComments from './NoteComments.vue'
+import WorkspaceChat from '../chat/WorkspaceChat.vue'
 
 defineProps({
   isMobileMode: { type: Boolean, default: false }
@@ -80,6 +82,7 @@ defineProps({
 
 const store = useBoardStore()
 
+const showChat = ref(false)
 const isRenaming = ref(false)
 const newTitle = ref('')
 const renameRef = ref(null)
