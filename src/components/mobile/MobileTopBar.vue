@@ -37,11 +37,13 @@ defineEmits(['open-settings', 'open-search', 'open-drawer'])
   align-items: center;
   justify-content: space-between;
   padding: 1dvh 3vw;
-  width: 100vw;
+  width: 100%;
   background: var(--bg-secondary, #1a1a2e);
   border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
   flex-shrink: 0;
   z-index: 100;
+  position: sticky;
+  top: 0;
 }
 .mobile-topbar-left {
   display: flex;

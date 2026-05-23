@@ -6427,22 +6427,30 @@
       ============================================================ */
 
    @media (max-width: 768px) {
-     body {
+     html, body {
        height: 100dvh;
+       overflow: hidden !important;
+       position: fixed !important;
+       width: 100vw;
      }
 
      #app {
        height: 100dvh;
        width: 100vw;
        flex-direction: column;
+       overflow: hidden !important;
+       position: fixed !important;
+       top: 0;
+       left: 0;
      }
 
      .board-area {
        padding: 2vw;
        overflow-x: auto;
        overflow-y: hidden;
-       width: 100vw;
+       width: 100%;
        height: 100%;
+       -webkit-overflow-scrolling: touch;
      }
 
      .board {
@@ -6451,8 +6459,6 @@
        height: 100%;
        width: max-content;
        min-width: 100%;
-       overflow-x: auto;
-       -webkit-overflow-scrolling: touch;
      }
 
      .column {

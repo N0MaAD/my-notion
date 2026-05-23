@@ -26,12 +26,14 @@ import { PhCheckSquare, PhCalendarDot, PhStar, PhTrash } from '@phosphor-icons/v
 <style scoped>
 .bottom-nav {
   display: flex;
-  width: 100vw;
+  width: 100%;
   z-index: 100;
   background: var(--bg-secondary, #1a1a2e);
   border-top: 1px solid var(--border, rgba(255,255,255,0.08));
   padding-bottom: env(safe-area-inset-bottom, 0);
   flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
 }
 .bottom-nav-item {
   flex: 1;

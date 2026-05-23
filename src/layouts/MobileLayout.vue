@@ -88,17 +88,19 @@ function onSwipeEnd(e) {
   display: flex;
   flex-direction: column;
   height: 100dvh;
+  height: 100vh;
   width: 100vw;
   overflow: hidden;
   position: fixed;
   top: 0;
   left: 0;
+  z-index: 1;
 }
 .mobile-main {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  width: 100vw;
+  width: 100%;
   min-height: 0;
   -webkit-overflow-scrolling: touch;
 }
