@@ -1,5 +1,6 @@
 <template>
   <component :is="iconComponent" :size="size" :weight="weight" v-if="iconComponent" />
+  <span v-else class="ph-icon-text" :style="{ fontSize: (size * 0.65) + 'px', width: size + 'px', height: size + 'px' }">{{ name }}</span>
 </template>
 
 <script setup>
@@ -114,3 +115,16 @@ const ICON_MAP = {
 
 const iconComponent = computed(() => ICON_MAP[props.name] || null)
 </script>
+
+<style scoped>
+.ph-icon-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  line-height: 1;
+  font-family: inherit;
+  color: currentColor;
+  flex-shrink: 0;
+}
+</style>

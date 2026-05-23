@@ -185,9 +185,10 @@ function cancel() {
 .add-card-type-btn {
   width: 34px;
   height: 34px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border, #ddd);
   border-radius: 6px;
-  background: #fff;
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #222);
   cursor: pointer;
   font-size: 1rem;
   display: flex;
@@ -198,15 +199,15 @@ function cancel() {
 }
 
 .add-card-type-btn:hover {
-  background: #f0f4ff;
-  border-color: #c8d8f8;
+  background: var(--bg-tertiary, #f0f4ff);
+  border-color: var(--accent, #3b82f6);
 }
 
 .type-picker {
-  background: #fff;
-  border: 1px solid #e2e2e2;
+  background: var(--bg-secondary, #fff);
+  border: 1px solid var(--border, #e2e2e2);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   padding: 0.3rem;
   margin-top: 0.3rem;
 }
@@ -219,15 +220,16 @@ function cancel() {
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.82rem;
+  color: var(--text-primary, #222);
   transition: background 0.1s;
 }
 
 .type-picker-item:hover {
-  background: #f0f4ff;
+  background: var(--bg-tertiary, #f0f4ff);
 }
 
 .type-picker-item.active {
-  background: #f0f4ff;
+  background: var(--bg-tertiary, #f0f4ff);
   font-weight: 600;
 }
 
@@ -235,6 +237,7 @@ function cancel() {
   font-size: 0.9rem;
   width: 1.4rem;
   text-align: center;
+  color: var(--accent, #3b82f6);
 }
 
 .type-picker-label {
@@ -242,7 +245,7 @@ function cancel() {
 }
 
 .type-picker-desc {
-  color: #999;
+  color: var(--text-secondary, #999);
   font-size: 0.72rem;
   margin-left: auto;
 }
@@ -259,7 +262,7 @@ function cancel() {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.78rem;
-  color: #666;
+  color: var(--text-secondary, #666);
   cursor: pointer;
   user-select: none;
 }
