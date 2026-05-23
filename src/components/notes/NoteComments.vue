@@ -4,7 +4,7 @@
     <span class="comments-toggle"><PhCaretDown v-if="expanded" :size="14" /><PhCaretRight v-else :size="14" /></span>
     <span class="comments-title"><PhChats :size="14" /> Commentaires</span>
     <span v-if="comments.length" class="comments-count">{{ comments.length }}</span>
-    <button class="open-chat-btn" @click.stop="$emit('open-chat')" title="Chat workspace">💭</button>
+    <button class="open-chat-btn" @click.stop="$emit('open-chat')" title="Chat workspace"><PhChats :size="16" /></button>
   </div>
 
   <div v-if="expanded" class="comments-body">
