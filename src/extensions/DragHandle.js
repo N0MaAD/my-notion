@@ -1,5 +1,6 @@
 import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
+import { createIcon } from '../utils/icons.js'
 
 export const DragHandle = Extension.create({
   name: 'dragHandle',
@@ -12,7 +13,7 @@ export const DragHandle = Extension.create({
       const el = document.createElement('div')
       el.classList.add('drag-handle')
       el.draggable = true
-      el.textContent = '⠿'
+      el.appendChild(createIcon('dots-six-vertical', 16))
       return el
     }
 

@@ -2,13 +2,13 @@
 <div class="add-block">
   <div v-if="isOpen" class="add-block-menu">
     <button class="btn btn-ghost add-block-option" @click="add('text')">
-      📝 Texte
+      <PhNotePencil :size="16" /> Texte
     </button>
     <button class="btn btn-ghost add-block-option" @click="addPage">
-      📄 Sous-page
+      <PhFilePlus :size="16" /> Sous-page
     </button>
     <button class="btn btn-ghost add-block-option" @click="addEmbed">
-      🔗 Embed
+      <PhLinkSimple :size="16" /> Embed
     </button>
   </div>
   <button v-else class="btn btn-ghost" @click="isOpen = true">
@@ -19,6 +19,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { PhNotePencil, PhFilePlus, PhLinkSimple } from '@phosphor-icons/vue'
 import { useBoardStore } from '../../stores/board.js'
 
 const store = useBoardStore()

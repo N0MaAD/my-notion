@@ -2,7 +2,7 @@
 <div>
   <!-- Pinned notes bar -->
   <div v-if="store.pinnedNotes.length > 0" class="pinned-bar">
-    <span class="pinned-bar-label">⭐ Épinglées</span>
+    <span class="pinned-bar-label"><PhStar :size="14" /> Épinglées</span>
     <div class="pinned-notes">
       <div
         v-for="note in store.pinnedNotes"
@@ -30,6 +30,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { PhStar } from '@phosphor-icons/vue'
 import KanbanColumn from '../components/kanban/KanbanColumn.vue'
 import AddColumn from '../components/kanban/AddColumn.vue'
 import { useBoardStore } from '../stores/board.js'

@@ -1,4 +1,5 @@
 import { Node, mergeAttributes } from '@tiptap/core'
+import { createIcon } from '../utils/icons.js'
 
 export const EmbedNode = Node.create({
   name: 'embedBlock',
@@ -36,11 +37,12 @@ export const EmbedNode = Node.create({
       header.classList.add('node-embed-header')
 
       const label = document.createElement('span')
-      label.textContent = `🔗 ${node.attrs.label || node.attrs.url}`
+      label.appendChild(createIcon('link-simple', 14))
+      label.appendChild(document.createTextNode(` ${node.attrs.label || node.attrs.url}`))
 
       const deleteBtn = document.createElement('button')
       deleteBtn.classList.add('node-delete-btn')
-      deleteBtn.textContent = '✕'
+      deleteBtn.appendChild(createIcon('x', 12))
       deleteBtn.addEventListener('click', (e) => {
         e.stopPropagation()
         const pos = getPos()

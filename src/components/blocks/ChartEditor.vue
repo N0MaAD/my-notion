@@ -4,7 +4,7 @@
     <div class="chart-editor" @click.stop>
       <div class="chart-editor-header">
         <h3>{{ isEditing ? 'Modifier le graphique' : 'Nouveau graphique' }}</h3>
-        <button class="chart-editor-close" @click="$emit('close')">✕</button>
+        <button class="chart-editor-close" @click="$emit('close')"><PhX :size="16" /></button>
       </div>
 
       <div class="chart-editor-body">
@@ -33,7 +33,7 @@
           <div v-for="(row, i) in form.rows" :key="i" class="chart-editor-row">
             <input v-model="row.label" placeholder="Label" class="chart-editor-input" />
             <input v-model.number="row.value" type="number" placeholder="0" class="chart-editor-input chart-editor-input-num" />
-            <button class="chart-editor-row-del" @click="form.rows.splice(i, 1)" title="Supprimer">✕</button>
+            <button class="chart-editor-row-del" @click="form.rows.splice(i, 1)" title="Supprimer"><PhX :size="14" /></button>
           </div>
           <button class="chart-editor-add-row" @click="form.rows.push({ label: '', value: 0 })">+ Ajouter une ligne</button>
         </div>
@@ -60,6 +60,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { PhX } from '@phosphor-icons/vue'
 
 const props = defineProps({
   visible: Boolean,

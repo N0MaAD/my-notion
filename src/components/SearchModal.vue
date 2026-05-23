@@ -3,7 +3,7 @@
   <div v-if="isOpen" class="search-overlay" @click.self="close">
     <div class="search-modal">
       <div class="search-input-row">
-        <span class="search-icon">🔍</span>
+        <span class="search-icon"><PhMagnifyingGlass :size="16" /></span>
         <input
           ref="inputRef"
           class="search-input"
@@ -29,7 +29,7 @@
             @click="openResult(item)"
             @mouseenter="selectedIndex = i"
           >
-            <span class="search-result-icon">📄</span>
+            <span class="search-result-icon"><PhFileText :size="14" /></span>
             <div class="search-result-text">
               <span class="search-result-title">{{ item.title || 'Sans titre' }}</span>
               <span class="search-result-path">{{ item.path }}</span>
@@ -47,7 +47,7 @@
             @click="runCommand(cmd)"
             @mouseenter="selectedIndex = recentNotes.length + i"
           >
-            <span class="search-result-icon">{{ cmd.icon }}</span>
+            <span class="search-result-icon"><PhIcon :name="cmd.icon" :size="14" /></span>
             <div class="search-result-text">
               <span class="search-result-title">{{ cmd.label }}</span>
             </div>
@@ -68,12 +68,12 @@
             @click="openResult(result)"
             @mouseenter="selectedIndex = i"
           >
-            <span class="search-result-icon">{{ result.type === 'note' ? '📄' : '📑' }}</span>
+            <span class="search-result-icon"><PhFileText v-if="result.type === 'note'" :size="14" /><PhFile v-else :size="14" /></span>
             <div class="search-result-text">
               <span class="search-result-title" v-html="highlight(result.title)"></span>
               <span class="search-result-path">
                 {{ result.path }}
-                <span v-if="wsStore.multiWorkspaceActive && result.wsIcon" class="search-ws-badge">{{ result.wsIcon }}</span>
+                <span v-if="wsStore.multiWorkspaceActive && result.wsIcon" class="search-ws-badge"><PhIcon :name="result.wsIcon" :size="14" /></span>
               </span>
               <span v-if="result.snippet" class="search-result-snippet" v-html="highlight(result.snippet)"></span>
             </div>
@@ -89,6 +89,8 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
+import { PhMagnifyingGlass, PhFileText, PhFile } from '@phosphor-icons/vue'
+import PhIcon from './PhIcon.vue'
 import { useBoardStore } from '../stores/board.js'
 import { useWorkspaceStore } from '../stores/workspace.js'
 import { useIsMobile } from '../composables/useIsMobile.js'
@@ -129,14 +131,14 @@ const recentNotes = computed(() => {
 
 // ─── Commands ───
 const commands = computed(() => [
-  { id: 'quick-capture', icon: '⚡', label: 'Capture rapide',       shortcut: 'Alt+N', action: () => { emit('quick-capture'); close() } },
-  { id: 'notes',         icon: '📋', label: 'Vue Notes',            action: () => { emit('navigate', 'notes');    close() } },
-  { id: 'agenda',        icon: '📅', label: 'Vue Agenda',           action: () => { emit('navigate', 'agenda');   close() } },
-  { id: 'tags',          icon: '🏷️',  label: 'Vue Tags',            action: () => { emit('navigate', 'tags');     close() } },
-  { id: 'settings',      icon: '⚙️',  label: 'Paramètres',          action: () => { emit('open-settings', 'appearance'); close() } },
-  { id: 'shortcuts',     icon: '⌨️',  label: 'Raccourcis clavier',  shortcut: '?', action: () => { emit('open-settings', 'shortcuts'); close() } },
-  { id: 'trash',         icon: '🗑️',  label: 'Corbeille',           action: () => { emit('open-settings', 'trash'); close() } },
-  { id: 'export',        icon: '📤',  label: 'Import / Export',     action: () => { emit('open-settings', 'export'); close() } },
+  { id: 'quick-capture', icon: 'lightning',     label: 'Capture rapide',       shortcut: 'Alt+N', action: () => { emit('quick-capture'); close() } },
+  { id: 'notes',         icon: 'check-square',  label: 'Vue Notes',            action: () => { emit('navigate', 'notes');    close() } },
+  { id: 'agenda',        icon: 'calendar-blank', label: 'Vue Agenda',           action: () => { emit('navigate', 'agenda');   close() } },
+  { id: 'tags',          icon: 'star',          label: 'Vue Tags',            action: () => { emit('navigate', 'tags');     close() } },
+  { id: 'settings',      icon: 'gear',          label: 'Paramètres',          action: () => { emit('open-settings', 'appearance'); close() } },
+  { id: 'shortcuts',     icon: 'command',       label: 'Raccourcis clavier',  shortcut: '?', action: () => { emit('open-settings', 'shortcuts'); close() } },
+  { id: 'trash',         icon: 'trash',         label: 'Corbeille',           action: () => { emit('open-settings', 'trash'); close() } },
+  { id: 'export',        icon: 'export',        label: 'Import / Export',     action: () => { emit('open-settings', 'export'); close() } },
 ])
 
 function runCommand(cmd) { cmd.action() }

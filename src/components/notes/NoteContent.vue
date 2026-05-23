@@ -5,7 +5,7 @@
       {{ store.activeNote.title }}
     </button>
     <template v-for="(blockId, i) in store.openPagePath" :key="blockId">
-      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-sep"><PhCaretRight :size="12" /></span>
       <button class="btn btn-ghost" @click="store.goBackTo(i)">
         {{ getPageTitle(i) }}
       </button>
@@ -31,8 +31,8 @@
       ref="renameRef"
     />
     <div class="sidebar-actions">
-      <button class="btn btn-ghost" @click="startRename" title="Renommer">✎</button>
-      <button class="btn btn-danger" @click="handleDelete" title="Supprimer">🗑</button>
+      <button class="btn btn-ghost" @click="startRename" title="Renommer"><PhPencilSimple :size="14" /></button>
+      <button class="btn btn-danger" @click="handleDelete" title="Supprimer"><PhTrash :size="14" /></button>
     </div>
   </div>
 
@@ -44,7 +44,7 @@
       :style="{ background: tag.color + '22', color: tag.color, borderColor: tag.color + '44' }"
       @click="store.toggleNoteTag(store.activeNoteId, tag.id)"
       title="Cliquer pour retirer"
-    >{{ tag.name }} ✕</span>
+    >{{ tag.name }} <PhX :size="10" /></span>
     <div class="sidebar-tag-add-wrap">
       <button class="sidebar-tag-add-btn" @click="showTagPicker = !showTagPicker">+ Tag</button>
       <div v-if="showTagPicker" class="sidebar-tag-picker">
@@ -71,6 +71,7 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { PhCaretRight, PhPencilSimple, PhTrash, PhX } from '@phosphor-icons/vue'
 import { useBoardStore } from '../../stores/board.js'
 import PageEditor from '../blocks/PageEditor.vue'
 import NoteComments from './NoteComments.vue'

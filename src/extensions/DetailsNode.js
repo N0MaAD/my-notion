@@ -1,4 +1,5 @@
 import { Node } from '@tiptap/core'
+import { createIcon } from '../utils/icons.js'
 
 export const DetailsNode = Node.create({
   name: 'detailsBlock',
@@ -43,7 +44,7 @@ export const DetailsNode = Node.create({
 
       const toggleIcon = document.createElement('span')
       toggleIcon.className = 'details-toggle'
-      toggleIcon.textContent = node.attrs.open ? '▾' : '›'
+      toggleIcon.appendChild(createIcon(node.attrs.open ? 'caret-down' : 'caret-right', 14))
 
       const summaryText = document.createElement('span')
       summaryText.className = 'details-summary-text'
@@ -77,7 +78,8 @@ export const DetailsNode = Node.create({
         update(updatedNode) {
           if (updatedNode.type.name !== 'detailsBlock') return false
           node = updatedNode
-          toggleIcon.textContent = node.attrs.open ? '▾' : '›'
+          toggleIcon.innerHTML = ''
+          toggleIcon.appendChild(createIcon(node.attrs.open ? 'caret-down' : 'caret-right', 14))
           contentEl.style.display = node.attrs.open ? '' : 'none'
           summaryText.textContent = node.attrs.summary
           return true

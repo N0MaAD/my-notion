@@ -7,12 +7,12 @@ import { useWorkspaceStore } from './workspace.js'
 const clientId = crypto.randomUUID()
 
 export const NOTE_TYPES = {
-  note:  { id: 'note',  label: 'Note',   icon: '📄', color: null,      description: 'Note classique' },
-  task:  { id: 'task',  label: 'Tâche',  icon: '☑️', color: '#3b82f6', description: 'Tâche avec case à cocher' },
-  date:  { id: 'date',  label: 'Date',   icon: '📅', color: '#f59e0b', description: 'Deadline ou periode' },
-  idea:  { id: 'idea',  label: 'Idée',   icon: '💡', color: '#a855f7', description: 'Idée / brainstorm' },
-  bug:   { id: 'bug',   label: 'Bug',    icon: '🐛', color: '#ef4444', description: 'Bug / problème' },
-  link:  { id: 'link',  label: 'Lien',   icon: '🔗', color: '#06b6d4', description: 'Lien / ressource' }
+  note:  { id: 'note',  label: 'Note',   icon: 'file-text', color: null,      description: 'Note classique' },
+  task:  { id: 'task',  label: 'Tâche',  icon: 'check-square', color: '#3b82f6', description: 'Tâche avec case à cocher' },
+  date:  { id: 'date',  label: 'Date',   icon: 'calendar-dot', color: '#f59e0b', description: 'Deadline ou periode' },
+  idea:  { id: 'idea',  label: 'Idée',   icon: 'lightbulb', color: '#a855f7', description: 'Idée / brainstorm' },
+  bug:   { id: 'bug',   label: 'Bug',    icon: 'bug-droid', color: '#ef4444', description: 'Bug / problème' },
+  link:  { id: 'link',  label: 'Lien',   icon: 'link-simple', color: '#06b6d4', description: 'Lien / ressource' }
 }
 
 export const useBoardStore = defineStore('board', () => {
@@ -520,7 +520,7 @@ export const useBoardStore = defineStore('board', () => {
         if (target <= now && now - target < 86400000) {
           note.notifiedAt = new Date().toISOString()
           const label = dt.toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-          addNotification(`⏰ ${note.title} — ${label}`, 'reminder')
+          addNotification(`bell-ringing ${note.title} — ${label}`, 'reminder')
           fireBrowserNotification('Rappel My Notion', `${note.title} — ${label}`)
           count++
         }
@@ -530,7 +530,7 @@ export const useBoardStore = defineStore('board', () => {
   }
 
   // ─── Pins ───
-  const FAVORIS_TAG_NAME = '★ Favoris'
+  const FAVORIS_TAG_NAME = 'star Favoris'
 
   function togglePin(noteId) {
     recordSnapshot()
@@ -715,7 +715,7 @@ export const useBoardStore = defineStore('board', () => {
         }
       } catch (e) {
         console.error('Erreur sauvegarde Firestore:', e)
-        addNotification('❌ Erreur de sauvegarde — vos modifications seront re-tentées', 'archive')
+        addNotification('warning-octagon Erreur de sauvegarde — vos modifications seront re-tentées', 'archive')
       }
     }, 500)
   }
@@ -732,7 +732,7 @@ export const useBoardStore = defineStore('board', () => {
       const cached = wsDataCache[wsId]
       if (!cached) continue
       const ws = wsStore.workspaces.find(w => w.id === wsId)
-      const wsIcon = ws?.icon || '📁'
+      const wsIcon = ws?.icon || 'folder'
       const wsName = ws?.name || ''
 
       for (const col of (cached.columns || [])) {

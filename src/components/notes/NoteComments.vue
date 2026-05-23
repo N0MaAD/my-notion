@@ -1,10 +1,10 @@
 <template>
 <div class="note-comments">
   <div class="comments-header" @click="expanded = !expanded">
-    <span class="comments-toggle">{{ expanded ? '▾' : '›' }}</span>
-    <span class="comments-title">💬 Commentaires</span>
+    <span class="comments-toggle"><PhCaretDown v-if="expanded" :size="14" /><PhCaretRight v-else :size="14" /></span>
+    <span class="comments-title"><PhChats :size="14" /> Commentaires</span>
     <span v-if="comments.length" class="comments-count">{{ comments.length }}</span>
-    <button class="open-chat-btn" @click.stop="$emit('open-chat')" title="Chat workspace">💭</button>
+    <button class="open-chat-btn" @click.stop="$emit('open-chat')" title="Chat workspace"><PhChats :size="16" /></button>
   </div>
 
   <div v-if="expanded" class="comments-body">
@@ -30,7 +30,7 @@
             class="comment-delete"
             @click="deleteComment(comment.id)"
             title="Supprimer"
-          >✕</button>
+          ><PhX :size="12" /></button>
         </div>
         <div class="comment-text" v-html="renderComment(comment.text)"></div>
       </div>
@@ -50,7 +50,7 @@
           @keydown.up.prevent="mentionUp"
           @keydown.escape="closeMentions"
         ></textarea>
-        <button class="comment-send" @click="submitComment" :disabled="!newComment.trim()">➤</button>
+        <button class="comment-send" @click="submitComment" :disabled="!newComment.trim()"><PhPaperPlaneRight :size="16" /></button>
       </div>
 
       <div v-if="showMentions && filteredMembers.length" class="mention-dropdown">
@@ -74,6 +74,7 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { PhCaretDown, PhCaretRight, PhChats, PhX, PhPaperPlaneRight } from '@phosphor-icons/vue'
 import { useBoardStore } from '../../stores/board.js'
 import { useWorkspaceStore } from '../../stores/workspace.js'
 import { useAuthStore } from '../../stores/auth.js'

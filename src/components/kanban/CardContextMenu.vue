@@ -19,9 +19,9 @@
       :class="{ active: t.id === currentType }"
       @click="selectType(t.id)"
     >
-      <span class="context-menu-icon">{{ t.icon }}</span>
+      <span class="context-menu-icon"><PhIcon :name="t.icon" :size="16" /></span>
       <span class="context-menu-text">{{ t.label }}</span>
-      <span v-if="t.id === currentType" class="context-menu-check">✓</span>
+      <span v-if="t.id === currentType" class="context-menu-check"><PhCheck :size="14" /></span>
     </div>
 
     <!-- Tags -->
@@ -36,7 +36,7 @@
     >
       <span class="context-tag-dot" :style="{ background: tag.color }"></span>
       <span class="context-menu-text">{{ tag.name }}</span>
-      <span v-if="noteHasTag(tag.id)" class="context-menu-check">✓</span>
+      <span v-if="noteHasTag(tag.id)" class="context-menu-check"><PhCheck :size="14" /></span>
     </div>
 
     <div v-if="currentType === 'date'" class="context-menu-divider" />
@@ -51,7 +51,7 @@
       </label>
 
       <label class="context-menu-date-label">
-        {{ currentIsDeadline ? '📅 Date' : '🗓️ Date de debut' }}
+        {{ currentIsDeadline ? 'Date' : 'Date de debut' }}
       </label>
       <input
         type="date"
@@ -61,7 +61,7 @@
       />
 
       <template v-if="!currentIsDeadline">
-        <label class="context-menu-date-label" style="margin-top: 0.5rem">🗓️ Date de fin</label>
+        <label class="context-menu-date-label" style="margin-top: 0.5rem">Date de fin</label>
         <input
           type="date"
           class="context-menu-date-input"
@@ -76,7 +76,7 @@
           :checked="hasTime"
           @change="toggleHasTime($event.target.checked)"
         />
-        <span>⏰ Définir une heure</span>
+        <span><PhBellRinging :size="14" /> Définir une heure</span>
       </label>
 
       <input
@@ -91,7 +91,7 @@
     <!-- Delete -->
     <div class="context-menu-divider" />
     <div class="context-menu-item context-menu-delete" @click="deleteNote">
-      <span class="context-menu-icon">🗑️</span>
+      <span class="context-menu-icon"><PhTrash :size="16" /></span>
       <span class="context-menu-text">Supprimer</span>
     </div>
   </div>
@@ -100,6 +100,8 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { PhCheck, PhBellRinging, PhTrash } from '@phosphor-icons/vue'
+import PhIcon from '../PhIcon.vue'
 import { NOTE_TYPES, useBoardStore } from '../../stores/board.js'
 
 const store = useBoardStore()
@@ -194,10 +196,10 @@ function close() {
 .context-menu {
   position: fixed;
   z-index: 1000;
-  background: #fff;
-  border: 1px solid #e2e2e2;
+  background: var(--bg-secondary, #fff);
+  border: 1px solid var(--border, #e2e2e2);
   border-radius: 10px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
   min-width: 200px;
   padding: 0.4rem;
   animation: contextIn 0.12s ease-out;
@@ -238,7 +240,7 @@ function close() {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #999;
+  color: var(--text-secondary, #999);
   padding: 0.4rem 0.6rem 0.3rem;
 }
 
@@ -250,15 +252,16 @@ function close() {
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.85rem;
+  color: var(--text-primary, #222);
   transition: background 0.1s;
 }
 
 .context-menu-item:hover {
-  background: #f0f4ff;
+  background: var(--bg-tertiary, #f0f4ff);
 }
 
 .context-menu-item.active {
-  background: #f0f4ff;
+  background: var(--bg-tertiary, #f0f4ff);
   font-weight: 600;
 }
 
@@ -266,6 +269,7 @@ function close() {
   font-size: 0.95rem;
   width: 1.4rem;
   text-align: center;
+  color: var(--accent, #3b82f6);
 }
 
 .context-menu-text {
@@ -273,13 +277,13 @@ function close() {
 }
 
 .context-menu-check {
-  color: #3b82f6;
+  color: var(--accent, #3b82f6);
   font-size: 0.8rem;
 }
 
 .context-menu-divider {
   height: 1px;
-  background: #eee;
+  background: var(--border, #eee);
   margin: 0.3rem 0.4rem;
 }
 
@@ -289,7 +293,7 @@ function close() {
 
 .context-menu-date-label {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-secondary, #666);
   display: block;
   margin-bottom: 0.3rem;
 }
@@ -297,14 +301,16 @@ function close() {
 .context-menu-date-input {
   width: 100%;
   padding: 0.35rem 0.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border, #ddd);
   border-radius: 6px;
   font-size: 0.85rem;
   outline: none;
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #222);
 }
 
 .context-menu-date-input:focus {
-  border-color: #3b82f6;
+  border-color: var(--accent, #3b82f6);
 }
 
 .context-menu-checkbox-label {
@@ -312,7 +318,7 @@ function close() {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.8rem;
-  color: #444;
+  color: var(--text-primary, #444);
   margin-bottom: 0.5rem;
   cursor: pointer;
   user-select: none;
@@ -321,7 +327,7 @@ function close() {
 .context-menu-checkbox-label input[type="checkbox"] {
   width: 0.9rem;
   height: 0.9rem;
-  accent-color: #3b82f6;
+  accent-color: var(--accent, #3b82f6);
   cursor: pointer;
 }
 
@@ -337,6 +343,6 @@ function close() {
 }
 
 .context-menu-delete:hover {
-  background: #fef2f2;
+  background: rgba(239, 68, 68, 0.1);
 }
 </style>

@@ -14,7 +14,7 @@
       <router-link class="nav-tab" active-class="active" to="/notes">Notes</router-link>
       <router-link class="nav-tab" active-class="active" to="/agenda">Agenda</router-link>
       <router-link class="nav-tab" active-class="active" to="/tags">Tags</router-link>
-      <router-link class="nav-tab" active-class="active" to="/trash">🗑️ Corbeille</router-link>
+      <router-link class="nav-tab" active-class="active" to="/trash"><PhTrash :size="16" /> Corbeille</router-link>
     </nav>
   </div>
 
@@ -55,7 +55,7 @@
       @dragleave="isOverTrash = false"
       @drop.prevent="onTrashDrop"
     >
-      <span class="trash-icon">🗑️</span>
+      <span class="trash-icon"><PhTrash :size="24" /></span>
     </div>
   </Transition>
 </div>
@@ -70,6 +70,7 @@ import SearchModal from '../components/SearchModal.vue'
 import QuickCapture from '../components/QuickCapture.vue'
 import NotificationToast from '../components/NotificationToast.vue'
 import WorkspaceSwitcher from '../components/WorkspaceSwitcher.vue'
+import { PhTrash } from '@phosphor-icons/vue'
 import { useBoardStore } from '../stores/board.js'
 import { useAuthStore } from '../stores/auth.js'
 

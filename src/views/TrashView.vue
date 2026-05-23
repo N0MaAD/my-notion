@@ -1,7 +1,7 @@
 <template>
 <div class="trash-view">
   <div class="trash-header">
-    <h2 class="trash-title">🗑️ Corbeille</h2>
+    <h2 class="trash-title"><PhTrash :size="18" /> Corbeille</h2>
     <button
       v-if="trashNotes.length > 0"
       class="btn btn-danger"
@@ -14,7 +14,7 @@
   <p class="trash-retention">Les notes supprimées sont conservées pendant {{ TRASH_RETENTION_DAYS }} jours</p>
 
   <div v-if="trashNotes.length === 0" class="trash-empty">
-    <span class="trash-empty-icon">🗑️</span>
+    <span class="trash-empty-icon"><PhTrash :size="48" /></span>
     <p>La corbeille est vide</p>
   </div>
 
@@ -26,7 +26,7 @@
       class="trash-item"
     >
       <div class="trash-item-left">
-        <span class="trash-item-icon">{{ noteIcon(note) }}</span>
+        <span class="trash-item-icon"><PhIcon :name="noteIcon(note)" :size="16" /></span>
         <div class="trash-item-info">
           <span class="trash-item-title">{{ note.title || 'Sans titre' }}</span>
           <span class="trash-item-date">Supprimée {{ formatDeletedDate(note.deletedAt) }}</span>
@@ -34,10 +34,10 @@
       </div>
       <div class="trash-item-actions">
         <button class="btn btn-ghost trash-restore-btn" @click="restoreNote(note)" title="Restaurer">
-          ↩ Restaurer
+          <PhArrowCounterClockwise :size="14" /> Restaurer
         </button>
         <button class="btn btn-danger btn-sm" @click="deleteForever(note)" title="Supprimer définitivement">
-          ✕
+          <PhX :size="14" />
         </button>
       </div>
     </div>
@@ -47,6 +47,8 @@
 
 <script setup>
 import { computed } from 'vue'
+import { PhTrash, PhArrowCounterClockwise, PhX } from '@phosphor-icons/vue'
+import PhIcon from '../components/PhIcon.vue'
 import { useBoardStore, NOTE_TYPES } from '../stores/board.js'
 
 const store = useBoardStore()
@@ -56,7 +58,7 @@ const trashNotes = computed(() => store.trash || [])
 
 function noteIcon(note) {
   const t = NOTE_TYPES[note.type || 'note']
-  return t ? t.icon : '📄'
+  return t ? t.icon : 'file-text'
 }
 
 function formatDeletedDate(ts) {

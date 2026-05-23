@@ -27,7 +27,7 @@
           :class="{ active: activeSection === item.id }"
           @click="activeSection = item.id"
         >
-          <span class="settings-nav-icon">{{ item.icon }}</span>
+          <span class="settings-nav-icon"><PhIcon :name="item.icon" :size="18" /></span>
           <span>{{ item.label }}</span>
         </button>
         <div class="settings-nav-section-label">Espaces de travail</div>
@@ -36,7 +36,7 @@
           :class="{ active: activeSection === 'workspaces' }"
           @click="activeSection = 'workspaces'"
         >
-          <span class="settings-nav-icon">🏢</span>
+          <span class="settings-nav-icon"><PhBuilding :size="18" /></span>
           <span>Mes espaces</span>
         </button>
         <button
@@ -45,14 +45,14 @@
           :class="{ active: activeSection === 'members' }"
           @click="activeSection = 'members'; loadMembers()"
         >
-          <span class="settings-nav-icon">👥</span>
+          <span class="settings-nav-icon"><PhUsers :size="18" /></span>
           <span>Membres</span>
         </button>
       </nav>
 
       <div class="settings-sidebar-footer">
         <button class="settings-nav-item danger" @click="$emit('logout')">
-          <span class="settings-nav-icon">🚪</span>
+          <span class="settings-nav-icon"><PhSignOut :size="18" /></span>
           <span>Déconnexion</span>
         </button>
       </div>
@@ -62,7 +62,7 @@
     <main class="settings-main">
       <div class="settings-main-header">
         <h1 class="settings-main-title">{{ currentItem?.label || 'Paramètres' }}</h1>
-        <button class="settings-close-btn" @click="$emit('close')" title="Fermer (Échap)">✕</button>
+        <button class="settings-close-btn" @click="$emit('close')" title="Fermer (Échap)"><PhX :size="14" /></button>
       </div>
 
       <!-- Apparence -->
@@ -86,7 +86,7 @@
               <div class="settings-theme-info">
                 <span class="settings-theme-icon">{{ t.icon }}</span>
                 <span class="settings-theme-label">{{ t.label }}</span>
-                <span v-if="themeStore.theme === t.id" class="settings-theme-check">✓</span>
+                <span v-if="themeStore.theme === t.id" class="settings-theme-check"><PhCheck :size="14" /></span>
               </div>
             </button>
           </div>
@@ -118,14 +118,14 @@
           </div>
 
           <div v-if="PRESET_BACKGROUNDS.length === 0 && !themeStore.backgroundImage" class="bg-empty">
-            <span class="bg-empty-icon">🖼️</span>
+            <span class="bg-empty-icon"><PhPanorama :size="18" /></span>
             <p>Aucun fond prédéfini pour le moment</p>
           </div>
 
           <!-- Import custom photo -->
           <div class="bg-import-section">
             <label class="btn btn-accent bg-import-btn">
-              📷 Importer une photo
+              <PhAperture :size="18" /> Importer une photo
               <input
                 type="file"
                 accept="image/*"
@@ -144,7 +144,7 @@
           <h3 class="settings-block-title">Corbeille</h3>
           <p class="settings-block-desc">Les notes supprimées sont conservées ici pendant {{ TRASH_RETENTION_DAYS }} jours</p>
           <div v-if="trashNotes.length === 0" class="settings-empty">
-            <span class="settings-empty-icon">🗑️</span>
+            <span class="settings-empty-icon"><PhTrash :size="16" /></span>
             <p>La corbeille est vide</p>
           </div>
           <div v-else class="settings-trash-list">
@@ -162,8 +162,8 @@
                 <span class="settings-trash-item-date">Supprimée {{ formatDeletedDate(note.deletedAt) }}</span>
               </div>
               <div class="settings-trash-item-actions">
-                <button class="btn btn-ghost" @click="restoreNote(note)" title="Restaurer">↩</button>
-                <button class="btn btn-danger" @click="deleteForever(note)" title="Supprimer définitivement">✕</button>
+                <button class="btn btn-ghost" @click="restoreNote(note)" title="Restaurer"><PhArrowCounterClockwise :size="14" /></button>
+                <button class="btn btn-danger" @click="deleteForever(note)" title="Supprimer définitivement"><PhX :size="14" /></button>
               </div>
             </div>
           </div>
@@ -193,10 +193,10 @@
           <h3 class="settings-block-title">Exporter</h3>
           <p class="settings-block-desc">Télécharge toutes tes notes dans le format de ton choix</p>
           <div class="export-options">
-            <button class="btn btn-accent" @click="doExportMarkdown">📝 Markdown</button>
-            <button class="btn btn-accent" @click="doExportCSV">📊 CSV</button>
-            <button class="btn btn-accent" @click="doExportHTML">🌐 HTML</button>
-            <button class="btn btn-accent" @click="doExportJSON">📄 JSON</button>
+            <button class="btn btn-accent" @click="doExportMarkdown"><PhNotePencil :size="16" /> Markdown</button>
+            <button class="btn btn-accent" @click="doExportCSV"><PhFileCsv :size="16" /> CSV</button>
+            <button class="btn btn-accent" @click="doExportHTML"><PhFileHtml :size="16" /> HTML</button>
+            <button class="btn btn-accent" @click="doExportJSON"><PhFileJs :size="16" /> JSON</button>
           </div>
         </div>
 
@@ -207,7 +207,7 @@
             <label class="import-option">
               <input type="file" accept=".json" class="import-file-input" @change="doImportJSON" />
               <span class="import-option-card">
-                <span class="import-option-icon">📄</span>
+                <span class="import-option-icon"><PhFileJs :size="16" /></span>
                 <span class="import-option-label">JSON (My Notion)</span>
                 <span class="import-option-desc">Fichier exporté depuis My Notion</span>
               </span>
@@ -215,7 +215,7 @@
             <label class="import-option">
               <input type="file" accept=".json" class="import-file-input" @change="doImportTrello" />
               <span class="import-option-card">
-                <span class="import-option-icon">📋</span>
+                <span class="import-option-icon"><PhFileText :size="16" /></span>
                 <span class="import-option-label">Trello (JSON)</span>
                 <span class="import-option-desc">Export JSON d'un tableau Trello</span>
               </span>
@@ -223,7 +223,7 @@
             <label class="import-option">
               <input type="file" accept=".md,.txt" multiple class="import-file-input" @change="doImportMarkdown" />
               <span class="import-option-card">
-                <span class="import-option-icon">📝</span>
+                <span class="import-option-icon"><PhNotePencil :size="16" /></span>
                 <span class="import-option-label">Markdown / Notion</span>
                 <span class="import-option-desc">Fichiers .md exportés depuis Notion</span>
               </span>
@@ -247,7 +247,7 @@
               :class="{ active: ws.id === wsStore.activeWorkspaceIds[0] }"
             >
               <div class="ws-settings-item-left">
-                <span class="ws-settings-icon">{{ ws.icon }}</span>
+                <span class="ws-settings-icon"><PhIcon :name="ws.icon" :size="20" /></span>
                 <div class="ws-settings-info">
                   <template v-if="editingWsId === ws.id">
                     <input
@@ -277,19 +277,19 @@
                   class="btn btn-ghost btn-sm"
                   @click="startEditWs(ws)"
                   title="Renommer"
-                >✏️</button>
+                ><PhPencilLine :size="14" /></button>
                 <button
                   v-if="ws.role === 'owner'"
                   class="btn btn-ghost btn-sm"
                   @click="showIconPicker = ws.id"
                   title="Changer l'icône"
-                >{{ ws.icon }}</button>
+                ><PhIcon :name="ws.icon" :size="16" /></button>
                 <button
                   v-if="ws.role === 'owner' && wsStore.workspaces.length > 1"
                   class="btn btn-danger btn-sm"
                   @click="confirmDeleteWs(ws)"
                   title="Supprimer"
-                >✕</button>
+                ><PhX :size="14" /></button>
                 <button
                   v-if="ws.role !== 'owner'"
                   class="btn btn-danger btn-sm"
@@ -309,7 +309,7 @@
                   :key="icon"
                   class="ws-icon-picker-btn"
                   @click="changeWsIcon(showIconPicker, icon)"
-                >{{ icon }}</button>
+                ><PhIcon :name="icon" :size="20" /></button>
               </div>
             </div>
           </div>
@@ -360,7 +360,7 @@
                   class="btn btn-danger btn-sm"
                   @click="doRemoveMember(member.uid)"
                   title="Retirer"
-                >✕</button>
+                ><PhX :size="14" /></button>
               </div>
             </div>
           </div>
@@ -392,7 +392,7 @@
             <div v-if="generatedLink" class="ws-generated-link">
               <input class="ws-link-input" :value="generatedLink" readonly ref="linkInputRef" @click="copyLink" />
               <button class="btn btn-ghost" @click="copyLink" :title="linkCopied ? 'Copié !' : 'Copier'">
-                {{ linkCopied ? '✓' : '📋' }}
+                <PhCheck v-if="linkCopied" :size="14" /><PhFileText v-else :size="14" />
               </button>
             </div>
 
@@ -403,7 +403,7 @@
                   <span class="ws-active-link-role">{{ link.role === 'editor' ? 'Éditeur' : 'Lecteur' }}</span>
                   <span class="ws-active-link-date">{{ formatLinkDate(link.createdAt) }}</span>
                 </div>
-                <button class="btn btn-danger btn-sm" @click="doRevokeLink(link.id)" title="Révoquer">✕</button>
+                <button class="btn btn-danger btn-sm" @click="doRevokeLink(link.id)" title="Révoquer"><PhX :size="14" /></button>
               </div>
             </div>
           </div>
@@ -416,6 +416,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { PhBuilding, PhUsers, PhSignOut, PhX, PhCheck, PhTrash, PhArrowCounterClockwise, PhPanorama, PhAperture, PhNotePencil, PhFileCsv, PhFileHtml, PhFileJs, PhFileText, PhPencilLine, PhClipboard } from '@phosphor-icons/vue'
+import PhIcon from '../components/PhIcon.vue'
 import { useThemeStore, THEMES, PRESET_BACKGROUNDS } from '../stores/theme.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useBoardStore } from '../stores/board.js'
@@ -434,19 +436,19 @@ const wsStore = useWorkspaceStore()
 
 const TRASH_RETENTION_DAYS = 30
 
-const ICONS = ['🏠', '💼', '👥', '📁', '🎓', '🎨', '🔬', '🏗️', '🎮', '🎵', '📚', '🌍', '❤️', '⭐', '🚀', '💡']
+const ICONS = ['house-simple', 'suitcase', 'users', 'folder', 'graduation-cap', 'paint-brush-broad', 'microscope', 'barricade', 'game-controller', 'equalizer', 'books', 'planet', 'heartbeat', 'sparkle', 'rocket-launch', 'lightbulb']
 
 const prefItems = [
-  { id: 'appearance', icon: '🎨', label: 'Apparence' },
-  { id: 'shortcuts', icon: '⌨️', label: 'Raccourcis' },
-  { id: 'export', icon: '📤', label: 'Import / Export' },
-  { id: 'trash', icon: '🗑️', label: 'Corbeille' }
+  { id: 'appearance', icon: 'paint-brush-broad', label: 'Apparence' },
+  { id: 'shortcuts', icon: 'command', label: 'Raccourcis' },
+  { id: 'export', icon: 'export', label: 'Import / Export' },
+  { id: 'trash', icon: 'trash', label: 'Corbeille' }
 ]
 
 const allItems = [
   ...prefItems,
-  { id: 'workspaces', icon: '🏢', label: 'Mes espaces' },
-  { id: 'members', icon: '👥', label: 'Membres' }
+  { id: 'workspaces', icon: 'building', label: 'Mes espaces' },
+  { id: 'members', icon: 'users', label: 'Membres' }
 ]
 
 const SHORTCUT_GROUPS = [
