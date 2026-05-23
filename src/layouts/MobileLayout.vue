@@ -90,14 +90,16 @@ function onSwipeEnd(e) {
   height: 100dvh;
   width: 100vw;
   overflow: hidden;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 .mobile-main {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   width: 100vw;
-  padding-bottom: 8dvh;
+  min-height: 0;
   -webkit-overflow-scrolling: touch;
 }
 .mobile-layout:has(.mobile-note-view) .mobile-main {

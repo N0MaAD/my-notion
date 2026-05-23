@@ -41,6 +41,7 @@ defineEmits(['open-settings', 'open-search', 'open-drawer'])
   background: var(--bg-secondary, #1a1a2e);
   border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
   flex-shrink: 0;
+  z-index: 100;
 }
 .mobile-topbar-left {
   display: flex;
