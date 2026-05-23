@@ -41,7 +41,9 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Seul un membre du workspace peut créer un lien
-      allow create: if request.auth != null;
+      allow create: if request.auth != null
+        && exists(/databases/$(database)/documents/workspaces/$(request.resource.data.workspaceId))
+        && request.auth.uid in get(/databases/$(database)/documents/workspaces/$(request.resource.data.workspaceId)).data.members;
 
       // Le créateur ou le owner du workspace peut modifier (révoquer)
       allow update: if request.auth != null
@@ -63,7 +65,9 @@ service cloud.firestore {
 
     // ─── Workspace Chat ───
     match /workspaceChats/{wsId}/messages/{msgId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null
+        && exists(/databases/$(database)/documents/workspaces/$(wsId))
+        && request.auth.uid in get(/databases/$(database)/documents/workspaces/$(wsId)).data.members;
     }
 
     // ─── Invitations ───

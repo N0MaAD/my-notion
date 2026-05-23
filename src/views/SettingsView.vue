@@ -416,7 +416,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { PhBuilding, PhUsers, PhSignOut, PhX, PhCheck, PhTrash, PhArrowCounterClockwise, PhPanorama, PhAperture, PhNotePencil, PhFileCsv, PhFileHtml, PhFileJs, PhFileText, PhPencilLine, PhClipboard } from '@phosphor-icons/vue'
+import { PhBuilding, PhUsers, PhSignOut, PhX, PhCheck, PhTrash, PhArrowCounterClockwise, PhPanorama, PhAperture, PhNotePencil, PhFileCsv, PhFileHtml, PhFileJs, PhFileText, PhPencilLine } from '@phosphor-icons/vue'
 import PhIcon from '../components/PhIcon.vue'
 import { useThemeStore, THEMES, PRESET_BACKGROUNDS } from '../stores/theme.js'
 import { useAuthStore } from '../stores/auth.js'

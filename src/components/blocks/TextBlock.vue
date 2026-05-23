@@ -91,6 +91,7 @@
 
 <script setup>
 import { ref, computed, onBeforeUnmount, watch, nextTick } from 'vue'
+import { PhLinkSimple } from '@phosphor-icons/vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'

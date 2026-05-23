@@ -150,9 +150,15 @@ export const ChartNode = Node.create({
           const total = values.reduce((a, b) => a + b, 0)
           const numEl = document.createElement('div')
           numEl.className = 'chart-number-display'
-          numEl.innerHTML = `<span class="chart-number-value">${total.toLocaleString('fr-FR')}</span>`
+          const valSpan = document.createElement('span')
+          valSpan.className = 'chart-number-value'
+          valSpan.textContent = total.toLocaleString('fr-FR')
+          numEl.appendChild(valSpan)
           if (labels.length > 0) {
-            numEl.innerHTML += `<span class="chart-number-label">${labels[0]}</span>`
+            const labelSpan = document.createElement('span')
+            labelSpan.className = 'chart-number-label'
+            labelSpan.textContent = labels[0]
+            numEl.appendChild(labelSpan)
           }
           dom.appendChild(numEl)
         } else {
