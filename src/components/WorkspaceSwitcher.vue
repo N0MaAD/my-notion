@@ -57,18 +57,6 @@
             <button v-for="icon in ICONS" :key="icon" class="ws-icon-btn"
               :class="{ active: newIcon === icon }" @click="newIcon = icon"><PhIcon :name="icon" :size="18" /></button>
           </div>
-          <label class="ws-modal-label">Type</label>
-          <div class="ws-type-row">
-            <button class="ws-type-btn" :class="{ active: newType === 'personal' }" @click="newType = 'personal'">
-              <span><PhIcon name="house-simple" :size="18" /></span><span>Personnel</span>
-            </button>
-            <button class="ws-type-btn" :class="{ active: newType === 'work' }" @click="newType = 'work'">
-              <span><PhIcon name="suitcase" :size="18" /></span><span>Travail</span>
-            </button>
-            <button class="ws-type-btn" :class="{ active: newType === 'shared' }" @click="newType = 'shared'">
-              <span><PhIcon name="users" :size="18" /></span><span>Partagé</span>
-            </button>
-          </div>
         </div>
         <div class="ws-modal-footer">
           <button class="btn btn-ghost" @click="showCreate = false">Annuler</button>
@@ -95,7 +83,6 @@ const open      = ref(false)
 const showCreate = ref(false)
 const newName   = ref('')
 const newIcon   = ref('folder')
-const newType   = ref('shared')
 const switcherRef = ref(null)
 
 const ICONS = ['house-simple', 'suitcase', 'users', 'folder', 'graduation-cap', 'paint-brush-broad', 'microscope', 'barricade', 'game-controller', 'equalizer', 'books', 'planet', 'heartbeat', 'sparkle', 'rocket-launch', 'lightbulb']
@@ -126,11 +113,10 @@ async function toggle(wsId) {
 
 async function createNew() {
   if (!newName.value.trim()) return
-  const wsId = await wsStore.createWorkspace(newName.value.trim(), newIcon.value, newType.value)
+  const wsId = await wsStore.createWorkspace(newName.value.trim(), newIcon.value)
   showCreate.value = false
   newName.value = ''
   newIcon.value = 'folder'
-  newType.value = 'shared'
   if (wsId) await toggle(wsId)
 }
 
