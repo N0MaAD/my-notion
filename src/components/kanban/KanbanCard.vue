@@ -23,12 +23,12 @@
       :class="{ done: note.checked }"
       @click.stop="store.toggleNoteChecked(note.id)"
     >
-      {{ note.checked ? '✓' : '' }}
+      <PhCheck v-if="note.checked" :size="12" />
     </button>
 
     <!-- Icône du type -->
     <span v-if="noteTypeInfo" class="card-type-icon" :title="noteTypeInfo.label">
-      {{ noteTypeInfo.icon }}
+      <PhIcon :name="noteTypeInfo.icon" :size="14" />
     </span>
 
     <p :class="{ 'text-strikethrough': note.checked }">{{ note.title }}</p>
@@ -39,7 +39,7 @@
       @click.stop="store.togglePin(note.id)"
       :title="store.isPinned(note.id) ? 'Désépingler' : 'Épingler'"
     >
-      {{ store.isPinned(note.id) ? '★' : '☆' }}
+      <PhStar :size="14" :weight="store.isPinned(note.id) ? 'fill' : 'regular'" />
     </button>
   </div>
 
@@ -51,14 +51,14 @@
       class="card-deadline"
       :class="deadlineClass"
     >
-      📅 {{ formatDate(note.startDate) }}<span v-if="note.startTime"> · ⏰ {{ note.startTime }}</span>
+      <PhCalendarDot :size="12" /> {{ formatDate(note.startDate) }}<span v-if="note.startTime"> · <PhBellRinging :size="12" /> {{ note.startTime }}</span>
     </div>
     <!-- Mode periode : plage de dates -->
     <div
       v-else-if="!note.isDeadline && (note.startDate || note.endDate)"
       class="card-duration"
     >
-      🗓️ {{ formatDurationRange(note.startDate, note.endDate) }}<span v-if="note.startTime"> · ⏰ {{ note.startTime }}</span>
+      <PhCalendarBlank :size="12" /> {{ formatDurationRange(note.startDate, note.endDate) }}<span v-if="note.startTime"> · <PhBellRinging :size="12" /> {{ note.startTime }}</span>
     </div>
   </template>
 
@@ -92,6 +92,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { PhCheck, PhStar, PhCalendarDot, PhCalendarBlank, PhBellRinging } from '@phosphor-icons/vue'
+import PhIcon from '../PhIcon.vue'
 import { useBoardStore, NOTE_TYPES } from '../../stores/board.js'
 import { useIsMobile } from '../../composables/useIsMobile.js'
 import CardContextMenu from './CardContextMenu.vue'

@@ -1,23 +1,27 @@
 <template>
 <nav class="bottom-nav">
   <router-link to="/notes" class="bottom-nav-item" active-class="active" :class="{ active: $route.name === 'note' }">
-    <span class="bottom-nav-icon">📋</span>
+    <span class="bottom-nav-icon"><PhCheckSquare :size="20" /></span>
     <span class="bottom-nav-label">Notes</span>
   </router-link>
   <router-link to="/agenda" class="bottom-nav-item" active-class="active">
-    <span class="bottom-nav-icon">📅</span>
+    <span class="bottom-nav-icon"><PhCalendarDot :size="20" /></span>
     <span class="bottom-nav-label">Agenda</span>
   </router-link>
   <router-link to="/tags" class="bottom-nav-item" active-class="active">
-    <span class="bottom-nav-icon">🏷️</span>
+    <span class="bottom-nav-icon"><PhStar :size="20" /></span>
     <span class="bottom-nav-label">Tags</span>
   </router-link>
   <router-link to="/trash" class="bottom-nav-item" active-class="active">
-    <span class="bottom-nav-icon">🗑️</span>
+    <span class="bottom-nav-icon"><PhTrash :size="20" /></span>
     <span class="bottom-nav-label">Corbeille</span>
   </router-link>
 </nav>
 </template>
+
+<script setup>
+import { PhCheckSquare, PhCalendarDot, PhStar, PhTrash } from '@phosphor-icons/vue'
+</script>
 
 <style scoped>
 .bottom-nav {

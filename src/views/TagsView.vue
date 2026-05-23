@@ -8,7 +8,7 @@
   </div>
 
   <div v-if="store.tags.length === 0" class="tags-empty">
-    <span class="tags-empty-icon">🏷️</span>
+    <span class="tags-empty-icon"><PhStar :size="32" /></span>
     <p>Aucun tag pour l'instant</p>
     <p class="tags-empty-hint">Crée ton premier tag pour organiser tes notes</p>
   </div>
@@ -47,7 +47,7 @@
       <div class="tag-modal" @click.stop>
         <div class="tag-modal-header">
           <h3>{{ editingTag ? 'Modifier le tag' : 'Nouveau tag' }}</h3>
-          <button class="tag-modal-close" @click="closeModal">✕</button>
+          <button class="tag-modal-close" @click="closeModal"><PhX :size="14" /></button>
         </div>
         <div class="tag-modal-body">
           <label class="tag-modal-label">Nom</label>
@@ -87,9 +87,9 @@
           <div class="tag-detail-title-row">
             <span class="tag-detail-dot" :style="{ background: detailTag.color }"></span>
             <h3>{{ detailTag.name }}</h3>
-            <button class="btn btn-ghost" @click="openEditTag(detailTag)" title="Modifier">✎</button>
+            <button class="btn btn-ghost" @click="openEditTag(detailTag)" title="Modifier"><PhPencilSimple :size="14" /></button>
           </div>
-          <button class="tag-modal-close" @click="closeDetail">✕</button>
+          <button class="tag-modal-close" @click="closeDetail"><PhX :size="14" /></button>
         </div>
         <div class="tag-detail-notes">
           <div v-if="detailNotes.length === 0" class="tags-empty" style="padding: 2rem">
@@ -101,7 +101,7 @@
             class="tag-detail-note"
             @click="store.setActiveNote(note.id); closeDetail()"
           >
-            <span class="tag-detail-note-icon">{{ getNoteIcon(note) }}</span>
+            <span class="tag-detail-note-icon"><PhIcon :name="getNoteIcon(note)" :size="14" /></span>
             <div class="tag-detail-note-info">
               <span class="tag-detail-note-title">{{ note.title }}</span>
               <span class="tag-detail-note-col">{{ note.columnTitle }}</span>
@@ -116,6 +116,8 @@
 
 <script setup>
 import { ref, computed, nextTick } from 'vue'
+import { PhX, PhPencilSimple, PhStar } from '@phosphor-icons/vue'
+import PhIcon from '../components/PhIcon.vue'
 import { useBoardStore, NOTE_TYPES } from '../stores/board.js'
 
 const store = useBoardStore()
@@ -142,7 +144,7 @@ function getNotesForTag(tagId) {
 }
 
 function isFavorisTag(tag) {
-  return tag && tag.name === '★ Favoris'
+  return tag && (tag.name === '★ Favoris' || tag.name === 'Favoris')
 }
 
 function tagCardStyle(tag) {

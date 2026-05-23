@@ -5,7 +5,7 @@
       <div class="drawer-panel" @click.stop @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd">
         <div class="drawer-header">
           <h3 class="drawer-title">Navigation</h3>
-          <button class="drawer-close" @click="close">✕</button>
+          <button class="drawer-close" @click="close"><PhX :size="20" /></button>
         </div>
 
         <!-- Workspaces -->
@@ -18,9 +18,9 @@
             :class="{ active: isWsActive(ws.id) }"
             @click="toggleWs(ws.id)"
           >
-            <span class="drawer-ws-icon">{{ ws.icon }}</span>
+            <span class="drawer-ws-icon"><PhIcon :name="ws.icon" :size="18" /></span>
             <span class="drawer-ws-name">{{ ws.name }}</span>
-            <span v-if="isWsActive(ws.id)" class="drawer-check">✓</span>
+            <span v-if="isWsActive(ws.id)" class="drawer-check"><PhCheck :size="14" /></span>
           </div>
         </div>
 
@@ -29,7 +29,7 @@
           <div class="drawer-section-label">Notes</div>
           <template v-for="col in store.columns" :key="col.id">
             <div class="drawer-col-title" @click="toggleCol(col.id)">
-              <span class="drawer-col-arrow">{{ expandedCols[col.id] ? '▾' : '›' }}</span>
+              <span class="drawer-col-arrow"><PhCaretDown v-if="expandedCols[col.id]" :size="14" /><PhCaretRight v-else :size="14" /></span>
               <span>{{ col.title }}</span>
               <span class="drawer-col-count">{{ col.notes.length }}</span>
             </div>
@@ -41,13 +41,13 @@
                 :class="{ active: store.activeNoteId === note.id }"
                 @click="openNote(note.id)"
               >
-                <span class="drawer-note-icon">{{ noteIcon(note) }}</span>
+                <span class="drawer-note-icon"><PhIcon :name="noteIcon(note)" :size="14" /></span>
                 <span class="drawer-note-title">{{ note.title }}</span>
                 <button
                   v-if="hasSubPages(note)"
                   class="drawer-expand-btn"
                   @click.stop="toggleNote(note.id)"
-                >{{ expandedNotes[note.id] ? '▾' : '›' }}</button>
+                ><PhCaretDown v-if="expandedNotes[note.id]" :size="14" /><PhCaretRight v-else :size="14" /></button>
               </div>
               <template v-if="expandedNotes[note.id]">
                 <div
@@ -56,7 +56,7 @@
                   class="drawer-subpage-item"
                   @click="openSubPage(note.id, block.id)"
                 >
-                  <span class="drawer-note-icon">📄</span>
+                  <span class="drawer-note-icon"><PhFileText :size="14" /></span>
                   <span class="drawer-note-title">{{ block.title }}</span>
                 </div>
               </template>
@@ -67,16 +67,16 @@
         <!-- Actions -->
         <div class="drawer-section drawer-actions">
           <button class="drawer-action-item" @click="$emit('open-settings', 'appearance'); close()">
-            <span>⚙️</span><span>Paramètres</span>
+            <span><PhGear :size="18" /></span><span>Paramètres</span>
           </button>
           <button class="drawer-action-item" @click="goToTrash">
-            <span>🗑️</span><span>Corbeille</span>
+            <span><PhTrash :size="18" /></span><span>Corbeille</span>
           </button>
           <button class="drawer-action-item" @click="$emit('open-settings', 'export'); close()">
-            <span>📤</span><span>Import / Export</span>
+            <span><PhExport :size="18" /></span><span>Import / Export</span>
           </button>
           <button class="drawer-action-item" @click="$emit('open-settings', 'shortcuts'); close()">
-            <span>⌨️</span><span>Raccourcis</span>
+            <span><PhCommand :size="18" /></span><span>Raccourcis</span>
           </button>
         </div>
       </div>
@@ -88,6 +88,8 @@
 <script setup>
 import { reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { PhX, PhCheck, PhCaretDown, PhCaretRight, PhFileText, PhGear, PhTrash, PhExport, PhCommand } from '@phosphor-icons/vue'
+import PhIcon from '../PhIcon.vue'
 import { useBoardStore } from '../../stores/board.js'
 import { useWorkspaceStore } from '../../stores/workspace.js'
 
@@ -123,9 +125,9 @@ function toggleNote(noteId) {
 
 function noteIcon(note) {
   const t = note.type || 'note'
-  if (t === 'task') return note.checked ? '✅' : '☑️'
-  if (t === 'date') return '📅'
-  return '📄'
+  if (t === 'task') return note.checked ? 'check-circle' : 'check-square'
+  if (t === 'date') return 'calendar-dot'
+  return 'file-text'
 }
 
 function hasSubPages(note) {

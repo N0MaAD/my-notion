@@ -33,7 +33,7 @@
       @mousedown.prevent="executeSlashCommand(item)"
       @mouseenter="selectedIndex = i"
     >
-      <span class="slash-menu-icon">{{ item.icon }}</span>
+      <span class="slash-menu-icon"><PhIcon :name="item.icon" :size="18" /></span>
       <div class="slash-menu-text">
         <span class="slash-menu-label">{{ item.label }}</span>
         <span class="slash-menu-desc">{{ item.description }}</span>
@@ -67,7 +67,7 @@
         @mousedown.prevent="pickNote(n)"
         @mouseenter="notePickerIndex = i"
       >
-        <span class="note-picker-item-title">🔖 {{ n.title }}</span>
+        <span class="note-picker-item-title"><PhLinkSimple :size="14" /> {{ n.title }}</span>
         <span class="note-picker-item-col">{{ n.columnTitle }}</span>
       </div>
       <div v-if="filteredNotes.length === 0" class="note-picker-empty">
@@ -85,7 +85,7 @@
   />
 
   <EditorContent :editor="editor" class="tiptap-editor" />
-  <button class="btn btn-danger block-delete" @click="$emit('delete')">✕</button>
+  <button class="btn btn-danger block-delete" @click="$emit('delete')"><PhX :size="14" /></button>
 </div>
 </template>
 
@@ -115,11 +115,11 @@ const slashFilter = ref('')
 const selectedIndex = ref(0)
 
 const slashItems = [
-{ id: 'text', icon: '📝', label: 'Texte', description: 'Bloc de texte simple', type: 'text' },
-{ id: 'page', icon: '📄', label: 'Sous-page', description: 'Créer une sous-page', type: 'page' },
-{ id: 'embed', icon: '🔗', label: 'Embed', description: 'Intégrer un lien (YouTube, Sheets...)', type: 'embed' },
-{ id: 'noteLink', icon: '🔖', label: 'Lien vers une note', description: 'Insérer un lien vers une autre note', type: 'noteLink' },
-{ id: 'image', icon: '🖼️', label: 'Image', description: 'Importer une image', type: 'image' },
+{ id: 'text', icon: 'note-pencil', label: 'Texte', description: 'Bloc de texte simple', type: 'text' },
+{ id: 'page', icon: 'file-text', label: 'Sous-page', description: 'Créer une sous-page', type: 'page' },
+{ id: 'embed', icon: 'link-simple', label: 'Embed', description: 'Intégrer un lien (YouTube, Sheets...)', type: 'embed' },
+{ id: 'noteLink', icon: 'link-simple', label: 'Lien vers une note', description: 'Insérer un lien vers une autre note', type: 'noteLink' },
+{ id: 'image', icon: 'panorama', label: 'Image', description: 'Importer une image', type: 'image' },
 { id: 'h2', icon: 'H2', label: 'Titre 2', description: 'Grand titre', type: 'heading2' },
 { id: 'h3', icon: 'H3', label: 'Titre 3', description: 'Sous-titre', type: 'heading3' },
 { id: 'bullet', icon: '•', label: 'Liste à puces', description: 'Liste non ordonnée', type: 'bullet' },

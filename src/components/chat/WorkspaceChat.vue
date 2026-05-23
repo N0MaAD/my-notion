@@ -1,7 +1,7 @@
 <template>
 <div class="workspace-chat">
   <div class="chat-header">
-    <button class="chat-back" @click="$emit('close')" title="Retour aux commentaires">‹</button>
+    <button class="chat-back" @click="$emit('close')" title="Retour aux commentaires"><PhCaretLeft :size="18" /></button>
     <span class="chat-title">Chat workspace</span>
   </div>
 
@@ -45,13 +45,14 @@
       rows="1"
       @keydown.enter.exact.prevent="send"
     ></textarea>
-    <button class="chat-send" @click="send" :disabled="!newMessage.trim()">➤</button>
+    <button class="chat-send" @click="send" :disabled="!newMessage.trim()"><PhPaperPlaneRight :size="18" /></button>
   </div>
 </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { PhCaretLeft, PhPaperPlaneRight } from '@phosphor-icons/vue'
 import { useChatStore } from '../../stores/chat.js'
 import { useWorkspaceStore } from '../../stores/workspace.js'
 import { useAuthStore } from '../../stores/auth.js'

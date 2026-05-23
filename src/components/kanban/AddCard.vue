@@ -7,7 +7,7 @@
         :title="selectedTypeInfo.label"
         @click="showTypePicker = !showTypePicker"
       >
-        {{ selectedTypeInfo.icon }}
+        <PhIcon :name="selectedTypeInfo.icon" :size="16" />
       </button>
       <input
         class="input"
@@ -28,7 +28,7 @@
         :class="{ active: selectedType === t.id }"
         @click="selectType(t.id)"
       >
-        <span class="type-picker-icon">{{ t.icon }}</span>
+        <span class="type-picker-icon"><PhIcon :name="t.icon" :size="16" /></span>
         <span class="type-picker-label">{{ t.label }}</span>
         <span class="type-picker-desc">{{ t.description }}</span>
       </div>
@@ -41,11 +41,11 @@
         <span>Deadline (date unique)</span>
       </label>
       <div class="add-card-deadline">
-        <label>{{ isDeadline ? '📅 Date' : '🗓️ Début' }}</label>
+        <label>{{ isDeadline ? 'Date' : 'Début' }}</label>
         <input type="date" v-model="startDate" class="input" />
       </div>
       <div v-if="!isDeadline" class="add-card-deadline">
-        <label>🗓️ Fin</label>
+        <label>Fin</label>
         <input type="date" v-model="endDate" class="input" />
       </div>
     </div>
@@ -58,13 +58,15 @@
 
   <div v-else class="add-card-buttons">
     <button class="btn btn-ghost" @click="startAdding('note')">+ Ajouter une note</button>
-    <button class="btn btn-ghost add-card-type-trigger" @click="startAddingWithPicker" title="Choisir le type">▾</button>
+    <button class="btn btn-ghost add-card-type-trigger" @click="startAddingWithPicker" title="Choisir le type"><PhCaretDown :size="14" /></button>
   </div>
 </div>
 </template>
 
 <script setup>
 import { ref, computed, nextTick } from 'vue'
+import { PhCaretDown } from '@phosphor-icons/vue'
+import PhIcon from '../PhIcon.vue'
 import { useBoardStore, NOTE_TYPES } from '../../stores/board.js'
 
 const store = useBoardStore()

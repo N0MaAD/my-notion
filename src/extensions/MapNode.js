@@ -1,4 +1,5 @@
 import { Node } from '@tiptap/core'
+import { createIcon } from '../utils/icons.js'
 
 export const MapNode = Node.create({
   name: 'mapBlock',
@@ -33,7 +34,8 @@ export const MapNode = Node.create({
 
         const label = document.createElement('div')
         label.className = 'map-label'
-        label.textContent = `📍 ${node.attrs.address}`
+        label.appendChild(createIcon('map-pin-area', 14))
+        label.appendChild(document.createTextNode(` ${node.attrs.address}`))
         dom.appendChild(label)
 
         const iframe = document.createElement('iframe')

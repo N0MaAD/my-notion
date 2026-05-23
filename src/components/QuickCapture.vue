@@ -3,7 +3,7 @@
   <div v-if="isOpen" class="qc-overlay" @click.self="close">
     <div class="qc-modal">
       <div class="qc-header">
-        <span class="qc-label">⚡ Capture rapide</span>
+        <span class="qc-label"><PhLightning :size="18" /> Capture rapide</span>
         <select v-model="selectedColId" class="qc-col-select">
           <option v-for="col in targetCols" :key="col.id" :value="col.id">{{ col.title }}</option>
         </select>
@@ -40,6 +40,7 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { PhLightning } from '@phosphor-icons/vue'
 import { useBoardStore } from '../stores/board.js'
 
 const store = useBoardStore()

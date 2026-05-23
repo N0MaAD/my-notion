@@ -10,10 +10,10 @@
         @click="store.removeNotification(n.id)"
       >
         <span class="toast-icon">
-          {{ n.type === 'archive' ? '🗄️' : 'ℹ️' }}
+          <PhArchive v-if="n.type === 'archive'" :size="16" /><PhInfo v-else :size="16" />
         </span>
         <span class="toast-message">{{ n.message }}</span>
-        <button class="toast-close" @click.stop="store.removeNotification(n.id)">×</button>
+        <button class="toast-close" @click.stop="store.removeNotification(n.id)"><PhX :size="14" /></button>
       </div>
     </TransitionGroup>
   </div>
@@ -21,6 +21,7 @@
 </template>
 
 <script setup>
+import { PhArchive, PhInfo, PhX } from '@phosphor-icons/vue'
 import { useBoardStore } from '../stores/board.js'
 const store = useBoardStore()
 </script>

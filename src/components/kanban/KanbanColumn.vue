@@ -19,8 +19,8 @@
     draggable="true"
     @dragstart.stop="onColumnDragStart"
     @dragend="onColumnDragEnd"
-  >⠿</span>
-    <span v-else class="column-permanent-icon" title="Colonne permanente">📌</span>
+  ><PhDotsSixVertical :size="16" /></span>
+    <span v-else class="column-permanent-icon" title="Colonne permanente"><PhMapPinSimple :size="14" /></span>
       <ColorPicker
         v-if="!column.permanent"
         :color="column.color || null"
@@ -42,11 +42,11 @@
         v-if="wsStore.multiWorkspaceActive && column._wsIcon"
         class="column-ws-badge"
         :title="column._wsName"
-      >{{ column._wsIcon }}</span>
+      ><PhIcon :name="column._wsIcon" :size="14" /></span>
     </div>
     <div v-if="!column.permanent" class="column-actions">
-      <button class="btn btn-ghost" @click="startRename" title="Renommer">✎</button>
-      <button class="btn btn-danger" @click="confirmDeleteColumn" title="Supprimer">✕</button>
+      <button class="btn btn-ghost" @click="startRename" title="Renommer"><PhPencilSimple :size="14" /></button>
+      <button class="btn btn-danger" @click="confirmDeleteColumn" title="Supprimer"><PhX :size="14" /></button>
     </div>
   </div>
 
@@ -59,7 +59,7 @@
       :style="{ background: tag.color + '22', color: tag.color, borderColor: tag.color + '44' }"
       @click="removeColumnTag(tag.id)"
       :title="'Retirer ' + tag.name"
-    >{{ tag.name }} ✕</span>
+    >{{ tag.name }} <PhX :size="10" /></span>
     <button v-if="availableTags.length > 0" class="column-tag-add" @click="showTagPicker = !showTagPicker">+</button>
     <div v-if="showTagPicker" class="column-tag-picker">
       <div
@@ -96,6 +96,8 @@
 
 <script setup>
 import { ref, computed, nextTick } from 'vue'
+import { PhDotsSixVertical, PhMapPinSimple, PhPencilSimple, PhX } from '@phosphor-icons/vue'
+import PhIcon from '../PhIcon.vue'
 import KanbanCard from './KanbanCard.vue'
 import AddCard from './AddCard.vue'
 import ColorPicker from './ColorPicker.vue'

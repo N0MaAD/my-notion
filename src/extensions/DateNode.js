@@ -1,4 +1,5 @@
 import { Node, mergeAttributes } from '@tiptap/core'
+import { createIcon } from '../utils/icons.js'
 
 export const DateNode = Node.create({
   name: 'dateBlock',
@@ -37,7 +38,7 @@ export const DateNode = Node.create({
 
       const icon = document.createElement('span')
       icon.classList.add('node-date-icon')
-      icon.textContent = node.attrs.isDeadline ? '📅' : '🗓️'
+      icon.appendChild(createIcon(node.attrs.isDeadline ? 'calendar-dot' : 'calendar-blank', 14))
 
       const title = document.createElement('span')
       title.classList.add('node-date-title')
@@ -49,7 +50,7 @@ export const DateNode = Node.create({
 
       const deleteBtn = document.createElement('button')
       deleteBtn.classList.add('node-delete-btn')
-      deleteBtn.textContent = '✕'
+      deleteBtn.appendChild(createIcon('x', 12))
       deleteBtn.addEventListener('click', (e) => {
         e.stopPropagation()
         const pos = getPos()

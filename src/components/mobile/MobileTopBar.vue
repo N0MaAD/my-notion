@@ -2,12 +2,12 @@
 <div class="mobile-topbar">
   <div class="mobile-topbar-left">
     <button class="btn btn-ghost mobile-hamburger" @click="$emit('open-drawer')">
-      <span class="hamburger-icon">☰</span>
+      <span class="hamburger-icon"><PhList :size="22" /></span>
     </button>
     <WorkspaceSwitcher @manage="$emit('open-settings', 'workspaces')" />
   </div>
   <div class="mobile-topbar-right">
-    <button class="btn btn-ghost mobile-search-btn" @click="$emit('open-search')">🔍</button>
+    <button class="btn btn-ghost mobile-search-btn" @click="$emit('open-search')"><PhMagnifyingGlass :size="20" /></button>
     <button class="btn btn-ghost mobile-avatar-btn" @click="$emit('open-settings', 'appearance')">
       <img
         v-if="authStore.user?.photoURL"
@@ -22,6 +22,7 @@
 </template>
 
 <script setup>
+import { PhList, PhMagnifyingGlass } from '@phosphor-icons/vue'
 import { useAuthStore } from '../../stores/auth.js'
 import WorkspaceSwitcher from '../WorkspaceSwitcher.vue'
 

@@ -19,9 +19,9 @@
       :class="{ active: t.id === currentType }"
       @click="selectType(t.id)"
     >
-      <span class="context-menu-icon">{{ t.icon }}</span>
+      <span class="context-menu-icon"><PhIcon :name="t.icon" :size="16" /></span>
       <span class="context-menu-text">{{ t.label }}</span>
-      <span v-if="t.id === currentType" class="context-menu-check">✓</span>
+      <span v-if="t.id === currentType" class="context-menu-check"><PhCheck :size="14" /></span>
     </div>
 
     <!-- Tags -->
@@ -36,7 +36,7 @@
     >
       <span class="context-tag-dot" :style="{ background: tag.color }"></span>
       <span class="context-menu-text">{{ tag.name }}</span>
-      <span v-if="noteHasTag(tag.id)" class="context-menu-check">✓</span>
+      <span v-if="noteHasTag(tag.id)" class="context-menu-check"><PhCheck :size="14" /></span>
     </div>
 
     <div v-if="currentType === 'date'" class="context-menu-divider" />
@@ -51,7 +51,7 @@
       </label>
 
       <label class="context-menu-date-label">
-        {{ currentIsDeadline ? '📅 Date' : '🗓️ Date de debut' }}
+        {{ currentIsDeadline ? 'Date' : 'Date de debut' }}
       </label>
       <input
         type="date"
@@ -61,7 +61,7 @@
       />
 
       <template v-if="!currentIsDeadline">
-        <label class="context-menu-date-label" style="margin-top: 0.5rem">🗓️ Date de fin</label>
+        <label class="context-menu-date-label" style="margin-top: 0.5rem">Date de fin</label>
         <input
           type="date"
           class="context-menu-date-input"
@@ -76,7 +76,7 @@
           :checked="hasTime"
           @change="toggleHasTime($event.target.checked)"
         />
-        <span>⏰ Définir une heure</span>
+        <span><PhBellRinging :size="14" /> Définir une heure</span>
       </label>
 
       <input
@@ -91,7 +91,7 @@
     <!-- Delete -->
     <div class="context-menu-divider" />
     <div class="context-menu-item context-menu-delete" @click="deleteNote">
-      <span class="context-menu-icon">🗑️</span>
+      <span class="context-menu-icon"><PhTrash :size="16" /></span>
       <span class="context-menu-text">Supprimer</span>
     </div>
   </div>
@@ -100,6 +100,8 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { PhCheck, PhBellRinging, PhTrash } from '@phosphor-icons/vue'
+import PhIcon from '../PhIcon.vue'
 import { NOTE_TYPES, useBoardStore } from '../../stores/board.js'
 
 const store = useBoardStore()

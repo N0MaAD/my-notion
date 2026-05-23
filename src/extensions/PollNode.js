@@ -1,4 +1,5 @@
 import { Node } from '@tiptap/core'
+import { createIcon } from '../utils/icons.js'
 
 export const PollNode = Node.create({
   name: 'pollBlock',
@@ -97,7 +98,7 @@ export const PollNode = Node.create({
 
         const resetBtn = document.createElement('button')
         resetBtn.className = 'poll-reset-btn'
-        resetBtn.textContent = '↺'
+        resetBtn.appendChild(createIcon('arrows-clockwise', 14))
         resetBtn.title = 'Réinitialiser'
         resetBtn.addEventListener('mousedown', (e) => {
           e.preventDefault()

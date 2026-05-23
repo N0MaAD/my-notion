@@ -1,6 +1,7 @@
 import { Node } from '@tiptap/core'
 import { Chart, registerables } from 'chart.js'
 import { useBoardStore } from '../stores/board.js'
+import { createIcon } from '../utils/icons.js'
 
 Chart.register(...registerables)
 
@@ -167,7 +168,7 @@ export const ChartNode = Node.create({
 
         const editBtn = document.createElement('button')
         editBtn.className = 'chart-edit-btn'
-        editBtn.textContent = '✎'
+        editBtn.appendChild(createIcon('pencil-simple', 14))
         editBtn.title = 'Modifier le graphique'
         editBtn.addEventListener('mousedown', (e) => {
           e.preventDefault()

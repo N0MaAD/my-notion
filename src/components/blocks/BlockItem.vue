@@ -9,16 +9,16 @@
   />
 
   <div v-else-if="block.type === 'page'" class="block-page" @click="store.openSubPage(block.id)">
-    <span class="block-page-icon">📄</span>
+    <span class="block-page-icon"><PhFileText :size="14" /></span>
     <span class="block-page-title">{{ block.title }}</span>
-    <span class="block-page-arrow">›</span>
-    <button class="btn btn-danger block-delete" @click.stop="store.deleteBlock(block.id)">✕</button>
+    <span class="block-page-arrow"><PhCaretRight :size="12" /></span>
+    <button class="btn btn-danger block-delete" @click.stop="store.deleteBlock(block.id)"><PhX :size="14" /></button>
   </div>
 
   <div v-else-if="block.type === 'embed'" class="block-embed">
     <div class="block-embed-header">
-      <span>🔗 {{ block.label || block.url }}</span>
-      <button class="btn btn-danger block-delete block-delete-embed" @click="store.deleteBlock(block.id)">✕</button>
+      <span><PhLinkSimple :size="14" /> {{ block.label || block.url }}</span>
+      <button class="btn btn-danger block-delete block-delete-embed" @click="store.deleteBlock(block.id)"><PhX :size="14" /></button>
     </div>
     <div
       class="block-embed-wrapper"
@@ -38,6 +38,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { PhFileText, PhCaretRight, PhX, PhLinkSimple } from '@phosphor-icons/vue'
 import { useBoardStore } from '../../stores/board.js'
 import TextBlock from './TextBlock.vue'
 

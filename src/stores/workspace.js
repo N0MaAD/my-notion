@@ -97,7 +97,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     }
 
     await setDoc(doc(db, 'workspaces', personalId), {
-      name: 'Personnel', icon: '🏠', type: 'personal',
+      name: 'Personnel', icon: 'house-simple', type: 'personal',
       ownerId: authStore.user.uid,
       members: { [authStore.user.uid]: memberEntry },
       columns: userData.columns || [], pins: userData.pins || [],
@@ -106,7 +106,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     })
 
     await setDoc(doc(db, 'workspaces', proId), {
-      name: 'Professionnel', icon: '💼', type: 'work',
+      name: 'Professionnel', icon: 'suitcase', type: 'work',
       ownerId: authStore.user.uid,
       members: { [authStore.user.uid]: memberEntry },
       columns: [], pins: [], trash: [], tags: [],
@@ -120,8 +120,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     })
 
     workspaces.value = [
-      { id: personalId, name: 'Personnel', icon: '🏠', type: 'personal', role: 'owner', ownerId: authStore.user.uid, memberCount: 1 },
-      { id: proId, name: 'Professionnel', icon: '💼', type: 'work', role: 'owner', ownerId: authStore.user.uid, memberCount: 1 }
+      { id: personalId, name: 'Personnel', icon: 'house-simple', type: 'personal', role: 'owner', ownerId: authStore.user.uid, memberCount: 1 },
+      { id: proId, name: 'Professionnel', icon: 'suitcase', type: 'work', role: 'owner', ownerId: authStore.user.uid, memberCount: 1 }
     ]
     activeWorkspaceIds.value = [personalId]
   }
@@ -154,7 +154,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     const now = new Date().toISOString()
 
     await setDoc(doc(db, 'workspaces', wsId), {
-      name, icon: icon || '📁', type,
+      name, icon: icon || 'folder', type,
       ownerId: authStore.user.uid,
       members: {
         [authStore.user.uid]: {
@@ -176,7 +176,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     wsIds.push(wsId)
     await setDoc(userRef, { ...userData, workspaceIds: wsIds })
 
-    workspaces.value.push({ id: wsId, name, icon: icon || '📁', type, role: 'owner', ownerId: authStore.user.uid, memberCount: 1 })
+    workspaces.value.push({ id: wsId, name, icon: icon || 'folder', type, role: 'owner', ownerId: authStore.user.uid, memberCount: 1 })
     return wsId
   }
 
@@ -308,7 +308,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     await setDoc(doc(db, 'shareLinks', token), {
       workspaceId,
       workspaceName: wsData.name,
-      workspaceIcon: wsData.icon || '📁',
+      workspaceIcon: wsData.icon || 'folder',
       role,
       createdBy: authStore.user.uid,
       createdAt: new Date().toISOString(),

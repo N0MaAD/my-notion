@@ -2,10 +2,10 @@
 <div class="ws-switcher" ref="switcherRef">
   <button class="ws-current" @click="open = !open">
     <span class="ws-current-icons">
-      <span v-for="ws in activeWorkspaces" :key="ws.id" class="ws-current-icon">{{ ws.icon }}</span>
+      <span v-for="ws in activeWorkspaces" :key="ws.id" class="ws-current-icon"><PhIcon :name="ws.icon" :size="18" /></span>
     </span>
     <span class="ws-current-name">{{ label }}</span>
-    <span class="ws-current-arrow">{{ open ? '▴' : '▾' }}</span>
+    <span class="ws-current-arrow"><PhCaretUp v-if="open" :size="12" /><PhCaretDown v-else :size="12" /></span>
   </button>
 
   <div v-if="open" class="ws-dropdown">
@@ -19,9 +19,9 @@
         @click.prevent="toggle(ws.id)"
       >
         <span class="ws-checkbox" :class="{ checked: isActive(ws.id) }">
-          <span v-if="isActive(ws.id)">✓</span>
+          <PhCheck v-if="isActive(ws.id)" :size="14" />
         </span>
-        <span class="ws-item-icon">{{ ws.icon }}</span>
+        <span class="ws-item-icon"><PhIcon :name="ws.icon" :size="18" /></span>
         <div class="ws-item-info">
           <span class="ws-item-name">{{ ws.name }}</span>
           <span class="ws-item-meta">{{ ws.memberCount > 1 ? ws.memberCount + ' membres' : roleLabel(ws.role) }}</span>
@@ -35,7 +35,7 @@
         <span>Nouvel espace</span>
       </button>
       <button class="ws-action" @click="$emit('manage'); open = false">
-        <span class="ws-action-icon">⚙</span>
+        <span class="ws-action-icon"><PhGear :size="14" /></span>
         <span>Gérer les espaces</span>
       </button>
     </div>
@@ -46,7 +46,7 @@
       <div class="ws-modal" @click.stop>
         <div class="ws-modal-header">
           <h3>Nouvel espace de travail</h3>
-          <button class="ws-modal-close" @click="showCreate = false">✕</button>
+          <button class="ws-modal-close" @click="showCreate = false"><PhX :size="14" /></button>
         </div>
         <div class="ws-modal-body">
           <label class="ws-modal-label">Nom</label>
@@ -55,18 +55,18 @@
           <label class="ws-modal-label">Icône</label>
           <div class="ws-icon-grid">
             <button v-for="icon in ICONS" :key="icon" class="ws-icon-btn"
-              :class="{ active: newIcon === icon }" @click="newIcon = icon">{{ icon }}</button>
+              :class="{ active: newIcon === icon }" @click="newIcon = icon"><PhIcon :name="icon" :size="18" /></button>
           </div>
           <label class="ws-modal-label">Type</label>
           <div class="ws-type-row">
             <button class="ws-type-btn" :class="{ active: newType === 'personal' }" @click="newType = 'personal'">
-              <span>🏠</span><span>Personnel</span>
+              <span><PhIcon name="house-simple" :size="18" /></span><span>Personnel</span>
             </button>
             <button class="ws-type-btn" :class="{ active: newType === 'work' }" @click="newType = 'work'">
-              <span>💼</span><span>Travail</span>
+              <span><PhIcon name="suitcase" :size="18" /></span><span>Travail</span>
             </button>
             <button class="ws-type-btn" :class="{ active: newType === 'shared' }" @click="newType = 'shared'">
-              <span>👥</span><span>Partagé</span>
+              <span><PhIcon name="users" :size="18" /></span><span>Partagé</span>
             </button>
           </div>
         </div>
@@ -82,6 +82,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { PhCaretUp, PhCaretDown, PhCheck, PhGear, PhX } from '@phosphor-icons/vue'
+import PhIcon from './PhIcon.vue'
 import { useWorkspaceStore } from '../stores/workspace.js'
 import { useBoardStore } from '../stores/board.js'
 
@@ -92,11 +94,11 @@ const boardStore = useBoardStore()
 const open      = ref(false)
 const showCreate = ref(false)
 const newName   = ref('')
-const newIcon   = ref('📁')
+const newIcon   = ref('folder')
 const newType   = ref('shared')
 const switcherRef = ref(null)
 
-const ICONS = ['🏠', '💼', '👥', '📁', '🎓', '🎨', '🔬', '🏗️', '🎮', '🎵', '📚', '🌍', '❤️', '⭐', '🚀', '💡']
+const ICONS = ['house-simple', 'suitcase', 'users', 'folder', 'graduation-cap', 'paint-brush-broad', 'microscope', 'barricade', 'game-controller', 'equalizer', 'books', 'planet', 'heartbeat', 'sparkle', 'rocket-launch', 'lightbulb']
 
 const workspaces       = computed(() => wsStore.workspaces)
 const activeWorkspaces = computed(() => wsStore.workspaces.filter(w => wsStore.activeWorkspaceIds.includes(w.id)))
@@ -127,7 +129,7 @@ async function createNew() {
   const wsId = await wsStore.createWorkspace(newName.value.trim(), newIcon.value, newType.value)
   showCreate.value = false
   newName.value = ''
-  newIcon.value = '📁'
+  newIcon.value = 'folder'
   newType.value = 'shared'
   if (wsId) await toggle(wsId)
 }

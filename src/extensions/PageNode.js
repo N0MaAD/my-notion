@@ -1,4 +1,5 @@
 import { Node, mergeAttributes } from '@tiptap/core'
+import { createIcon } from '../utils/icons.js'
 
 let onOpenSubPage = null
 
@@ -26,7 +27,7 @@ export const PageNode = Node.create({
     return ['div', mergeAttributes(HTMLAttributes, {
       'data-page-block': '',
       'class': 'node-page-block'
-    }), `📄 ${HTMLAttributes.title}`]
+    }), HTMLAttributes.title]
   },
 
   addNodeView() {
@@ -37,7 +38,7 @@ export const PageNode = Node.create({
 
       const icon = document.createElement('span')
       icon.classList.add('node-page-icon')
-      icon.textContent = '📄'
+      icon.appendChild(createIcon('file-text', 14))
 
       const title = document.createElement('span')
       title.classList.add('node-page-title')
@@ -45,11 +46,11 @@ export const PageNode = Node.create({
 
       const arrow = document.createElement('span')
       arrow.classList.add('node-page-arrow')
-      arrow.textContent = '›'
+      arrow.appendChild(createIcon('caret-right', 10))
 
       const deleteBtn = document.createElement('button')
       deleteBtn.classList.add('node-delete-btn')
-      deleteBtn.textContent = '✕'
+      deleteBtn.appendChild(createIcon('x', 12))
       deleteBtn.addEventListener('click', (e) => {
         e.stopPropagation()
         const pos = getPos()

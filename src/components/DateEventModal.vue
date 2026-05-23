@@ -4,7 +4,7 @@
     <div class="agenda-modal" @click.stop>
       <div class="agenda-modal-header">
         <h3>{{ editing ? 'Modifier l\'événement' : 'Nouvel événement' }}</h3>
-        <button class="agenda-modal-close" @click="$emit('close')">×</button>
+        <button class="agenda-modal-close" @click="$emit('close')"><PhX :size="18" /></button>
       </div>
 
       <div class="agenda-modal-body">
@@ -72,6 +72,7 @@
 
 <script setup>
 import { ref, watch, nextTick } from 'vue'
+import { PhX } from '@phosphor-icons/vue'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },

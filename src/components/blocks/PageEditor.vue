@@ -35,7 +35,7 @@
           @mousedown.prevent="executeSlashCommand(item)"
           @mouseenter="selectedIndex = i"
         >
-          <span class="slash-menu-icon">{{ item.icon }}</span>
+          <span class="slash-menu-icon"><PhIcon :name="item.icon" :size="18" /></span>
           <div class="slash-menu-text">
             <span class="slash-menu-label">{{ item.label }}</span>
           </div>
@@ -70,7 +70,7 @@
           @mousedown.prevent="pickNote(n)"
           @mouseenter="notePickerIndex = i"
         >
-          <span class="note-picker-item-title">🔖 {{ n.title }}</span>
+          <span class="note-picker-item-title"><PhIcon name="link-simple" :size="14" /> {{ n.title }}</span>
           <span class="note-picker-item-col">{{ n.columnTitle }}</span>
         </div>
         <div v-if="filteredNotes.length === 0" class="note-picker-empty">
@@ -159,6 +159,7 @@ import { AudioNode } from '../../extensions/AudioNode.js'
 import { ChartNode } from '../../extensions/ChartNode.js'
 import { PollNode } from '../../extensions/PollNode.js'
 import { MapNode } from '../../extensions/MapNode.js'
+import PhIcon from '../PhIcon.vue'
 import ChartEditor from './ChartEditor.vue'
 import DateEventModal from '../DateEventModal.vue'
 import { useBoardStore } from '../../stores/board.js'
@@ -183,29 +184,29 @@ const slashItems = [
   { id: 'h2', icon: 'H2', label: 'Titre 2', description: 'Titre moyen', type: 'heading2', category: 'Blocs de base', shortcut: '##' },
   { id: 'h3', icon: 'H3', label: 'Titre 3', description: 'Petit titre', type: 'heading3', category: 'Blocs de base', shortcut: '###' },
   { id: 'h4', icon: 'H4', label: 'Titre 4', description: 'Titre discret', type: 'heading4', category: 'Blocs de base', shortcut: '####' },
-  { id: 'bullet', icon: '⊡', label: 'Liste à puces', description: 'Liste non ordonnée', type: 'bullet', category: 'Blocs de base', shortcut: '-' },
-  { id: 'ordered', icon: '☰', label: 'Liste numérotée', description: 'Liste ordonnée', type: 'ordered', category: 'Blocs de base', shortcut: '1.' },
-  { id: 'taskList', icon: '☑', label: 'Liste de tâches', description: 'Cases à cocher', type: 'taskList', category: 'Blocs de base', shortcut: '[]' },
-  { id: 'toggle', icon: '▸', label: 'Menu dépliant', description: 'Contenu repliable', type: 'toggle', category: 'Blocs de base', shortcut: '>' },
-  { id: 'page', icon: '📄', label: 'Page', description: 'Créer une sous-page', type: 'page', category: 'Blocs de base' },
-  { id: 'callout', icon: '💡', label: 'Encadré', description: 'Bloc encadré avec icône', type: 'callout', category: 'Blocs de base' },
-  { id: 'quote', icon: '❝', label: 'Citation', description: 'Bloc de citation', type: 'quote', category: 'Blocs de base' },
-  { id: 'table', icon: '▦', label: 'Tableau', description: 'Insérer un tableau', type: 'table', category: 'Blocs de base' },
+  { id: 'bullet', icon: 'list-bullets', label: 'Liste à puces', description: 'Liste non ordonnée', type: 'bullet', category: 'Blocs de base', shortcut: '-' },
+  { id: 'ordered', icon: 'list-numbers', label: 'Liste numérotée', description: 'Liste ordonnée', type: 'ordered', category: 'Blocs de base', shortcut: '1.' },
+  { id: 'taskList', icon: 'check-square', label: 'Liste de tâches', description: 'Cases à cocher', type: 'taskList', category: 'Blocs de base', shortcut: '[]' },
+  { id: 'toggle', icon: 'caret-circle-right', label: 'Menu dépliant', description: 'Contenu repliable', type: 'toggle', category: 'Blocs de base', shortcut: '>' },
+  { id: 'page', icon: 'file-plus', label: 'Page', description: 'Créer une sous-page', type: 'page', category: 'Blocs de base' },
+  { id: 'callout', icon: 'lightbulb', label: 'Encadré', description: 'Bloc encadré avec icône', type: 'callout', category: 'Blocs de base' },
+  { id: 'quote', icon: 'quotes', label: 'Citation', description: 'Bloc de citation', type: 'quote', category: 'Blocs de base' },
+  { id: 'table', icon: 'grid-nine', label: 'Tableau', description: 'Insérer un tableau', type: 'table', category: 'Blocs de base' },
   { id: 'divider', icon: '—', label: 'Séparateur', description: 'Ligne horizontale', type: 'divider', category: 'Blocs de base', shortcut: '---' },
-  { id: 'image', icon: '🖼', label: 'Image', description: 'Importer une image', type: 'image', category: 'Médias' },
-  { id: 'video', icon: '🎬', label: 'Vidéo', description: 'Intégrer une vidéo (YouTube, URL...)', type: 'video', category: 'Médias' },
-  { id: 'audio', icon: '🔊', label: 'Audio', description: 'Intégrer un fichier audio', type: 'audio', category: 'Médias' },
-  { id: 'code', icon: '⟨/⟩', label: 'Code', description: 'Bloc de code', type: 'code', category: 'Médias' },
-  { id: 'embed', icon: '🔖', label: 'Aperçu de lien Web', description: 'Intégrer un lien (YouTube, Sheets...)', type: 'embed', category: 'Médias' },
-  { id: 'noteLink', icon: '🔗', label: 'Lien vers une note', description: 'Insérer un lien vers une autre note', type: 'noteLink', category: 'Lien' },
-  { id: 'chartBar', icon: '📊', label: 'Graphique à barres verticales', description: 'Barres verticales', type: 'chartBar', category: 'Graphiques' },
-  { id: 'chartBarH', icon: '📉', label: 'Graphique à barres horizontales', description: 'Barres horizontales', type: 'chartBarH', category: 'Graphiques' },
-  { id: 'chartLine', icon: '📈', label: 'Graphique en lignes', description: 'Courbe de données', type: 'chartLine', category: 'Graphiques' },
-  { id: 'chartDonut', icon: '🍩', label: 'Graphique en anneau', description: 'Diagramme circulaire', type: 'chartDonut', category: 'Graphiques' },
+  { id: 'image', icon: 'panorama', label: 'Image', description: 'Importer une image', type: 'image', category: 'Médias' },
+  { id: 'video', icon: 'video', label: 'Vidéo', description: 'Intégrer une vidéo (YouTube, URL...)', type: 'video', category: 'Médias' },
+  { id: 'audio', icon: 'equalizer', label: 'Audio', description: 'Intégrer un fichier audio', type: 'audio', category: 'Médias' },
+  { id: 'code', icon: 'terminal', label: 'Code', description: 'Bloc de code', type: 'code', category: 'Médias' },
+  { id: 'embed', icon: 'link-simple', label: 'Aperçu de lien Web', description: 'Intégrer un lien (YouTube, Sheets...)', type: 'embed', category: 'Médias' },
+  { id: 'noteLink', icon: 'link-simple', label: 'Lien vers une note', description: 'Insérer un lien vers une autre note', type: 'noteLink', category: 'Lien' },
+  { id: 'chartBar', icon: 'chart-bar', label: 'Graphique à barres verticales', description: 'Barres verticales', type: 'chartBar', category: 'Graphiques' },
+  { id: 'chartBarH', icon: 'chart-bar-horizontal', label: 'Graphique à barres horizontales', description: 'Barres horizontales', type: 'chartBarH', category: 'Graphiques' },
+  { id: 'chartLine', icon: 'trend-up', label: 'Graphique en lignes', description: 'Courbe de données', type: 'chartLine', category: 'Graphiques' },
+  { id: 'chartDonut', icon: 'chart-donut', label: 'Graphique en anneau', description: 'Diagramme circulaire', type: 'chartDonut', category: 'Graphiques' },
   { id: 'chartNumber', icon: '#', label: 'Graphique numérique', description: 'Grand nombre mis en avant', type: 'chartNumber', category: 'Graphiques' },
-  { id: 'date', icon: '📅', label: 'Date / Événement', description: 'Ajouter un événement à l\'agenda', type: 'date', category: 'Autre' },
-  { id: 'poll', icon: '📋', label: 'Sondage', description: 'Sondage à choix multiples', type: 'poll', category: 'Autre' },
-  { id: 'map', icon: '🗺', label: 'Vue Carte', description: 'Carte Google Maps', type: 'map', category: 'Autre' },
+  { id: 'date', icon: 'calendar-dot', label: 'Date / Événement', description: 'Ajouter un événement à l\'agenda', type: 'date', category: 'Autre' },
+  { id: 'poll', icon: 'check-square', label: 'Sondage', description: 'Sondage à choix multiples', type: 'poll', category: 'Autre' },
+  { id: 'map', icon: 'map-trifold', label: 'Vue Carte', description: 'Carte Google Maps', type: 'map', category: 'Autre' },
 ]
 
 // ─── Note picker ───
@@ -517,7 +518,7 @@ switch (item.type) {
   case 'callout':
     cmd().insertContent({
       type: 'calloutBlock',
-      attrs: { emoji: '💡' },
+      attrs: { emoji: 'lightbulb' },
       content: [{ type: 'paragraph' }]
     }).run()
     break

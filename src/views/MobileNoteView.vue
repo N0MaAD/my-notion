@@ -1,10 +1,10 @@
 <template>
 <div class="mobile-note-view">
   <div class="mobile-note-topbar">
-    <button class="btn btn-ghost mobile-back-btn" @click="goBack">← Retour</button>
+    <button class="btn btn-ghost mobile-back-btn" @click="goBack"><PhArrowLeft :size="18" /> Retour</button>
     <div class="mobile-note-topbar-actions">
       <button class="btn btn-ghost" @click="store.togglePin(store.activeNoteId)" v-if="store.activeNote">
-        {{ store.isPinned(store.activeNoteId) ? '★' : '☆' }}
+        <PhStar :size="16" :weight="store.isPinned(store.activeNoteId) ? 'fill' : 'regular'" />
       </button>
     </div>
   </div>
@@ -17,6 +17,7 @@
 <script setup>
 import { watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { PhArrowLeft, PhStar } from '@phosphor-icons/vue'
 import { useBoardStore } from '../stores/board.js'
 import NoteContent from '../components/notes/NoteContent.vue'
 

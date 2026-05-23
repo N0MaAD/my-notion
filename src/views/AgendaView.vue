@@ -2,9 +2,9 @@
 <div class="agenda-view">
   <!-- Header: mois + navigation -->
   <div class="agenda-header">
-    <button class="agenda-nav-btn" @click="prevMonth" title="Mois precedent">‹</button>
+    <button class="agenda-nav-btn" @click="prevMonth" title="Mois precedent"><PhCaretLeft :size="18" /></button>
     <h2 class="agenda-month">{{ monthLabel }}</h2>
-    <button class="agenda-nav-btn" @click="nextMonth" title="Mois suivant">›</button>
+    <button class="agenda-nav-btn" @click="nextMonth" title="Mois suivant"><PhCaretRight :size="18" /></button>
     <button class="agenda-today-btn" @click="goToday">Aujourd'hui</button>
   </div>
 
@@ -36,7 +36,7 @@
           @click.stop="openEditModal(note)"
           :title="note.title + ' (' + note.columnTitle + ')'"
         >
-          <span v-if="noteTypeInfo(note)" class="agenda-note-icon">{{ noteTypeInfo(note).icon }}</span>
+          <span v-if="noteTypeInfo(note)" class="agenda-note-icon"><PhIcon :name="noteTypeInfo(note).icon" :size="14" /></span>
           <span v-if="note.startTime" class="agenda-note-time">{{ note.startTime }}</span>
           <span class="agenda-note-title">{{ note.title }}</span>
         </div>
@@ -57,6 +57,8 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { PhCaretLeft, PhCaretRight } from '@phosphor-icons/vue'
+import PhIcon from '../components/PhIcon.vue'
 import { useBoardStore, NOTE_TYPES } from '../stores/board.js'
 import DateEventModal from '../components/DateEventModal.vue'
 
