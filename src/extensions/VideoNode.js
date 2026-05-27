@@ -10,7 +10,11 @@ function toVideoEmbed(url) {
   const dailyMatch = url.match(/dailymotion\.com\/video\/([a-zA-Z0-9]+)/)
   if (dailyMatch) return { type: 'iframe', src: `https://www.dailymotion.com/embed/video/${dailyMatch[1]}` }
 
-  return { type: 'video', src: url }
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol === 'https:') return { type: 'video', src: url }
+  } catch {}
+  return { type: 'video', src: '' }
 }
 
 export const VideoNode = Node.create({
@@ -44,6 +48,8 @@ export const VideoNode = Node.create({
         iframe.setAttribute('frameborder', '0')
         iframe.setAttribute('allowfullscreen', '')
         iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture')
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups')
+        iframe.setAttribute('referrerpolicy', 'no-referrer')
         dom.appendChild(iframe)
       } else {
         const video = document.createElement('video')

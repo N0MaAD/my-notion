@@ -59,10 +59,15 @@ export const EmbedNode = Node.create({
       if (node.attrs.width) wrapper.style.width = node.attrs.width + 'px'
 
       const iframe = document.createElement('iframe')
-      iframe.src = node.attrs.url
+      const url = node.attrs.url || ''
+      if (url.startsWith('https://')) {
+        iframe.src = url
+      }
       iframe.classList.add('node-embed-frame')
       iframe.frameBorder = '0'
       iframe.allowFullscreen = true
+      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-forms')
+      iframe.setAttribute('referrerpolicy', 'no-referrer')
 
       // Resize handle
       const handle = document.createElement('div')

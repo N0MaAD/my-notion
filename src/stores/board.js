@@ -334,15 +334,49 @@ export const useBoardStore = defineStore('board', () => {
     if (!page) return
     const id = data.id || crypto.randomUUID()
     const { id: _, ...rest } = data
-    page.blocks.push({ id, type, ...getDefaultBlockData(type, rest) })
+    const blockData = getDefaultBlockData(type, rest)
+    if (blockData === null) return
+    page.blocks.push({ id, type, ...blockData })
   }
 
   function getDefaultBlockData(type, data) {
     switch (type) {
       case 'text': return { content: data.content || '' }
       case 'page': return { title: data.title || 'Sans titre', blocks: [] }
-      case 'embed': return { url: toEmbedUrl(data.url || ''), originalUrl: data.url || '', label: data.label || '' }
+      case 'embed': {
+        const embedUrl = toEmbedUrl(data.url || '')
+        if (!embedUrl) {
+          addNotification('URL non autorisée pour l\'embed. Domaines supportés : YouTube, Vimeo, Google Docs, Spotify, Figma…', 'warning-octagon')
+          return null
+        }
+        return { url: embedUrl, originalUrl: data.url || '', label: data.label || '' }
+      }
       default: return {}
+    }
+  }
+
+  const ALLOWED_EMBED_ORIGINS = [
+    'https://www.youtube.com',
+    'https://www.youtube-nocookie.com',
+    'https://player.vimeo.com',
+    'https://www.dailymotion.com',
+    'https://docs.google.com',
+    'https://maps.google.com',
+    'https://www.google.com/maps',
+    'https://open.spotify.com',
+    'https://codepen.io',
+    'https://codesandbox.io',
+    'https://figma.com',
+    'https://www.figma.com',
+  ]
+
+  function isAllowedEmbedUrl(url) {
+    try {
+      const parsed = new URL(url)
+      if (!['https:'].includes(parsed.protocol)) return false
+      return ALLOWED_EMBED_ORIGINS.some(origin => url.startsWith(origin))
+    } catch {
+      return false
     }
   }
 
@@ -355,7 +389,8 @@ export const useBoardStore = defineStore('board', () => {
     if (dc) return `https://docs.google.com/document/d/${dc[1]}/pub?embedded=true`
     const sl = url.match(/docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/)
     if (sl) return `https://docs.google.com/presentation/d/${sl[1]}/embed`
-    return url
+    if (isAllowedEmbedUrl(url)) return url
+    return null
   }
 
   function updateBlock(blockId, updates) {
