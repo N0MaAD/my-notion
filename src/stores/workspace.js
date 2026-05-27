@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, addDoc, query, where } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useAuthStore } from './auth.js'
+import { rateLimit } from '../utils/rateLimit.js'
 
 export const useWorkspaceStore = defineStore('workspace', () => {
   const workspaces = ref([])
@@ -149,6 +150,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function createWorkspace(name, icon) {
     const authStore = useAuthStore()
     if (!authStore.user) return null
+    if (!rateLimit('create-workspace', 5000)) return null
+    if (!name || name.trim().length === 0 || name.length > 200) return null
 
     const wsId = crypto.randomUUID()
     const now = new Date().toISOString()
@@ -222,6 +225,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   async function inviteMember(workspaceId, email, role = 'editor') {
     const authStore = useAuthStore()
+    if (!rateLimit('invite-member', 3000)) return { success: false, error: 'Trop rapide, réessaie dans quelques secondes' }
+    if (!email || email.length > 320 || !email.includes('@')) return { success: false, error: 'Email invalide' }
     const wsRef = getWorkspaceDocRef(workspaceId)
     const wsSnap = await getDoc(wsRef)
     if (!wsSnap.exists()) return { success: false, error: 'Workspace introuvable' }
@@ -298,6 +303,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   async function generateShareLink(workspaceId, role = 'editor') {
     const authStore = useAuthStore()
     if (!authStore.user) return null
+    if (!rateLimit('share-link', 5000)) return null
     const wsRef = getWorkspaceDocRef(workspaceId)
     const wsSnap = await getDoc(wsRef)
     if (!wsSnap.exists()) return null

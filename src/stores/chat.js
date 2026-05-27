@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { collection, addDoc, query, orderBy, limit, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { useAuthStore } from './auth.js'
+import { rateLimit } from '../utils/rateLimit.js'
 
 export const useChatStore = defineStore('chat', () => {
   const messages = ref([])
@@ -39,11 +40,13 @@ export const useChatStore = defineStore('chat', () => {
   async function send(wsId, text) {
     const auth = useAuthStore()
     if (!auth.user || !text.trim()) return
+    if (!rateLimit('chat-send', 1000)) return
+    const trimmed = text.trim().slice(0, 5000)
     await addDoc(collection(db, 'workspaceChats', wsId, 'messages'), {
       userId: auth.user.uid,
       userName: auth.user.displayName || auth.user.email,
       userPhoto: auth.user.photoURL || '',
-      text: text.trim(),
+      text: trimmed,
       createdAt: new Date().toISOString()
     })
   }
