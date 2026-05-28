@@ -633,14 +633,28 @@ async function doImportJSON(e) {
   importMessage.value = ''
   try {
     const text = await file.text()
+    if (text.length > 5 * 1024 * 1024) throw new Error('Fichier trop volumineux (max 5 Mo)')
     const data = JSON.parse(text)
     if (!data.columns || !Array.isArray(data.columns)) throw new Error('Format invalide')
+    if (data.columns.length > 50) throw new Error('Trop de colonnes (max 50)')
     let noteCount = 0
     for (const col of data.columns) {
-      const id = crypto.randomUUID()
-      const notes = (col.notes || []).map(n => ({ ...n, id: crypto.randomUUID() }))
+      if (typeof col.title !== 'string' && col.title !== undefined) throw new Error('Titre de colonne invalide')
+      const rawNotes = Array.isArray(col.notes) ? col.notes.slice(0, 500) : []
+      const notes = rawNotes
+        .filter(n => n && typeof n === 'object')
+        .map(n => ({
+          id: crypto.randomUUID(),
+          title: typeof n.title === 'string' ? n.title.slice(0, 500) : 'Sans titre',
+          type: typeof n.type === 'string' ? n.type : 'note',
+          blocks: Array.isArray(n.blocks) ? n.blocks : [],
+          tags: Array.isArray(n.tags) ? n.tags : [],
+          pinned: n.pinned === true,
+          createdAt: typeof n.createdAt === 'string' ? n.createdAt : new Date().toISOString()
+        }))
       noteCount += notes.length
-      store.columns.push({ id, title: col.title || 'Importé', notes })
+      const id = crypto.randomUUID()
+      store.columns.push({ id, title: (col.title || 'Importé').slice(0, 200), notes })
     }
     if (data.tags) {
       for (const tag of data.tags) {

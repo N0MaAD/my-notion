@@ -311,13 +311,16 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (wsData.ownerId !== authStore.user.uid) return null
 
     const token = crypto.randomUUID()
+    const now = new Date()
+    const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
     await setDoc(doc(db, 'shareLinks', token), {
       workspaceId,
       workspaceName: wsData.name,
       workspaceIcon: wsData.icon || 'folder',
       role,
       createdBy: authStore.user.uid,
-      createdAt: new Date().toISOString(),
+      createdAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
       active: true
     })
     return token
@@ -344,6 +347,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (!linkSnap.exists()) return { success: false, error: 'Lien invalide ou expiré' }
     const linkData = linkSnap.data()
     if (!linkData.active) return { success: false, error: 'Ce lien a été révoqué' }
+    if (linkData.expiresAt && new Date(linkData.expiresAt) < new Date()) {
+      return { success: false, error: 'Ce lien a expiré' }
+    }
 
     const wsRef = getWorkspaceDocRef(linkData.workspaceId)
     const wsSnap = await getDoc(wsRef)
@@ -388,6 +394,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     if (!linkSnap.exists()) return null
     const data = linkSnap.data()
     if (!data.active) return null
+    if (data.expiresAt && new Date(data.expiresAt) < new Date()) return null
     return data
   }
 
