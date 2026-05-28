@@ -98,8 +98,7 @@ function onSwipeEnd(e) {
 }
 .mobile-main {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: auto;
   width: 100%;
   min-height: 0;
   -webkit-overflow-scrolling: touch;

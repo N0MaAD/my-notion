@@ -6446,32 +6446,32 @@
 
      .board-area {
        padding: 2vw;
-       overflow-x: auto;
-       overflow-y: hidden;
+       overflow: auto;
        width: 100%;
        height: 100%;
        -webkit-overflow-scrolling: touch;
      }
 
      .board {
-       flex-direction: row;
+       display: flex;
+       flex-direction: row !important;
+       flex-wrap: nowrap !important;
        gap: 3vw;
-       height: 100%;
        width: max-content;
-       min-width: 100%;
+       min-height: 0;
+       padding-right: 2vw;
      }
 
      .column {
-       width: 72vw !important;
-       min-width: 72vw !important;
-       flex-shrink: 0;
-       max-height: 100%;
+       width: 75vw !important;
+       min-width: 75vw !important;
+       max-width: 75vw !important;
+       flex-shrink: 0 !important;
        border-radius: 2vw;
-       overflow-y: auto;
      }
 
      .column-cards {
-       max-height: none;
+       max-height: 60vh;
        overflow-y: auto;
      }
 
