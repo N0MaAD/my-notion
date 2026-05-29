@@ -29,7 +29,7 @@ service cloud.firestore {
         && request.resource.data.ownerId == request.auth.uid
         && request.auth.uid in request.resource.data.members
         && strOk(request.resource.data.name, 200)
-        && request.resource.data.members is map
+        && request.resource.data.members is list
         && request.resource.data.members.size() <= 100;
 
       // Lecture : membres OU invité en attente
@@ -49,7 +49,7 @@ service cloud.firestore {
           // Le nom doit rester valide
           && strOk(request.resource.data.name, 200)
           // Les membres restent une liste bornée
-          && request.resource.data.members is map
+          && request.resource.data.members is list
           && request.resource.data.members.size() <= 100
         )
         // Invité en attente : peut seulement se joindre

@@ -15,18 +15,13 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging()
 
-// Minimal fetch handler required for PWA installability
-self.addEventListener('fetch', (event) => {
-  event.respondWith(fetch(event.request))
-})
-
 messaging.onBackgroundMessage((payload) => {
   const { title, body, icon } = payload.notification || {}
   if (!title) return
   self.registration.showNotification(title, {
     body: body || '',
-    icon: icon || '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: icon || '/favicon.svg',
+    badge: '/favicon.svg',
     tag: 'my-notion-sync',
     renotify: true,
     data: payload.data || {}
