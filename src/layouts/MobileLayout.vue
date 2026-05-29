@@ -32,6 +32,7 @@
   />
   <QuickCapture ref="quickCaptureRef" />
   <NotificationToast />
+  <InstallBanner />
 </div>
 </template>
 
@@ -45,6 +46,7 @@ import SettingsView from '../views/SettingsView.vue'
 import SearchModal from '../components/SearchModal.vue'
 import QuickCapture from '../components/QuickCapture.vue'
 import NotificationToast from '../components/NotificationToast.vue'
+import InstallBanner from '../components/InstallBanner.vue'
 import { useAuthStore } from '../stores/auth.js'
 
 const authStore = useAuthStore()
