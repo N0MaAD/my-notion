@@ -138,6 +138,43 @@
         </div>
       </div>
 
+      <!-- Application (install PWA + notifications) -->
+      <div v-else-if="activeSection === 'app-install'" class="settings-section">
+        <div class="settings-block">
+          <h3 class="settings-block-title">Installer l'application</h3>
+          <p class="settings-block-desc">Installe My Notion sur ton appareil pour un accès rapide comme une vraie app</p>
+
+          <button v-if="pwaInstallable" class="settings-install-btn" @click="installPwa">
+            <PhDeviceMobile :size="20" />
+            <span>Installer My Notion</span>
+          </button>
+          <div v-else-if="pwaInstalled" class="settings-install-done">
+            <PhCheck :size="18" />
+            <span>Application installée</span>
+          </div>
+          <div v-else class="settings-install-info">
+            <p>L'installation sera disponible automatiquement via ton navigateur. Sur <strong>iOS Safari</strong>, utilise <em>Partager → Sur l'écran d'accueil</em>.</p>
+          </div>
+        </div>
+
+        <div class="settings-block">
+          <h3 class="settings-block-title">Notifications</h3>
+          <p class="settings-block-desc">Reçois des alertes quand quelqu'un modifie ton workspace ou t'envoie un message</p>
+
+          <button v-if="notifPermission === 'default'" class="settings-install-btn" @click="requestNotifPermission">
+            <PhBell :size="20" />
+            <span>Activer les notifications</span>
+          </button>
+          <div v-else-if="notifPermission === 'granted'" class="settings-install-done">
+            <PhCheck :size="18" />
+            <span>Notifications activées</span>
+          </div>
+          <div v-else class="settings-install-info">
+            <p>Les notifications ont été bloquées. Pour les réactiver, va dans les paramètres de ton navigateur → Autorisations du site → Notifications.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Corbeille -->
       <div v-else-if="activeSection === 'trash'" class="settings-section">
         <div class="settings-block">
@@ -416,7 +453,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { PhBuilding, PhUsers, PhSignOut, PhX, PhCheck, PhTrash, PhArrowCounterClockwise, PhPanorama, PhAperture, PhNotePencil, PhFileCsv, PhFileHtml, PhFileJs, PhFileText, PhPencilLine } from '@phosphor-icons/vue'
+import { PhBuilding, PhUsers, PhSignOut, PhX, PhCheck, PhTrash, PhArrowCounterClockwise, PhPanorama, PhAperture, PhNotePencil, PhFileCsv, PhFileHtml, PhFileJs, PhFileText, PhPencilLine, PhDeviceMobile, PhBell } from '@phosphor-icons/vue'
 import PhIcon from '../components/PhIcon.vue'
 import { useThemeStore, THEMES, PRESET_BACKGROUNDS } from '../stores/theme.js'
 import { useAuthStore } from '../stores/auth.js'
@@ -440,6 +477,7 @@ const ICONS = ['house-simple', 'suitcase', 'users', 'folder', 'graduation-cap', 
 
 const prefItems = [
   { id: 'appearance', icon: 'paint-brush-broad', label: 'Apparence' },
+  { id: 'app-install', icon: 'device-mobile', label: 'Application' },
   { id: 'shortcuts', icon: 'command', label: 'Raccourcis' },
   { id: 'export', icon: 'export', label: 'Import / Export' },
   { id: 'trash', icon: 'trash', label: 'Corbeille' }
@@ -486,6 +524,42 @@ const SHORTCUT_GROUPS = [
 ]
 
 const activeSection = ref(props.initialSection || 'appearance')
+
+// ─── PWA Install ───
+let deferredInstallPrompt = null
+const pwaInstallable = ref(false)
+const pwaInstalled = ref(window.matchMedia('(display-mode: standalone)').matches)
+const notifPermission = ref('Notification' in window ? Notification.permission : 'denied')
+
+function onBeforeInstallPrompt(e) {
+  e.preventDefault()
+  deferredInstallPrompt = e
+  pwaInstallable.value = true
+}
+window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+window.addEventListener('appinstalled', () => {
+  pwaInstalled.value = true
+  pwaInstallable.value = false
+  deferredInstallPrompt = null
+})
+
+async function installPwa() {
+  if (!deferredInstallPrompt) return
+  deferredInstallPrompt.prompt()
+  const result = await deferredInstallPrompt.userChoice
+  if (result.outcome === 'accepted') {
+    pwaInstallable.value = false
+    pwaInstalled.value = true
+    deferredInstallPrompt = null
+  }
+}
+
+async function requestNotifPermission() {
+  if (!('Notification' in window)) return
+  const perm = await Notification.requestPermission()
+  notifPermission.value = perm
+}
+
 const editingWsId = ref(null)
 const editWsName = ref('')
 const showIconPicker = ref(null)
