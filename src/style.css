@@ -6444,7 +6444,8 @@
        left: 0;
      }
 
-     .board-area {
+     .board-area,
+     .board-wrapper {
        padding: 2vw;
        overflow-x: scroll !important;
        overflow-y: hidden !important;
@@ -6460,8 +6461,7 @@
        gap: 3vw !important;
        width: max-content !important;
        height: auto !important;
-       min-height: 100% !important;
-       align-items: stretch !important;
+       align-items: flex-start !important;
        padding-right: 4vw;
      }
 

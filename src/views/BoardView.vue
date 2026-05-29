@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="board-wrapper">
   <!-- Pinned notes bar -->
   <div v-if="store.pinnedNotes.length > 0" class="pinned-bar">
     <span class="pinned-bar-label"><PhStar :size="14" /> Épinglées</span>
