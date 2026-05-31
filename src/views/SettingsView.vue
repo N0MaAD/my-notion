@@ -409,6 +409,57 @@
           </div>
         </div>
       </div>
+
+      <!-- Application (PWA Install) -->
+      <div v-else-if="activeSection === 'app-install'" class="settings-section">
+        <div class="settings-block">
+          <h3 class="settings-block-title">Application</h3>
+          <p class="settings-block-desc">Installe My Notion comme une application native sur ton appareil</p>
+
+          <div v-if="pwaInstalled" class="settings-app-status settings-app-installed">
+            <PhCheck :size="20" />
+            <span>Application installée</span>
+          </div>
+
+          <template v-else>
+            <button
+              v-if="deferredInstallPrompt"
+              class="btn btn-accent settings-install-btn"
+              @click="installPwa"
+            >
+              <PhDeviceMobile :size="18" />
+              Installer l'application
+            </button>
+
+            <div v-else class="settings-app-info">
+              <p><strong>Sur mobile (Android) :</strong></p>
+              <p>Ouvre le menu de Chrome (⋮) puis "Installer l'application" ou "Ajouter à l'écran d'accueil".</p>
+              <p style="margin-top: 8px;"><strong>Sur iPhone / iPad :</strong></p>
+              <p>Ouvre Safari, appuie sur le bouton Partager puis "Sur l'écran d'accueil".</p>
+              <p style="margin-top: 8px;"><strong>Sur PC :</strong></p>
+              <p>Dans Chrome, clique sur l'icône d'installation dans la barre d'adresse (⊕) ou va dans le menu ⋮ > "Installer My Notion".</p>
+            </div>
+          </template>
+        </div>
+
+        <div class="settings-block">
+          <h3 class="settings-block-title">Notifications</h3>
+          <p class="settings-block-desc">Active les notifications push pour rester informé</p>
+          <button
+            v-if="'Notification' in window && Notification.permission !== 'granted'"
+            class="btn btn-accent"
+            @click="requestNotifPermission"
+          >
+            <PhBell :size="18" />
+            Activer les notifications
+          </button>
+          <div v-else-if="'Notification' in window && Notification.permission === 'granted'" class="settings-app-status settings-app-installed">
+            <PhCheck :size="20" />
+            <span>Notifications activées</span>
+          </div>
+          <p v-else class="settings-app-info">Les notifications ne sont pas supportées sur ce navigateur.</p>
+        </div>
+      </div>
     </main>
   </div>
 </Teleport>
@@ -416,7 +467,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { PhBuilding, PhUsers, PhSignOut, PhX, PhCheck, PhTrash, PhArrowCounterClockwise, PhPanorama, PhAperture, PhNotePencil, PhFileCsv, PhFileHtml, PhFileJs, PhFileText, PhPencilLine } from '@phosphor-icons/vue'
+import { PhBuilding, PhUsers, PhSignOut, PhX, PhCheck, PhTrash, PhArrowCounterClockwise, PhPanorama, PhAperture, PhNotePencil, PhFileCsv, PhFileHtml, PhFileJs, PhFileText, PhPencilLine, PhDeviceMobile, PhBell } from '@phosphor-icons/vue'
 import PhIcon from '../components/PhIcon.vue'
 import { useThemeStore, THEMES, PRESET_BACKGROUNDS } from '../stores/theme.js'
 import { useAuthStore } from '../stores/auth.js'
@@ -442,7 +493,8 @@ const prefItems = [
   { id: 'appearance', icon: 'paint-brush-broad', label: 'Apparence' },
   { id: 'shortcuts', icon: 'command', label: 'Raccourcis' },
   { id: 'export', icon: 'export', label: 'Import / Export' },
-  { id: 'trash', icon: 'trash', label: 'Corbeille' }
+  { id: 'trash', icon: 'trash', label: 'Corbeille' },
+  { id: 'app-install', icon: 'device-mobile', label: 'Application' }
 ]
 
 const allItems = [
@@ -450,6 +502,44 @@ const allItems = [
   { id: 'workspaces', icon: 'building', label: 'Mes espaces' },
   { id: 'members', icon: 'users', label: 'Membres' }
 ]
+
+const deferredInstallPrompt = ref(null)
+const pwaInstalled = ref(
+  window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+)
+
+function onBeforeInstallPrompt(e) {
+  e.preventDefault()
+  deferredInstallPrompt.value = e
+}
+
+function onAppInstalled() {
+  pwaInstalled.value = true
+  deferredInstallPrompt.value = null
+}
+
+async function installPwa() {
+  if (!deferredInstallPrompt.value) return
+  deferredInstallPrompt.value.prompt()
+  const { outcome } = await deferredInstallPrompt.value.userChoice
+  if (outcome === 'accepted') {
+    pwaInstalled.value = true
+  }
+  deferredInstallPrompt.value = null
+}
+
+async function requestNotifPermission() {
+  if (!('Notification' in window)) return
+  const result = await Notification.requestPermission()
+  if (result === 'granted') {
+    try {
+      const { getMessaging, getToken } = await import('firebase/messaging')
+      const { app } = await import('../firebase.js')
+      const messaging = getMessaging(app)
+      await getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY })
+    } catch (_) { /* ignore */ }
+  }
+}
 
 const SHORTCUT_GROUPS = [
   {
@@ -854,6 +944,14 @@ function onKeyDown(e) {
   if (e.key === 'Escape') emit('close')
 }
 
-onMounted(() => document.addEventListener('keydown', onKeyDown))
-onUnmounted(() => document.removeEventListener('keydown', onKeyDown))
+onMounted(() => {
+  document.addEventListener('keydown', onKeyDown)
+  window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+  window.addEventListener('appinstalled', onAppInstalled)
+})
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeyDown)
+  window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+  window.removeEventListener('appinstalled', onAppInstalled)
+})
 </script>
