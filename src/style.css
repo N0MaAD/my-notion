@@ -311,13 +311,12 @@
        transform: translateX(40px);
      }
    }
-   
+
    @keyframes fadeIn {
-     from {
-       opacity: 0;
-     }
+     from { opacity: 0; }
+     to { opacity: 1; }
    }
-   
+
    @keyframes menuPop {
      from {
        opacity: 0;
@@ -803,22 +802,6 @@
      color: var(--text-secondary);
      font-size: 0.82rem;
      font-weight: 500;
-   }
-
-   .btn-logout {
-     background: none;
-     border: 1px solid var(--border);
-     border-radius: var(--radius-xs);
-     color: var(--text-muted);
-     font-size: 0.75rem;
-     padding: 0.3rem 0.7rem;
-     cursor: pointer;
-     transition: all 0.2s;
-   }
-
-   .btn-logout:hover {
-     color: var(--danger);
-     border-color: var(--danger);
    }
 
    /* ============================================================
@@ -1715,13 +1698,6 @@
    .sidebar-header h2 {
      font-size: 1.25rem;
      font-weight: 600;
-   }
-   
-   .sidebar-content {
-     flex: 1;
-     display: flex;
-     flex-direction: column;
-     gap: 1rem;
    }
    
    .sidebar-close {
@@ -2945,13 +2921,6 @@
      font-size: 0.85rem;
    }
    
-   .search-hint {
-     padding: 1.5rem;
-     text-align: center;
-     color: var(--text-muted);
-     font-size: 0.8rem;
-   }
-   
    /* ============================================================
       PINNED NOTES BAR
       ============================================================ */
@@ -3461,11 +3430,6 @@
    }
 
    /* ---- Table hover add buttons ---- */
-   .tiptap-editor .table-wrapper {
-     position: relative;
-     margin: 0.75rem 0;
-   }
-
    /* ---- Table picker (slash command) ---- */
    .table-picker-overlay {
      position: fixed;
@@ -3553,12 +3517,6 @@
      color: #fff;
      border-color: var(--accent, #3b82f6);
      transform: scale(1.15);
-   }
-
-   @media (max-width: 768px) {
-     .table-add-btn {
-       display: none !important;
-     }
    }
 
    /* ---- Table row hover ---- */
@@ -4217,22 +4175,6 @@
      transform: scale(1.15);
    }
 
-   /* Trash appear/disappear transition */
-   .trash-enter-active {
-     transition: opacity 0.25s ease, transform 0.25s ease;
-   }
-   .trash-leave-active {
-     transition: opacity 0.2s ease, transform 0.2s ease;
-   }
-   .trash-enter-from {
-     opacity: 0;
-     transform: scale(0.5);
-   }
-   .trash-leave-to {
-     opacity: 0;
-     transform: scale(0.5);
-   }
-
    /* ---- Permanent / archive columns ---- */
    .column-permanent .column-header h3 {
      font-weight: 600;
@@ -4246,15 +4188,6 @@
      user-select: none;
    }
 
-   .column-archive {
-     border-top-color: #ef4444 !important;
-   }
-
-   .column-archive .column-header h3 {
-     color: #fca5a5;
-   }
-
-   /* ---- Agenda cell click affordance ---- */
    .agenda-cell {
      cursor: pointer;
    }
@@ -4269,11 +4202,6 @@
      align-items: center;
      justify-content: center;
      animation: fadeIn 0.15s ease;
-   }
-
-   @keyframes fadeIn {
-     from { opacity: 0; }
-     to { opacity: 1; }
    }
 
    .agenda-modal {
@@ -4415,113 +4343,6 @@
      flex: 1;
    }
 
-   /* ============================================================
-      SETTINGS MENU (Profile avatar dropdown)
-      ============================================================ */
-
-   .settings-menu {
-     position: absolute;
-     top: calc(100% + 0.5rem);
-     left: 0;
-     min-width: 220px;
-     background: var(--bg-glass-strong);
-     border: 1px solid var(--border-glass);
-     border-radius: var(--radius-sm);
-     backdrop-filter: var(--blur);
-     box-shadow: var(--shadow-lg);
-     padding: 0.5rem 0;
-     z-index: 200;
-     animation: menuPop 180ms ease forwards;
-   }
-
-   .settings-menu-section {
-     padding: 0.4rem 0.8rem;
-   }
-
-   .settings-menu-label {
-     font-size: 0.7rem;
-     font-weight: 600;
-     text-transform: uppercase;
-     letter-spacing: 0.05em;
-     color: var(--text-muted);
-     margin-bottom: 0.4rem;
-   }
-
-   .settings-theme-options {
-     display: flex;
-     gap: 0.3rem;
-   }
-
-   .settings-theme-btn {
-     flex: 1;
-     display: flex;
-     flex-direction: column;
-     align-items: center;
-     gap: 0.25rem;
-     padding: 0.5rem 0.3rem;
-     border: 1px solid var(--border);
-     border-radius: var(--radius-xs);
-     background: none;
-     color: var(--text-secondary);
-     font-size: 0.72rem;
-     cursor: pointer;
-     transition: all 0.15s;
-   }
-
-   .settings-theme-btn:hover {
-     background: var(--bg-hover);
-     color: var(--text-primary);
-   }
-
-   .settings-theme-btn.active {
-     border-color: var(--accent);
-     background: var(--accent-glow);
-     color: var(--accent);
-   }
-
-   .settings-theme-btn .theme-icon {
-     font-size: 1.1rem;
-   }
-
-   .settings-menu-sep {
-     height: 1px;
-     background: var(--border);
-     margin: 0.3rem 0;
-   }
-
-   .settings-menu-item {
-     display: flex;
-     align-items: center;
-     gap: 0.5rem;
-     width: 100%;
-     padding: 0.45rem 0.8rem;
-     border: none;
-     background: none;
-     color: var(--text-secondary);
-     font-size: 0.8rem;
-     cursor: pointer;
-     transition: all 0.15s;
-     text-align: left;
-   }
-
-   .settings-menu-item:hover {
-     background: var(--bg-hover);
-     color: var(--text-primary);
-   }
-
-   .settings-menu-item.danger {
-     color: var(--danger);
-   }
-
-   .settings-menu-item.danger:hover {
-     background: rgba(248, 113, 113, 0.1);
-   }
-
-   .settings-overlay {
-     position: fixed;
-     inset: 0;
-     z-index: 199;
-   }
    /* ============================================================
       SETTINGS PAGE (plein écran)
       ============================================================ */
@@ -5466,6 +5287,7 @@
 
    .ws-current-icon {
      font-size: 0.9rem;
+     line-height: 1;
    }
 
    .ws-current-name {
@@ -5561,6 +5383,8 @@
      color: var(--accent);
      font-weight: 700;
      font-size: 0.9rem;
+     cursor: pointer;
+     user-select: none;
    }
 
    .ws-dropdown-footer {
@@ -6128,12 +5952,6 @@
      line-height: 1;
    }
 
-   /* ─── Workspace switcher checkboxes ─── */
-   .ws-item-check {
-     cursor: pointer;
-     user-select: none;
-   }
-
    .ws-checkbox {
      width: 16px;
      height: 16px;
@@ -6157,11 +5975,6 @@
    .ws-current-icons {
      display: flex;
      gap: 1px;
-   }
-
-   .ws-current-icon {
-     font-size: 0.9rem;
-     line-height: 1;
    }
 
    /* ============================================================
@@ -6459,6 +6272,9 @@
       ============================================================ */
 
    @media (max-width: 768px) {
+     .table-add-btn {
+       display: none !important;
+     }
      html, body {
        height: 100dvh;
        overflow: hidden !important;
