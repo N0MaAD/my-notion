@@ -1,9 +1,15 @@
 import { Node } from '@tiptap/core'
-import { Chart, registerables } from 'chart.js'
 import { useBoardStore } from '../stores/board.js'
 import { createIcon } from '../utils/icons.js'
 
-Chart.register(...registerables)
+let ChartCtor = null
+async function loadChart() {
+  if (ChartCtor) return ChartCtor
+  const { Chart, registerables } = await import('chart.js')
+  Chart.register(...registerables)
+  ChartCtor = Chart
+  return Chart
+}
 
 const COLORS = [
   '#3b82f6', '#ef4444', '#f59e0b', '#22c55e', '#a855f7',
@@ -168,8 +174,10 @@ export const ChartNode = Node.create({
           wrapper.appendChild(canvas)
           dom.appendChild(wrapper)
 
-          const config = buildChartConfig(chartType, labels, values)
-          chartInstance = new Chart(canvas, config)
+          loadChart().then(Chart => {
+            const config = buildChartConfig(chartType, labels, values)
+            chartInstance = new Chart(canvas, config)
+          })
         }
 
         const editBtn = document.createElement('button')
