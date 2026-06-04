@@ -929,7 +929,15 @@ watch(() => store.currentPage, (page) => {
 if (editor.value && page) {
   const tb = page.blocks.find(b => b.type === 'text')
   const content = tb ? tb.content || '' : ''
-  if (content !== editor.value.getHTML()) {
+  // Don't overwrite the editor while the user is actively typing. A background
+  // sync (a remote update, or our own write echoed back by Firestore) reassigns
+  // the store's note object and fires this watcher; calling setContent()
+  // mid-keystroke wipes a heading being typed or a just-created sub-page —
+  // they reappear then vanish ~1s later. onUpdate already mirrors the editor
+  // into the store on every keystroke, so skipping this while focused is safe.
+  // Navigating between pages remounts this component (see :key in NoteContent),
+  // so this path only ever applies remote edits to the page already open.
+  if (content !== editor.value.getHTML() && !editor.value.isFocused) {
     editor.value.commands.setContent(content)
   }
   nextTick(() => setupTableControls())
