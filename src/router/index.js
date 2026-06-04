@@ -17,10 +17,23 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   if (to.meta.public) return true
   const auth = useAuthStore()
-  if (!auth.loading && !auth.user) return false
+
+  // Attendre la résolution de l'état d'auth avant de décider
+  if (auth.loading) {
+    await new Promise(resolve => {
+      const unwatch = auth.$subscribe(() => {
+        if (!auth.loading) { unwatch(); resolve() }
+      })
+      // Timeout de sécurité : 5s max
+      setTimeout(() => { unwatch(); resolve() }, 5000)
+    })
+  }
+
+  // App.vue affiche LoginView quand !auth.user — on bloque juste la navigation
+  if (!auth.user) return false
   return true
 })
 

@@ -380,16 +380,29 @@ export const useBoardStore = defineStore('board', () => {
     }
   }
 
-  function toEmbedUrl(url) {
-    const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/)
-    if (yt) return `https://www.youtube.com/embed/${yt[1]}`
-    const sh = url.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
-    if (sh) return `https://docs.google.com/spreadsheets/d/${sh[1]}/pubhtml?widget=true&headers=false`
-    const dc = url.match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/)
-    if (dc) return `https://docs.google.com/document/d/${dc[1]}/pub?embedded=true`
-    const sl = url.match(/docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/)
-    if (sl) return `https://docs.google.com/presentation/d/${sl[1]}/embed`
-    if (isAllowedEmbedUrl(url)) return url
+  function toEmbedUrl(rawUrl) {
+    let url
+    try {
+      url = new URL(rawUrl)
+      if (url.protocol !== 'https:') return null
+    } catch {
+      return null
+    }
+    const safeId = /^[a-zA-Z0-9_-]+$/
+
+    const yt = rawUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/)
+    if (yt && safeId.test(yt[1])) return `https://www.youtube.com/embed/${yt[1]}`
+
+    const sh = rawUrl.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
+    if (sh && safeId.test(sh[1])) return `https://docs.google.com/spreadsheets/d/${sh[1]}/pubhtml?widget=true&headers=false`
+
+    const dc = rawUrl.match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/)
+    if (dc && safeId.test(dc[1])) return `https://docs.google.com/document/d/${dc[1]}/pub?embedded=true`
+
+    const sl = rawUrl.match(/docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/)
+    if (sl && safeId.test(sl[1])) return `https://docs.google.com/presentation/d/${sl[1]}/embed`
+
+    if (isAllowedEmbedUrl(rawUrl)) return rawUrl
     return null
   }
 

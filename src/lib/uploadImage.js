@@ -46,11 +46,12 @@ async function compressToDataUrl(file) {
   })
 }
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+
 export async function uploadImage(file) {
-  if (!file || !file.type?.startsWith('image/')) {
-    throw new Error('Fichier non supporté')
+  if (!file || !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    throw new Error('Format non supporté (jpeg, png, gif, webp, svg uniquement)')
   }
-  // Limite d'entrée généreuse, la compression fera le tri ensuite
   if (file.size > 20 * 1024 * 1024) {
     throw new Error('Image trop grande (max 20 MB en entrée)')
   }
