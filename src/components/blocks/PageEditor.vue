@@ -79,6 +79,23 @@
       </div>
     </div>
 
+    <!-- Sub-page title input (inline, replaces the native prompt that broke
+         the command on first use by stealing editor focus) -->
+    <div
+      v-if="showPageInput"
+      class="note-picker"
+      :style="{ top: pageInputPos.top + 'px', left: pageInputPos.left + 'px' }"
+    >
+      <input
+        ref="pageInputRef"
+        v-model="pageInputValue"
+        class="note-picker-input"
+        placeholder="Nom de la sous-page…"
+        @keydown="onPageInputKey"
+        @blur="cancelPageInput"
+      />
+    </div>
+
     <input
       ref="fileInputRef"
       type="file"
@@ -217,6 +234,13 @@ const notePickerIndex = ref(0)
 const notePickerInputRef = ref(null)
 const fileInputRef = ref(null)
 
+// ─── Sub-page title input ───
+const showPageInput = ref(false)
+const pageInputPos = ref({ top: 0, left: 0 })
+const pageInputValue = ref('')
+const pageInputRef = ref(null)
+const pendingPageRange = ref({ from: null, to: null })
+
 const showDateModal = ref(false)
 const dateModalCmd = ref(null)
 
@@ -263,6 +287,67 @@ function closeNotePicker() {
   notePickerFilter.value = ''
   notePickerIndex.value = 0
   editor.value?.commands.focus()
+}
+
+// ─── Sub-page creation (inline input instead of native prompt) ───
+async function openPageInput(from, to) {
+  pendingPageRange.value = { from, to }
+  pageInputPos.value = { ...slashPos.value }
+  pageInputValue.value = ''
+  showPageInput.value = true
+  await nextTick()
+  pageInputRef.value?.focus()
+}
+
+function onPageInputKey(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    submitPageInput()
+  } else if (e.key === 'Escape') {
+    e.preventDefault()
+    cancelPageInput()
+  }
+}
+
+function submitPageInput() {
+  if (!showPageInput.value) return
+  const title = pageInputValue.value.trim()
+  const { from, to } = pendingPageRange.value
+  showPageInput.value = false
+  if (!title) {
+    finishPageInput(from, to)
+    return
+  }
+  const pageId = crypto.randomUUID()
+  // Insert at an explicit range so it doesn't depend on the live selection,
+  // then add the matching store block (order matters: node first, see the
+  // PageEditor watcher).
+  if (from !== null) {
+    editor.value.chain().insertContentAt({ from, to }, {
+      type: 'pageBlock', attrs: { pageId, title }
+    }).focus().run()
+  } else {
+    editor.value.chain().focus().insertContent({
+      type: 'pageBlock', attrs: { pageId, title }
+    }).run()
+  }
+  store.addBlock('page', { id: pageId, title })
+}
+
+function cancelPageInput() {
+  if (!showPageInput.value) return
+  const { from, to } = pendingPageRange.value
+  showPageInput.value = false
+  finishPageInput(from, to)
+}
+
+// Drop the leftover "/page" text and return focus to the editor.
+function finishPageInput(from, to) {
+  if (from !== null) {
+    editor.value.chain().deleteRange({ from, to }).focus().run()
+  } else {
+    editor.value?.commands.focus()
+  }
 }
 
 function pickNote(note) {
@@ -562,20 +647,11 @@ switch (item.type) {
     }
     break
   }
-  case 'page': {
-    const title = prompt('Nom de la sous-page :')
-    if (title && title.trim()) {
-      const pageId = crypto.randomUUID()
-      cmd().insertContent({
-        type: 'pageBlock',
-        attrs: { pageId, title: title.trim() }
-      }).run()
-      store.addBlock('page', { id: pageId, title: title.trim() })
-    } else {
-      cmd().run()
-    }
+  case 'page':
+    // Inline input (see openPageInput); the native prompt() stole editor focus
+    // and made this command no-op on first use.
+    openPageInput(slashFrom, slashTo)
     break
-  }
   case 'embed': {
     const url = prompt('URL à intégrer (YouTube, Sheets...) :')
     if (url && url.trim()) {
