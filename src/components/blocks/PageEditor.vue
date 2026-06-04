@@ -96,6 +96,27 @@
       />
     </div>
 
+    <!-- Generic inline prompt for media/embeds/polls/etc. (replaces native
+         prompt(), which broke commands on first use by stealing editor focus) -->
+    <div
+      v-if="inlinePrompt"
+      class="note-picker inline-prompt"
+      :style="{ top: inlinePrompt.pos.top + 'px', left: inlinePrompt.pos.left + 'px' }"
+      @focusout="onInlinePromptFocusOut"
+    >
+      <input
+        v-for="f in inlinePrompt.fields"
+        :key="f.key"
+        v-model="f.value"
+        class="note-picker-input"
+        :placeholder="f.placeholder"
+        @keydown="onInlinePromptKey"
+      />
+      <div class="inline-prompt-actions">
+        <button class="inline-prompt-ok" @mousedown.prevent="submitInlinePrompt">OK</button>
+      </div>
+    </div>
+
     <input
       ref="fileInputRef"
       type="file"
@@ -241,6 +262,9 @@ const pageInputValue = ref('')
 const pageInputRef = ref(null)
 const pendingPageRange = ref({ from: null, to: null })
 
+// ─── Generic inline prompt (replaces native prompts for media/embeds/etc.) ───
+const inlinePrompt = ref(null)
+
 const showDateModal = ref(false)
 const dateModalCmd = ref(null)
 
@@ -341,13 +365,58 @@ function cancelPageInput() {
   finishPageInput(from, to)
 }
 
-// Drop the leftover "/page" text and return focus to the editor.
+// Drop the leftover "/…" text and return focus to the editor.
 function finishPageInput(from, to) {
   if (from !== null) {
     editor.value.chain().deleteRange({ from, to }).focus().run()
   } else {
     editor.value?.commands.focus()
   }
+}
+
+// ─── Generic inline prompt (one or more fields, replaces native prompt()) ───
+function openInlinePrompt(fields, from, to, build) {
+  inlinePrompt.value = {
+    fields: fields.map(f => ({ ...f, value: '' })),
+    pos: { ...slashPos.value },
+    from, to, build
+  }
+  nextTick(() => {
+    blockRef.value?.querySelector('.inline-prompt .note-picker-input')?.focus()
+  })
+}
+
+function onInlinePromptKey(e) {
+  if (e.key === 'Enter') { e.preventDefault(); submitInlinePrompt() }
+  else if (e.key === 'Escape') { e.preventDefault(); cancelInlinePrompt() }
+}
+
+// Cancel only when focus leaves the whole prompt, not when tabbing field→field.
+function onInlinePromptFocusOut(e) {
+  if (e.currentTarget.contains(e.relatedTarget)) return
+  cancelInlinePrompt()
+}
+
+function submitInlinePrompt() {
+  const p = inlinePrompt.value
+  if (!p) return
+  const values = {}
+  for (const f of p.fields) values[f.key] = f.value.trim()
+  inlinePrompt.value = null
+  const content = p.build(values)
+  if (!content) { finishPageInput(p.from, p.to); return }
+  if (p.from !== null) {
+    editor.value.chain().insertContentAt({ from: p.from, to: p.to }, content).focus().run()
+  } else {
+    editor.value.chain().focus().insertContent(content).run()
+  }
+}
+
+function cancelInlinePrompt() {
+  const p = inlinePrompt.value
+  if (!p) return
+  inlinePrompt.value = null
+  finishPageInput(p.from, p.to)
 }
 
 function pickNote(note) {
@@ -591,15 +660,10 @@ switch (item.type) {
   case 'taskList':
     cmd().toggleTaskList().run()
     break
-  case 'toggle': {
-    const summary = prompt('Titre du menu dépliant :') || 'Menu dépliant'
-    cmd().insertContent({
-      type: 'detailsBlock',
-      attrs: { summary, open: true },
-      content: [{ type: 'paragraph' }]
-    }).run()
+  case 'toggle':
+    openInlinePrompt([{ key: 'summary', placeholder: 'Titre du menu dépliant…' }], slashFrom, slashTo,
+      (v) => ({ type: 'detailsBlock', attrs: { summary: v.summary || 'Menu dépliant', open: true }, content: [{ type: 'paragraph' }] }))
     break
-  }
   case 'callout':
     cmd().insertContent({
       type: 'calloutBlock',
@@ -628,44 +692,27 @@ switch (item.type) {
     cmd().run()
     triggerImagePicker()
     break
-  case 'video': {
-    const url = prompt('URL de la vidéo (YouTube, Vimeo, lien direct...) :')
-    if (url && url.trim()) {
-      cmd().insertContent({ type: 'videoBlock', attrs: { src: url.trim() } }).run()
-    } else {
-      cmd().run()
-    }
+  case 'video':
+    openInlinePrompt([{ key: 'url', placeholder: 'URL de la vidéo (YouTube, Vimeo, lien direct…)' }], slashFrom, slashTo,
+      (v) => v.url ? { type: 'videoBlock', attrs: { src: v.url } } : null)
     break
-  }
-  case 'audio': {
-    const url = prompt('URL du fichier audio :')
-    if (url && url.trim()) {
-      const title = prompt('Titre (optionnel) :') || ''
-      cmd().insertContent({ type: 'audioBlock', attrs: { src: url.trim(), title } }).run()
-    } else {
-      cmd().run()
-    }
+  case 'audio':
+    openInlinePrompt(
+      [{ key: 'url', placeholder: 'URL du fichier audio' }, { key: 'title', placeholder: 'Titre (optionnel)' }],
+      slashFrom, slashTo,
+      (v) => v.url ? { type: 'audioBlock', attrs: { src: v.url, title: v.title } } : null)
     break
-  }
   case 'page':
     // Inline input (see openPageInput); the native prompt() stole editor focus
     // and made this command no-op on first use.
     openPageInput(slashFrom, slashTo)
     break
-  case 'embed': {
-    const url = prompt('URL à intégrer (YouTube, Sheets...) :')
-    if (url && url.trim()) {
-      const label = prompt('Label (optionnel) :') || url
-      const embedUrl = toEmbedUrl(url.trim())
-      cmd().insertContent({
-        type: 'embedBlock',
-        attrs: { url: embedUrl, label: label.trim() }
-      }).run()
-    } else {
-      cmd().run()
-    }
+  case 'embed':
+    openInlinePrompt(
+      [{ key: 'url', placeholder: 'URL à intégrer (YouTube, Sheets…)' }, { key: 'label', placeholder: 'Label (optionnel)' }],
+      slashFrom, slashTo,
+      (v) => v.url ? { type: 'embedBlock', attrs: { url: toEmbedUrl(v.url), label: v.label || v.url } } : null)
     break
-  }
   case 'chartBar':    cmd().run(); openChartEditor('bar'); break
   case 'chartBarH':   cmd().run(); openChartEditor('horizontalBar'); break
   case 'chartLine':   cmd().run(); openChartEditor('line'); break
@@ -675,29 +722,20 @@ switch (item.type) {
     dateModalCmd.value = cmd()
     showDateModal.value = true
     break
-  case 'poll': {
-    const question = prompt('Question du sondage :')
-    if (!question) { cmd().run(); break }
-    const raw = prompt('Options (séparées par des virgules) :') || 'Option A,Option B'
-    const options = raw.split(',').map(s => ({ text: s.trim(), votes: 0 })).filter(o => o.text)
-    cmd().insertContent({
-      type: 'pollBlock',
-      attrs: { question: question.trim(), options: JSON.stringify(options) }
-    }).run()
+  case 'poll':
+    openInlinePrompt(
+      [{ key: 'question', placeholder: 'Question du sondage' }, { key: 'options', placeholder: 'Options séparées par des virgules' }],
+      slashFrom, slashTo,
+      (v) => {
+        if (!v.question) return null
+        const options = (v.options || 'Option A,Option B').split(',').map(s => ({ text: s.trim(), votes: 0 })).filter(o => o.text)
+        return { type: 'pollBlock', attrs: { question: v.question, options: JSON.stringify(options) } }
+      })
     break
-  }
-  case 'map': {
-    const address = prompt('Adresse ou lieu à afficher :')
-    if (address && address.trim()) {
-      cmd().insertContent({
-        type: 'mapBlock',
-        attrs: { address: address.trim(), zoom: 15 }
-      }).run()
-    } else {
-      cmd().run()
-    }
+  case 'map':
+    openInlinePrompt([{ key: 'address', placeholder: 'Adresse ou lieu à afficher' }], slashFrom, slashTo,
+      (v) => v.address ? { type: 'mapBlock', attrs: { address: v.address, zoom: 15 } } : null)
     break
-  }
 }
 }
 

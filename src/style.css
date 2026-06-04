@@ -4105,6 +4105,27 @@
      overflow-y: auto;
    }
 
+   .inline-prompt-actions {
+     display: flex;
+     justify-content: flex-end;
+     padding: 0.4rem 0.5rem;
+   }
+
+   .inline-prompt-ok {
+     padding: 0.3rem 0.9rem;
+     border: none;
+     border-radius: 0.375rem;
+     background: var(--accent, #3b82f6);
+     color: #fff;
+     font-size: 0.8rem;
+     font-weight: 600;
+     cursor: pointer;
+   }
+
+   .inline-prompt-ok:hover {
+     opacity: 0.9;
+   }
+
    .note-picker-item {
      padding: 0.45rem 0.7rem;
      cursor: pointer;
