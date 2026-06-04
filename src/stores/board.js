@@ -823,6 +823,13 @@ export const useBoardStore = defineStore('board', () => {
       if (!snap.exists() || snap.metadata.hasPendingWrites) return
       if (isFirstSnapshot) { isFirstSnapshot = false; return }
       const data = snap.data()
+      // Skip echoes of our own writes. Firestore can return data with reordered
+      // object keys, so the JSON-hash comparison below silently fails to detect
+      // a self-write and mis-treats it as a remote change — which reassigns
+      // columns and resets the open editor, wiping in-flight edits (a heading
+      // being typed, a just-created sub-page). The per-tab clientId stamp
+      // identifies our own writes reliably regardless of key ordering.
+      if (data._lastModifiedBy === clientId) return
       const incoming = buildIncoming(data)
       const incomingHash = JSON.stringify(incoming)
       const prev = wsDataCache[wsId]
@@ -877,6 +884,8 @@ export const useBoardStore = defineStore('board', () => {
         const snap = await getDocFromServer(doc(db, 'workspaces', wsId))
         if (!snap.exists()) continue
         const data = snap.data()
+        // Skip our own writes (see clientId rationale in the onSnapshot handler).
+        if (data._lastModifiedBy === clientId) continue
         const incoming = buildIncoming(data)
         const incomingHash = JSON.stringify(incoming)
         const prev = wsDataCache[wsId]
