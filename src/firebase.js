@@ -5,6 +5,7 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager
 } from 'firebase/firestore'
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check'
 
 // ─── Configuration Firebase ───
 const requiredEnvVars = [
@@ -32,6 +33,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 export { app }
 export const auth = getAuth(app)
+
+// App Check — bloque les requêtes qui ne viennent pas de l'app
+// En dev sans clé reCAPTCHA, on active le debug token automatiquement
+if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+    isTokenAutoRefreshEnabled: true,
+  })
+} else if (import.meta.env.DEV) {
+  // Token de debug pour le développement local
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true
+}
 
 // Firestore avec persistance locale (mode hors ligne)
 // Les donnees sont cachees dans IndexedDB et synchronisees automatiquement
