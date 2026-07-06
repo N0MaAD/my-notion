@@ -1,0 +1,163 @@
+   /* ============================================================
+      MOBILE RESPONSIVE
+      ============================================================ */
+
+   @media (max-width: 768px) {
+     .table-add-btn {
+       display: none !important;
+     }
+     html, body {
+       height: 100dvh;
+       overflow: hidden !important;
+       position: fixed !important;
+       width: 100vw;
+     }
+
+     #app {
+       height: 100dvh;
+       width: 100vw;
+       flex-direction: column;
+       overflow: hidden !important;
+       position: fixed !important;
+       top: 0;
+       left: 0;
+     }
+
+     .board-area {
+       padding: 2vw;
+       overflow: auto;
+       width: 100%;
+       height: 100%;
+       -webkit-overflow-scrolling: touch;
+     }
+
+     .board {
+       display: flex;
+       flex-direction: row !important;
+       flex-wrap: nowrap !important;
+       gap: 3vw;
+       width: max-content;
+       min-height: 0;
+       padding-right: 2vw;
+     }
+
+     .column {
+       width: 75vw !important;
+       min-width: 75vw !important;
+       max-width: 75vw !important;
+       flex-shrink: 0 !important;
+       border-radius: 2vw;
+     }
+
+     .column-cards {
+       max-height: 60vh;
+       overflow-y: auto;
+     }
+
+     .card {
+       min-height: 6dvh;
+       padding: 3vw;
+     }
+
+     .card p {
+       font-size: 3.8vw;
+     }
+
+     .pinned-bar {
+       padding: 1.5vw 2vw;
+       overflow-x: auto;
+       width: 100vw;
+     }
+
+     .pinned-note {
+       min-width: 30vw;
+       min-height: 6dvh;
+     }
+
+     .sidebar {
+       display: none !important;
+     }
+
+     .sidebar-resizer {
+       display: none !important;
+     }
+
+     .trash-zone {
+       display: none !important;
+     }
+
+     .user-bar {
+       display: none !important;
+     }
+
+     .settings-page {
+       flex-direction: column;
+       height: 100dvh;
+       width: 100vw;
+     }
+
+     .settings-sidebar {
+       width: 100vw;
+       max-height: 30dvh;
+       overflow-y: auto;
+     }
+
+     .settings-main {
+       flex: 1;
+       overflow-y: auto;
+       overflow-x: hidden;
+       width: 100vw;
+       -webkit-overflow-scrolling: touch;
+     }
+
+     .settings-section {
+       overflow-y: visible;
+       flex: none;
+       padding: 1rem;
+     }
+
+     .agenda-container {
+       padding: 2vw;
+       width: 100vw;
+     }
+
+     .agenda-calendar {
+       font-size: 3.4vw;
+     }
+
+     .tags-view {
+       padding: 2vw;
+       width: 100vw;
+     }
+
+     .tag-card {
+       min-height: 6dvh;
+     }
+
+     .search-modal {
+       width: 96vw;
+       max-width: none;
+       margin: 2dvh auto;
+     }
+
+     .btn-pin {
+       min-width: 10vw;
+       min-height: 44px;
+       font-size: 4.5vw;
+     }
+
+     .btn, button {
+       min-height: 44px;
+       min-width: 44px;
+     }
+
+     .card p, .card-header, .trash-item-title, .drawer-note-title, .search-result-title {
+       overflow: hidden;
+       text-overflow: ellipsis;
+       white-space: nowrap;
+     }
+
+     .search-result-item {
+       min-height: 44px;
+     }
+   }

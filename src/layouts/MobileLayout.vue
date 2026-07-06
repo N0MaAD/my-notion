@@ -36,6 +36,7 @@
 </template>
 
 <script setup>
+import '../styles/app.css'
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MobileTopBar from '../components/mobile/MobileTopBar.vue'

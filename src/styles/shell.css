@@ -1,0 +1,143 @@
+   /* ============================================================
+      USER BAR
+      ============================================================ */
+
+   .user-bar {
+     position: fixed;
+     top: 0;
+     left: 0;
+     right: 0;
+     height: 2.75rem;
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     padding: 0 1rem;
+     background: var(--bg-glass-strong);
+     border-bottom: 0.0625rem solid var(--border-glass);
+     backdrop-filter: blur(1rem);
+     z-index: 100;
+   }
+
+   /* Onglets Notes / Agenda - centres absolus */
+   .nav-tabs {
+     position: absolute;
+     left: 50%;
+     top: 50%;
+     transform: translate(-50%, -50%);
+     display: flex;
+     gap: 0.25rem;
+     background: rgba(255, 255, 255, 0.04);
+     border: 0.0625rem solid var(--border-glass);
+     border-radius: var(--radius-sm);
+     padding: 0.2rem;
+   }
+
+   .nav-tab {
+     width: 2.25rem;
+     height: 2rem;
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     background: none;
+     border: none;
+     color: var(--text-secondary);
+     padding: 0;
+     border-radius: var(--radius-xs);
+     cursor: pointer;
+     transition: all 0.2s;
+   }
+
+   .nav-tab:hover {
+     color: var(--text-primary);
+     background: rgba(255, 255, 255, 0.05);
+   }
+
+   .nav-tab.active {
+     background: var(--accent);
+     color: #fff;
+     box-shadow: 0 0 0.75rem var(--accent-glow-strong);
+   }
+
+   .user-info {
+     display: flex;
+     align-items: center;
+     gap: 0.5rem;
+     border: 0;
+     background: transparent;
+     font: inherit;
+     cursor: pointer;
+     position: relative;
+     padding: 0.25rem 0.5rem;
+     border-radius: var(--radius-xs);
+     transition: background var(--transition);
+   }
+
+   .user-info:hover {
+     background: var(--bg-hover);
+   }
+
+   .user-avatar {
+     width: 26px;
+     height: 26px;
+     border-radius: 50%;
+     object-fit: cover;
+   }
+
+   .user-name {
+     color: var(--text-secondary);
+     font-size: 0.82rem;
+     font-weight: 500;
+   }
+
+   /* ============================================================
+      LAYOUT
+      ============================================================ */
+
+   .app-layout {
+     display: flex;
+     width: 100%;
+     height: 100vh;
+     padding-top: 2.75rem;
+     position: relative;
+   }
+
+   /* Animated blob 1 */
+   .app-layout::before {
+     content: "";
+     position: fixed;
+     width: 600px;
+     height: 600px;
+     background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%);
+     top: -10%;
+     left: -5%;
+     border-radius: 50%;
+     filter: blur(100px);
+     pointer-events: none;
+     z-index: 0;
+     animation: blob1 22s ease-in-out infinite;
+   }
+
+   /* Animated blob 3 (pink) */
+   .app-layout::after {
+     content: "";
+     position: fixed;
+     width: 450px;
+     height: 450px;
+     background: radial-gradient(circle, rgba(244, 114, 182, 0.06) 0%, transparent 70%);
+     top: 40%;
+     left: 40%;
+     border-radius: 50%;
+     filter: blur(100px);
+     pointer-events: none;
+     z-index: 0;
+     animation: blob3 30s ease-in-out infinite;
+   }
+
+   .board-area {
+     flex: 1;
+     overflow-x: auto;
+     overflow-y: hidden;
+     padding: 2rem;
+     position: relative;
+     z-index: 1;
+   }

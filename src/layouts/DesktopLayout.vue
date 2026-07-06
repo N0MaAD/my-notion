@@ -81,6 +81,7 @@
 </template>
 
 <script setup>
+import '../styles/app.css'
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import SidebarView from '../views/SidebarView.vue'

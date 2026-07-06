@@ -1,0 +1,43 @@
+   /* ============================================================
+      COMMAND PALETTE - enhanced search modal
+      ============================================================ */
+
+   .search-section {
+     padding: 0.25rem 0.35rem;
+   }
+
+   .search-section-label {
+     font-size: 0.62rem;
+     font-weight: 600;
+     text-transform: uppercase;
+     letter-spacing: 0.06em;
+     color: var(--text-muted);
+     padding: 0.5rem 0.75rem 0.25rem;
+   }
+
+   .search-item-kbd {
+     font-size: 0.55rem;
+     padding: 0.12rem 0.35rem;
+     border-radius: var(--radius-xs);
+     background: var(--bg-tertiary);
+     color: var(--text-muted);
+     border: 1px solid var(--border);
+     font-family: monospace;
+     margin-left: auto;
+     flex-shrink: 0;
+     white-space: nowrap;
+   }
+
+   .search-results-count {
+     font-size: 0.62rem;
+     font-weight: 600;
+     text-transform: uppercase;
+     letter-spacing: 0.06em;
+     color: var(--text-muted);
+     padding: 0.5rem 0.75rem 0.25rem;
+   }
+
+   .search-ws-badge {
+     margin-left: 0.35rem;
+     font-size: 0.72rem;
+   }

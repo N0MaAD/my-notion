@@ -1,0 +1,244 @@
+   [data-custom-bg="true"] .app-layout::before,
+   [data-custom-bg="true"] .app-layout::after {
+     display: none !important;
+   }
+
+   [data-custom-bg="true"] .user-bar {
+     background: rgba(0, 0, 0, 0.4) !important;
+     backdrop-filter: blur(20px) !important;
+   }
+
+   [data-custom-bg="true"] .column {
+     background: rgba(0, 0, 0, 0.3) !important;
+     backdrop-filter: blur(16px) !important;
+   }
+
+   [data-custom-bg="true"] .card {
+     background: rgba(0, 0, 0, 0.25) !important;
+     backdrop-filter: blur(12px) !important;
+   }
+
+   [data-custom-bg="true"] .sidebar {
+     background: rgba(0, 0, 0, 0.4) !important;
+     backdrop-filter: blur(20px) !important;
+   }
+
+   [data-custom-bg="true"] .mobile-topbar,
+   [data-custom-bg="true"] .bottom-nav {
+     background: rgba(0, 0, 0, 0.4) !important;
+     backdrop-filter: blur(20px) !important;
+   }
+
+   [data-custom-bg="true"] .settings-page {
+     background: rgba(0, 0, 0, 0.5) !important;
+     backdrop-filter: blur(20px) !important;
+   }
+
+   /* ============================================================
+      KEYFRAMES - ALL ANIMATIONS FROM BOLT CSS
+      ============================================================ */
+
+   @keyframes popUp {
+     from {
+       opacity: 0;
+       transform: translateY(8px) scale(0.97);
+     }
+   }
+
+   @keyframes colIn {
+     from {
+       opacity: 0;
+       transform: translateY(24px) scale(0.95);
+     }
+   }
+
+   @keyframes cardIn {
+     from {
+       opacity: 0;
+       transform: translateY(8px) scale(0.97);
+     }
+   }
+
+   @keyframes slideIn {
+     from {
+       opacity: 0;
+       transform: translateX(40px);
+     }
+   }
+
+   @keyframes fadeIn {
+     from { opacity: 0; }
+     to { opacity: 1; }
+   }
+
+   @keyframes menuPop {
+     from {
+       opacity: 0;
+       transform: scale(0.9) translateY(-8px);
+     }
+   }
+
+   @keyframes searchDrop {
+     from {
+       opacity: 0;
+       transform: translateY(-24px) scale(0.96);
+     }
+   }
+
+   @keyframes rainbowLine {
+     0% {
+       background-position: 0% 50%;
+     }
+     100% {
+       background-position: 300% 50%;
+     }
+   }
+
+   @keyframes starGlow {
+     0%,
+     100% {
+       filter: drop-shadow(0 0 4px rgba(234, 179, 8, 0.4));
+       transform: scale(1);
+     }
+     50% {
+       filter: drop-shadow(0 0 10px rgba(234, 179, 8, 0.8));
+       transform: scale(1.1);
+     }
+   }
+
+   @keyframes checkBounce {
+     0% {
+       transform: scale(0.7);
+     }
+     50% {
+       transform: scale(1.2);
+     }
+     100% {
+       transform: scale(1);
+     }
+   }
+
+   @keyframes warnPulse {
+     0%,
+     100% {
+       box-shadow: none;
+     }
+     50% {
+       box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+     }
+   }
+
+   @keyframes dangerPulse {
+     0%,
+     100% {
+       box-shadow: none;
+     }
+     50% {
+       box-shadow: 0 0 12px rgba(248, 113, 113, 0.25);
+     }
+   }
+
+   @keyframes wiggle {
+     0% {
+       transform: rotate(0);
+     }
+     25% {
+       transform: rotate(15deg);
+     }
+     75% {
+       transform: rotate(-15deg);
+     }
+     100% {
+       transform: rotate(0);
+     }
+   }
+
+   @keyframes floatBorder {
+     0%,
+     100% {
+       background-position: 0% 0%;
+     }
+     50% {
+       background-position: 0% 100%;
+     }
+   }
+
+   @keyframes glowPulse {
+     0%,
+     100% {
+       box-shadow: 0 0 10px var(--accent-glow-intense),
+         0 0 20px var(--accent-glow-intense);
+     }
+     50% {
+       box-shadow: 0 0 20px var(--accent-glow-intense),
+         0 0 40px var(--accent-glow-intense),
+         0 0 60px var(--accent-glow-intense);
+     }
+   }
+
+   @keyframes shimmer {
+     0% {
+       background-position: -1000px 0;
+     }
+     100% {
+       background-position: 1000px 0;
+     }
+   }
+
+   @keyframes pulse {
+     0%,
+     100% {
+       transform: scale(1);
+       opacity: 1;
+     }
+     50% {
+       transform: scale(1.05);
+       opacity: 0.8;
+     }
+   }
+
+   @keyframes float {
+     0%,
+     100% {
+       transform: translateY(0);
+     }
+     50% {
+       transform: translateY(-10px);
+     }
+   }
+
+   @keyframes contextIn {
+     from {
+       opacity: 0;
+       transform: scale(0.95) translateY(-4px);
+     }
+     to {
+       opacity: 1;
+       transform: scale(1) translateY(0);
+     }
+   }
+
+   @keyframes searchIn {
+     from {
+       opacity: 0;
+       transform: translateY(-10px) scale(0.98);
+     }
+     to {
+       opacity: 1;
+       transform: translateY(0) scale(1);
+     }
+   }
+
+   /* Animated blobs */
+   @keyframes blob3 {
+     0%,
+     100% {
+       transform: translate(0, 0) scale(1);
+     }
+     33% {
+       transform: translate(-15vw, 10vh) scale(1.15);
+     }
+     66% {
+       transform: translate(10vw, -15vh) scale(0.9);
+     }
+   }

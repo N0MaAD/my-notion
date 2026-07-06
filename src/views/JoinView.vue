@@ -45,6 +45,7 @@
 </template>
 
 <script setup>
+import '../styles/app.css'
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
