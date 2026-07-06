@@ -10,14 +10,12 @@ import {
   setPersistence
 } from 'firebase/auth'
 import { auth } from '../firebase.js'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { db } from '../firebase.js'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const loading = ref(true)
 
-  onAuthStateChanged(auth, async (firebaseUser) => {
+  onAuthStateChanged(auth, (firebaseUser) => {
     if (firebaseUser) {
       user.value = {
         uid: firebaseUser.uid,
@@ -25,20 +23,30 @@ export const useAuthStore = defineStore('auth', () => {
         email: firebaseUser.email,
         photoURL: firebaseUser.photoURL
       }
-      const userRef = doc(db, 'users', firebaseUser.uid)
-      const userSnap = await getDoc(userRef)
-      const existing = userSnap.exists() ? userSnap.data() : {}
-      await setDoc(userRef, {
-        ...existing,
-        email: firebaseUser.email,
-        displayName: firebaseUser.displayName,
-        photoURL: firebaseUser.photoURL
+      syncUserProfile(firebaseUser).catch((error) => {
+        console.warn('User profile sync failed:', error)
       })
     } else {
       user.value = null
     }
     loading.value = false
   })
+
+  async function syncUserProfile(firebaseUser) {
+    const [{ doc, getDoc, setDoc }, { db }] = await Promise.all([
+      import('firebase/firestore'),
+      import('../firestore.js')
+    ])
+    const userRef = doc(db, 'users', firebaseUser.uid)
+    const userSnap = await getDoc(userRef)
+    const existing = userSnap.exists() ? userSnap.data() : {}
+    await setDoc(userRef, {
+      ...existing,
+      email: firebaseUser.email,
+      displayName: firebaseUser.displayName,
+      photoURL: firebaseUser.photoURL
+    })
+  }
 
   async function loginWithGoogle(rememberMe = false) {
     const persistence = rememberMe

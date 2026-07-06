@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch, nextTick } from 'vue'
 import { doc, getDoc, getDocFromServer, setDoc, updateDoc, onSnapshot } from 'firebase/firestore'
-import { db } from '../firebase.js'
+import { db } from '../firestore.js'
 import { useWorkspaceStore } from './workspace.js'
 
 const clientId = crypto.randomUUID()

@@ -21,23 +21,24 @@
 </template>
 
 <script setup>
-import { watch, computed, onMounted, onUnmounted } from 'vue'
+import { watch, computed, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import LoginView from './views/LoginView.vue'
-import DesktopLayout from './layouts/DesktopLayout.vue'
-import MobileLayout from './layouts/MobileLayout.vue'
-import { useBoardStore } from './stores/board.js'
 import { useAuthStore } from './stores/auth.js'
 import { useThemeStore } from './stores/theme.js'
-import { useWorkspaceStore } from './stores/workspace.js'
 import { useIsMobile } from './composables/useIsMobile.js'
 
+const DesktopLayout = defineAsyncComponent(() => import('./layouts/DesktopLayout.vue'))
+const MobileLayout = defineAsyncComponent(() => import('./layouts/MobileLayout.vue'))
+
 const route = useRoute()
-const store = useBoardStore()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
-const wsStore = useWorkspaceStore()
 const isMobile = useIsMobile()
+
+let store = null
+let wsStore = null
+let initializationId = 0
 
 const isJoinRoute = computed(() => route.path.startsWith('/join/'))
 
@@ -45,8 +46,19 @@ let deadlineCheckInterval = null
 let reminderCheckInterval = null
 
 watch(() => authStore.user, async (user) => {
+  const currentInitializationId = ++initializationId
+
   if (user) {
+    const [{ useBoardStore }, { useWorkspaceStore }] = await Promise.all([
+      import('./stores/board.js'),
+      import('./stores/workspace.js')
+    ])
+    if (currentInitializationId !== initializationId || authStore.user?.uid !== user.uid) return
+
+    store = useBoardStore()
+    wsStore = useWorkspaceStore()
     await wsStore.loadWorkspaces()
+    if (currentInitializationId !== initializationId) return
     await wsStore.checkPendingInvites()
     await store.loadFromFirestore()
     if (deadlineCheckInterval) clearInterval(deadlineCheckInterval)
@@ -66,8 +78,8 @@ watch(() => authStore.user, async (user) => {
       })
     }).catch(() => {})
   } else {
-    store.stopSync()
-    wsStore.cleanup()
+    store?.stopSync()
+    wsStore?.cleanup()
   }
 }, { immediate: true })
 
@@ -83,10 +95,10 @@ function onGlobalKeyDown(e) {
   const meta = e.ctrlKey || e.metaKey
   if (meta && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
     e.preventDefault()
-    store.undo()
+    store?.undo()
   } else if (meta && ((e.key === 'z' || e.key === 'Z') && e.shiftKey || e.key === 'y' || e.key === 'Y')) {
     e.preventDefault()
-    store.redo()
+    store?.redo()
   }
 }
 

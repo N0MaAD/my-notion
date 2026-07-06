@@ -10,11 +10,19 @@
       <WorkspaceSwitcher @manage="showSettings = true; settingsSection = 'workspaces'" />
     </div>
 
-    <nav class="nav-tabs">
-      <router-link class="nav-tab" active-class="active" to="/notes">Notes</router-link>
-      <router-link class="nav-tab" active-class="active" to="/agenda">Agenda</router-link>
-      <router-link class="nav-tab" active-class="active" to="/tags">Tags</router-link>
-      <router-link class="nav-tab" active-class="active" to="/trash"><PhTrash :size="16" /> Corbeille</router-link>
+    <nav class="nav-tabs" aria-label="Navigation principale">
+      <router-link class="nav-tab" active-class="active" to="/notes" aria-label="Notes" title="Notes">
+        <PhCheckSquare :size="18" />
+      </router-link>
+      <router-link class="nav-tab" active-class="active" to="/agenda" aria-label="Agenda" title="Agenda">
+        <PhCalendarDot :size="18" />
+      </router-link>
+      <router-link class="nav-tab" active-class="active" to="/tags" aria-label="Tags" title="Tags">
+        <PhStar :size="18" />
+      </router-link>
+      <router-link class="nav-tab" active-class="active" to="/trash" aria-label="Corbeille" title="Corbeille">
+        <PhTrash :size="18" />
+      </router-link>
     </nav>
   </div>
 
@@ -70,7 +78,7 @@ import SearchModal from '../components/SearchModal.vue'
 import QuickCapture from '../components/QuickCapture.vue'
 import NotificationToast from '../components/NotificationToast.vue'
 import WorkspaceSwitcher from '../components/WorkspaceSwitcher.vue'
-import { PhTrash } from '@phosphor-icons/vue'
+import { PhCheckSquare, PhCalendarDot, PhStar, PhTrash } from '@phosphor-icons/vue'
 import { useBoardStore } from '../stores/board.js'
 import { useAuthStore } from '../stores/auth.js'
 

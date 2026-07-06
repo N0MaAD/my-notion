@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, addDoc, query, where } from 'firebase/firestore'
-import { db } from '../firebase.js'
+import { db } from '../firestore.js'
 import { useAuthStore } from './auth.js'
 import { rateLimit } from '../utils/rateLimit.js'
 

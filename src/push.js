@@ -1,7 +1,7 @@
 import { getMessaging, getToken, onMessage } from 'firebase/messaging'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { app } from './firebase.js'
-import { db } from './firebase.js'
+import { db } from './firestore.js'
 
 let messaging = null
 

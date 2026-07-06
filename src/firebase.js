@@ -1,10 +1,5 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import {
-  initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager
-} from 'firebase/firestore'
 
 // ─── Configuration Firebase ───
 const firebaseConfig = {
@@ -19,11 +14,3 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 export { app }
 export const auth = getAuth(app)
-
-// Firestore avec persistance locale (mode hors ligne)
-// Les donnees sont cachees dans IndexedDB et synchronisees automatiquement
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
-})
