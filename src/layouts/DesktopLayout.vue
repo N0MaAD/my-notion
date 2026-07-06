@@ -3,10 +3,10 @@
   <!-- User bar -->
   <div class="user-bar">
     <div class="user-bar-left">
-      <div class="user-info" @click="showSettings = true">
-        <img v-if="authStore.user.photoURL" :src="authStore.user.photoURL" class="user-avatar" referrerpolicy="no-referrer" />
+      <button type="button" class="user-info" aria-label="Ouvrir les paramètres du compte" title="Paramètres du compte" @click="showSettings = true">
+        <img v-if="authStore.user.photoURL" :src="authStore.user.photoURL" alt="" class="user-avatar" referrerpolicy="no-referrer" />
         <span class="user-name">{{ authStore.user.displayName }}</span>
-      </div>
+      </button>
       <WorkspaceSwitcher @manage="showSettings = true; settingsSection = 'workspaces'" />
     </div>
 
@@ -37,10 +37,21 @@
   <div v-if="!isFullscreen" class="board-area">
     <router-view />
   </div>
-  <div
+  <button
     v-if="store.activeNote && !isFullscreen"
+    type="button"
     class="sidebar-resizer"
+    role="separator"
+    aria-label="Redimensionner le panneau de note"
+    title="Redimensionner le panneau"
+    aria-orientation="vertical"
+    aria-valuemin="300"
+    aria-valuemax="1200"
+    :aria-valuenow="sidebarWidth"
+    aria-keyshortcuts="ArrowLeft ArrowRight"
     @mousedown="startResize"
+    @keydown.left.prevent="resizeSidebar(20)"
+    @keydown.right.prevent="resizeSidebar(-20)"
   />
   <aside v-if="store.activeNote" class="sidebar" :class="{ fullscreen: isFullscreen }" :style="!isFullscreen ? { width: sidebarWidth + 'px', minWidth: sidebarWidth + 'px' } : {}">
     <SidebarView :is-fullscreen="isFullscreen" @toggle-fullscreen="isFullscreen = !isFullscreen" />
@@ -148,5 +159,9 @@ function startResize(e) {
   document.body.style.userSelect = 'none'
   document.addEventListener('mousemove', onMouseMove)
   document.addEventListener('mouseup', onMouseUp)
+}
+
+function resizeSidebar(delta) {
+  sidebarWidth.value = Math.max(300, Math.min(1200, sidebarWidth.value + delta))
 }
 </script>

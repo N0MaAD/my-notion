@@ -587,6 +587,23 @@
      background: rgba(56, 189, 248, 0.35);
      color: #fff;
    }
+
+   .sr-only {
+     position: absolute;
+     width: 1px;
+     height: 1px;
+     padding: 0;
+     margin: -1px;
+     overflow: hidden;
+     clip: rect(0, 0, 0, 0);
+     white-space: nowrap;
+     border: 0;
+   }
+
+   :where(a, button, input, textarea, select, [tabindex]):focus-visible {
+     outline: 2px solid var(--accent) !important;
+     outline-offset: 2px;
+   }
    
    /* ============================================================
       LOGIN PAGE
@@ -635,8 +652,9 @@
      background: var(--bg-glass-strong);
      border: 1px solid var(--border-glass);
      border-radius: var(--radius);
-     padding: 3rem 2.5rem;
-     min-width: 340px;
+     width: min(400px, calc(100% - 2rem));
+     padding: clamp(2rem, 8vw, 3rem) clamp(1.25rem, 6vw, 2.5rem);
+     min-width: 0;
      max-width: 400px;
      text-align: center;
      backdrop-filter: blur(24px);
@@ -668,13 +686,14 @@
      justify-content: center;
      gap: 0.75rem;
      width: 100%;
-     padding: 0.75rem 1.2rem;
+     padding: 0.75rem clamp(0.75rem, 4vw, 1.2rem);
      border: 1px solid var(--border);
      border-radius: var(--radius-sm);
      background: rgba(255, 255, 255, 0.05);
      color: var(--text-primary);
      font-size: 0.95rem;
      font-weight: 500;
+     white-space: nowrap;
      cursor: pointer;
      transition: all 0.2s;
    }
@@ -783,6 +802,9 @@
      display: flex;
      align-items: center;
      gap: 0.5rem;
+     border: 0;
+     background: transparent;
+     font: inherit;
      cursor: pointer;
      position: relative;
      padding: 0.25rem 0.5rem;
@@ -1723,6 +1745,9 @@
    
    .sidebar-resizer {
      width: 4px;
+     min-width: 4px;
+     padding: 0;
+     border: 0;
      cursor: col-resize;
      background: linear-gradient(to bottom, transparent, rgba(56, 189, 248, 0.2), transparent);
      transition: all var(--transition);
@@ -2857,10 +2882,15 @@
    }
    
    .search-result-item {
+     width: 100%;
      display: flex;
      align-items: flex-start;
      gap: 0.6rem;
      padding: 0.6rem 0.75rem;
+     text-align: left;
+     font: inherit;
+     color: inherit;
+     background: transparent;
      border-radius: var(--radius-xs);
      cursor: pointer;
      transition: all var(--transition);
@@ -2872,8 +2902,8 @@
      background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(14, 165, 233, 0.06));
      padding-left: 0.9rem;
      border-color: rgba(56, 189, 248, 0.12);
-   }
-   
+    }
+
    .search-result-icon {
      font-size: 1rem;
      margin-top: 0.1rem;
@@ -6431,5 +6461,16 @@
 
      .search-result-item {
        min-height: 44px;
+     }
+   }
+
+   @media (prefers-reduced-motion: reduce) {
+     *,
+     *::before,
+     *::after {
+       scroll-behavior: auto !important;
+       animation-duration: 0.01ms !important;
+       animation-iteration-count: 1 !important;
+       transition-duration: 0.01ms !important;
      }
    }

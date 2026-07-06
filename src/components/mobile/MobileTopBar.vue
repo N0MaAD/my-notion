@@ -1,17 +1,18 @@
 <template>
 <div class="mobile-topbar">
   <div class="mobile-topbar-left">
-    <button class="btn btn-ghost mobile-hamburger" @click="$emit('open-drawer')">
+    <button type="button" class="btn btn-ghost mobile-hamburger" aria-label="Ouvrir le menu" title="Menu" @click="$emit('open-drawer')">
       <span class="hamburger-icon"><PhList :size="22" /></span>
     </button>
     <WorkspaceSwitcher @manage="$emit('open-settings', 'workspaces')" />
   </div>
   <div class="mobile-topbar-right">
-    <button class="btn btn-ghost mobile-search-btn" @click="$emit('open-search')"><PhMagnifyingGlass :size="20" /></button>
-    <button class="btn btn-ghost mobile-avatar-btn" @click="$emit('open-settings', 'appearance')">
+    <button type="button" class="btn btn-ghost mobile-search-btn" aria-label="Ouvrir la recherche" title="Rechercher" @click="$emit('open-search')"><PhMagnifyingGlass :size="20" /></button>
+    <button type="button" class="btn btn-ghost mobile-avatar-btn" aria-label="Ouvrir les paramètres du compte" title="Paramètres" @click="$emit('open-settings', 'appearance')">
       <img
         v-if="authStore.user?.photoURL"
         :src="authStore.user.photoURL"
+        alt=""
         class="mobile-avatar"
         referrerpolicy="no-referrer"
       />

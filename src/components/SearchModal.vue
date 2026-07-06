@@ -1,13 +1,22 @@
 <template>
 <Teleport to="body">
   <div v-if="isOpen" class="search-overlay" @click.self="close">
-    <div class="search-modal">
+    <div
+      ref="modalRef"
+      class="search-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="search-dialog-title"
+      @keydown="trapFocus"
+    >
+      <h2 id="search-dialog-title" class="sr-only">Recherche globale</h2>
       <div class="search-input-row">
-        <span class="search-icon"><PhMagnifyingGlass :size="16" /></span>
+        <span class="search-icon" aria-hidden="true"><PhMagnifyingGlass :size="16" /></span>
         <input
           ref="inputRef"
           class="search-input"
           v-model="query"
+          aria-label="Rechercher une note ou exécuter une commande"
           placeholder="Rechercher ou exécuter une commande…"
           @keydown.escape="close"
           @keydown.down.prevent="moveDown"
@@ -21,65 +30,68 @@
       <template v-if="!query.trim()">
         <div v-if="recentNotes.length" class="search-section">
           <div class="search-section-label">Récents</div>
-          <div
+          <button
             v-for="(item, i) in recentNotes"
             :key="'r' + item.id"
+            type="button"
             class="search-result-item"
             :class="{ active: selectedIndex === i }"
             @click="openResult(item)"
             @mouseenter="selectedIndex = i"
           >
             <span class="search-result-icon"><PhFileText :size="14" /></span>
-            <div class="search-result-text">
+            <span class="search-result-text">
               <span class="search-result-title">{{ item.title || 'Sans titre' }}</span>
               <span class="search-result-path">{{ item.path }}</span>
-            </div>
-          </div>
+            </span>
+          </button>
         </div>
 
         <div class="search-section">
           <div class="search-section-label">Actions</div>
-          <div
+          <button
             v-for="(cmd, i) in commands"
             :key="cmd.id"
+            type="button"
             class="search-result-item"
             :class="{ active: selectedIndex === recentNotes.length + i }"
             @click="runCommand(cmd)"
             @mouseenter="selectedIndex = recentNotes.length + i"
           >
             <span class="search-result-icon"><PhIcon :name="cmd.icon" :size="14" /></span>
-            <div class="search-result-text">
+            <span class="search-result-text">
               <span class="search-result-title">{{ cmd.label }}</span>
-            </div>
+            </span>
             <kbd v-if="cmd.shortcut" class="search-item-kbd">{{ cmd.shortcut }}</kbd>
-          </div>
+          </button>
         </div>
       </template>
 
       <!-- Search results -->
       <template v-else>
         <div v-if="results.length" class="search-results">
-          <div class="search-results-count">{{ results.length }} résultat{{ results.length > 1 ? 's' : '' }}</div>
-          <div
+          <div class="search-results-count" aria-live="polite">{{ results.length }} résultat{{ results.length > 1 ? 's' : '' }}</div>
+          <button
             v-for="(result, i) in results"
             :key="result.noteId + (result.pagePath?.join('') || '') + i"
+            type="button"
             class="search-result-item"
             :class="{ active: selectedIndex === i }"
             @click="openResult(result)"
             @mouseenter="selectedIndex = i"
           >
             <span class="search-result-icon"><PhFileText v-if="result.type === 'note'" :size="14" /><PhFile v-else :size="14" /></span>
-            <div class="search-result-text">
+            <span class="search-result-text">
               <span class="search-result-title" v-html="highlight(result.title)"></span>
               <span class="search-result-path">
                 {{ result.path }}
                 <span v-if="wsStore.multiWorkspaceActive && result.wsIcon" class="search-ws-badge"><PhIcon :name="result.wsIcon" :size="14" /></span>
               </span>
               <span v-if="result.snippet" class="search-result-snippet" v-html="highlight(result.snippet)"></span>
-            </div>
-          </div>
+            </span>
+          </button>
         </div>
-        <div v-else class="search-empty">Aucun résultat pour « {{ query }} »</div>
+        <div v-else class="search-empty" role="status">Aucun résultat pour « {{ query }} »</div>
       </template>
     </div>
   </div>
@@ -105,6 +117,8 @@ const isOpen = ref(false)
 const query = ref('')
 const selectedIndex = ref(0)
 const inputRef = ref(null)
+const modalRef = ref(null)
+let previouslyFocusedElement = null
 
 // ─── Recent notes (persisted in localStorage) ───
 const MAX_RECENT = 6
@@ -272,6 +286,9 @@ function openResult(result) {
 
 // ─── Open / close ───
 function open() {
+  previouslyFocusedElement = document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null
   isOpen.value = true
   query.value = ''
   selectedIndex.value = 0
@@ -279,12 +296,35 @@ function open() {
 }
 
 function close() {
+  if (!isOpen.value) return
   isOpen.value = false
   query.value = ''
+  const focusTarget = previouslyFocusedElement
+  previouslyFocusedElement = null
+  nextTick(() => focusTarget?.focus())
+}
+
+function trapFocus(e) {
+  if (e.key !== 'Tab' || !modalRef.value) return
+  const focusable = [...modalRef.value.querySelectorAll(
+    'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+  )]
+  if (!focusable.length) return
+
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault()
+    first.focus()
+  }
 }
 
 function onKeydown(e) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); isOpen.value ? close() : open() }
+  else if (e.key === 'Escape' && isOpen.value) { e.preventDefault(); close() }
 }
 
 onMounted(() => document.addEventListener('keydown', onKeydown))
