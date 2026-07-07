@@ -151,11 +151,11 @@ return {
 })
 
 function updateColor(color) {
-props.column.color = color
+store.updateColumnAppearance(props.column.id, { color })
 }
 
 function updateOpacity(opacity) {
-props.column.opacity = opacity
+store.updateColumnAppearance(props.column.id, { opacity })
 }
 
 // Column drag
@@ -194,7 +194,7 @@ store.columns.splice(toIndex, 0, col)
 }
 
 // Card drag
-function onCardDragOver(e) {
+function onCardDragOver() {
 isDragOver.value = true
 }
 

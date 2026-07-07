@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch, nextTick } from 'vue'
-import { doc, getDoc, getDocFromServer, setDoc, updateDoc, onSnapshot } from 'firebase/firestore'
+import { doc, getDoc, getDocFromServer, updateDoc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firestore.js'
 import { useWorkspaceStore } from './workspace.js'
 
@@ -194,6 +194,15 @@ export const useBoardStore = defineStore('board', () => {
     recordSnapshot()
     const col = columns.value.find(c => c.id === columnId)
     if (col) col.title = newTitle
+  }
+
+  function updateColumnAppearance(columnId, updates) {
+    if (isPermanentColumn(columnId)) return
+    const col = columns.value.find(c => c.id === columnId)
+    if (!col) return
+    recordSnapshot()
+    if ('color' in updates) col.color = updates.color
+    if ('opacity' in updates) col.opacity = updates.opacity
   }
 
   // ─── Note operations ───
@@ -956,7 +965,7 @@ export const useBoardStore = defineStore('board', () => {
     columns, trash, tags, activeNoteId, activeNote, openPagePath, currentPage,
     pinnedNotes, dataLoaded, notifications, canUndo, canRedo,
     undo, redo,
-    addColumn, deleteColumn, renameColumn,
+    addColumn, deleteColumn, renameColumn, updateColumnAppearance,
     addNote, deleteNote, renameNote, updateNoteType,
     toggleNoteChecked, setNoteDeadline, setNoteDuration, setNoteIsDeadline, setNoteTime, setNoteColor,
     setActiveNote, addBlock, updateBlock, deleteBlock, openSubPage, goBackTo,

@@ -117,7 +117,7 @@ export const ChartNode = Node.create({
   },
 
   addNodeView() {
-    return ({ node, getPos, editor }) => {
+    return ({ node, getPos }) => {
       const dom = document.createElement('div')
       dom.className = 'chart-block'
       dom.setAttribute('data-chart', '')

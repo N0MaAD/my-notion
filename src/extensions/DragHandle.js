@@ -45,7 +45,6 @@ export const DragHandle = Extension.create({
             editorView.dispatch(tr)
 
             // Laisser ProseMirror gérer le reste via son système natif
-            const slice = editorView.state.selection.content()
             e.dataTransfer.effectAllowed = 'move'
 
             handle.classList.add('dragging')
@@ -108,7 +107,7 @@ export const DragHandle = Extension.create({
 
                 handle.style.top = (blockRect.top - parentRect.top + blockRect.height / 2 - 10) + 'px'
                 handle.style.left = (blockRect.left - parentRect.left - 28) + 'px'
-              } catch (e) {
+              } catch {
                 removeHandle()
               }
 

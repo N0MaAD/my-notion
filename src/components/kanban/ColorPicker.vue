@@ -99,7 +99,7 @@ function onOpacityChange(val) {
 emit('update:opacity', parseInt(val) / 100)
 }
 
-function closeOnOutside(e) {
+function closeOnOutside() {
 if (isOpen.value) {
   isOpen.value = false
 }

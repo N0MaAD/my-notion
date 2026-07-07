@@ -50,7 +50,6 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { useWorkspaceStore } from '../stores/workspace.js'
-import { useBoardStore } from '../stores/board.js'
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { auth } from '../firebase.js'
 
@@ -58,7 +57,6 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const wsStore = useWorkspaceStore()
-const boardStore = useBoardStore()
 
 const loading = ref(true)
 const error = ref('')
@@ -87,7 +85,7 @@ watch(() => authStore.user, async (user) => {
 async function doLogin() {
   try {
     await signInWithPopup(auth, new GoogleAuthProvider())
-  } catch (e) {
+  } catch {
     error.value = 'Erreur de connexion'
   }
 }

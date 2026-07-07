@@ -93,7 +93,7 @@ import PhIcon from '../PhIcon.vue'
 import { useBoardStore } from '../../stores/board.js'
 import { useWorkspaceStore } from '../../stores/workspace.js'
 
-const props = defineProps({ modelValue: Boolean })
+defineProps({ modelValue: Boolean })
 const emit = defineEmits(['update:modelValue', 'open-settings'])
 
 const store = useBoardStore()

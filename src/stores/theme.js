@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 
 const STORAGE_KEY = 'my-notion-theme'
 const BG_STORAGE_KEY = 'my-notion-bg'

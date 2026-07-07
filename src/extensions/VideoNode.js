@@ -13,7 +13,9 @@ function toVideoEmbed(url) {
   try {
     const parsed = new URL(url)
     if (parsed.protocol === 'https:') return { type: 'video', src: url }
-  } catch {}
+  } catch {
+    // URL invalide : on conserve le fallback vide.
+  }
   return { type: 'video', src: '' }
 }
 

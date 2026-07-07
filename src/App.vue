@@ -33,7 +33,7 @@ const MobileLayout = defineAsyncComponent(() => import('./layouts/MobileLayout.v
 
 const route = useRoute()
 const authStore = useAuthStore()
-const themeStore = useThemeStore()
+useThemeStore()
 const isMobile = useIsMobile()
 
 let store = null

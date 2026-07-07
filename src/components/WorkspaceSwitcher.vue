@@ -75,7 +75,7 @@ import PhIcon from './PhIcon.vue'
 import { useWorkspaceStore } from '../stores/workspace.js'
 import { useBoardStore } from '../stores/board.js'
 
-const emit = defineEmits(['manage'])
+defineEmits(['manage'])
 const wsStore = useWorkspaceStore()
 const boardStore = useBoardStore()
 
